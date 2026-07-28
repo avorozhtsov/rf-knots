@@ -200,6 +200,36 @@ in this environment:
    conjecture. See [07](07-domain-choice.md) §3, where this was the thesis-level
    contribution; it now has a concrete implementation path.
 
+### Measured: the proposer does not currently earn its place
+
+Eight seeds, K=6, 60 instances per arm, trained Scrambler against a uniform-random
+one on identical settings (same K, same BFS cutoff and growth bound, same seeds):
+
+```
+pooled   trained 4.67   random 4.53   difference +0.15, 95% CI [-0.06, +0.35]
+per-seed mean +0.15, sd 1.01, 5/8 positive, t = 0.41
+```
+
+**Indistinguishable from random.** A 3-seed version of the same measurement gave
++0.40 with CI [+0.08, +0.72]; that was a false positive from seed selection.
+
+The seed spread is the real finding. Optimal depth is bounded by K -- every
+scramble move is invertible within the move set, so reversing a K-move scramble
+always solves it in at most K -- which makes "fraction of scrambles at depth K"
+the interpretable metric: how often the Scrambler wastes none of its budget.
+
+```
+seed 6:  0.98 at maximum   (nearly every move necessary)
+seed 5:  0.07 at maximum   (far WORSE than random's 0.46)
+```
+
+Identical code, different initialisation, qualitatively different learned
+behaviour. Seed 5 is the "self-calibrate to easy problems" collapse PopuLoRA
+reports for single-agent self-play -- and single-agent is what this is, because
+**one network plays both roles**, distinguished only by a phase channel in the
+observation. Separate networks per role is the untested change that most
+directly addresses it.
+
 ### Sequencing
 
 The proposer has to earn its place rather than being assumed:
