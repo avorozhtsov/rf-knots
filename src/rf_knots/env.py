@@ -45,6 +45,7 @@ class State(core.State):
     _budget: jax.Array = jnp.int32(0)
     _scrambler: jax.Array = jnp.int32(0)
     _crossing_changes: jax.Array = jnp.int32(0)
+    _log_ratio: jax.Array = jnp.float32(0.0)
 
     @property
     def env_id(self) -> core.EnvId:  # type: ignore[override]
@@ -81,6 +82,9 @@ class BraidUnknot(core.Env):
     # -- construction ---------------------------------------------------------
 
     def _init(self, key: jax.Array) -> State:
+        key, ratio_key = jax.random.split(key)
+        low, high = self.config.log_ratio_range
+        log_ratio = jax.random.uniform(ratio_key, (), minval=low, maxval=high)
         scrambler = jax.random.bernoulli(key).astype(jnp.int32)
         word = braid.empty_word(self.config.max_len)
         n = jnp.int32(1)
@@ -96,9 +100,12 @@ class BraidUnknot(core.Env):
             _budget=jnp.int32(self.config.scramble_budget),
             _scrambler=scrambler,
             _crossing_changes=jnp.int32(0),
+            _log_ratio=log_ratio.astype(jnp.float32),
         )
 
-    def init_from_word(self, word: list[int], n: int, budget: int | None = None) -> State:
+    def init_from_word(
+        self, word: list[int], n: int, budget: int | None = None, log_ratio: float = 0.0
+    ) -> State:
         """Build a phase-1 (Simplifier-to-move) state from an externally supplied word.
 
         Used to point a trained agent at knot tables or at a stored hard-instance
@@ -127,6 +134,7 @@ class BraidUnknot(core.Env):
             _budget=jnp.int32(budget if budget is not None else self.config.simplify_budget),
             _scrambler=jnp.int32(0),
             _crossing_changes=jnp.int32(0),
+            _log_ratio=jnp.float32(log_ratio),
         )
         return state.replace(observation=self.observe(state))  # type: ignore[return-value]
 
@@ -157,10 +165,22 @@ class BraidUnknot(core.Env):
         # mathematical output*: it is the upper bound on u(K). With the bonus at
         # 0 (the default) the game is exactly win/lose and nothing rewards speed.
         used = jnp.maximum(self.config.simplify_budget - budget, 0).astype(jnp.float32)
-        speed = 1.0 - used / self.config.simplify_budget
-        payoff = jnp.where(
-            solved, 1.0 - self.config.simplifier_speed_bonus * (1.0 - speed), -1.0
-        )
+        # Multi-objective cost: lambda * crossing_changes + total_moves, scaled to
+        # [-1, 1] so the value head keeps a fixed range whatever lambda is. With
+        # lambda = 1 and no crossing changes this reduces to the speed bonus.
+        if not self.config.multi_objective:
+            # Win/lose, optionally graded by speed. The historical game.
+            payoff = jnp.where(
+                solved,
+                1.0
+                - self.config.simplifier_speed_bonus * (used / self.config.simplify_budget),
+                -1.0,
+            )
+        else:
+            ratio = jnp.exp(state._log_ratio)
+            cost = ratio * crossing_changes.astype(jnp.float32) + used
+            worst = (ratio + 1.0) * self.config.simplify_budget
+            payoff = jnp.where(solved, 1.0 - 2.0 * jnp.clip(cost / worst, 0.0, 1.0), -1.0)
         rewards = jnp.zeros(2, dtype=jnp.float32)
         rewards = rewards.at[simplifier].set(payoff).at[state._scrambler].set(-payoff)
         rewards = jnp.where(terminated, rewards, jnp.zeros(2, dtype=jnp.float32))
@@ -229,9 +249,12 @@ class BraidUnknot(core.Env):
                 length.astype(jnp.float32) / max_len,
                 jnp.minimum(top_count, max_len) / max_len,
                 (top_count == 1).astype(jnp.float32),  # destabilisation available
+                # log(A/B): what the agent is being asked to optimise this episode
+                state._log_ratio / 5.0,
+                state._crossing_changes.astype(jnp.float32) / max(max_len, 1),
             ]
         )
-        scalar_planes = jnp.broadcast_to(scalars[:, None], (6, max_len))
+        scalar_planes = jnp.broadcast_to(scalars[:, None], (8, max_len))
 
         letter_planes = jnp.concatenate(
             [positive, negative, empty, top_generator[None, :]], axis=0
@@ -243,7 +266,7 @@ class BraidUnknot(core.Env):
     def num_channels(self) -> int:
         # letter one-hot (+/- each generator), padding, the top-generator
         # marker, and six broadcast scalars
-        return 2 * (self.config.max_strands - 1) + 1 + 1 + 6
+        return 2 * (self.config.max_strands - 1) + 1 + 1 + 8
 
 
 def braid_word_str(state: State) -> str:

@@ -291,3 +291,87 @@ def test_destabilize_hint_is_visible_locally_and_globally(env: BraidUnknot) -> N
     assert obs[0, count_channel] == pytest.approx(1 / SMALL.max_len)
     assert obs[0, available_channel] == 1.0
     assert bool(state.legal_action_mask[env.spec.start_of(DESTABILIZE)])
+
+
+def test_log_ratio_conditioning_and_multiobjective_cost() -> None:
+    """A*crossing_changes + B*total_moves, with only the ratio conditioned on.
+
+    Minimising A*cc + B*m has the same argmin as lambda*cc + m for lambda = A/B,
+    so the policy needs the ratio and nothing else; the absolute scale would only
+    change the value's range, which normalisation handles.
+    """
+    config = BraidConfig(
+        max_len=12,
+        max_strands=4,
+        scramble_budget=1,
+        simplify_budget=8,
+        allow_crossing_change=True,
+        multi_objective=True,
+        log_ratio_range=(-5.0, 5.0),
+    )
+    env = BraidUnknot(config)
+    # letter planes are 2(N-1) one-hots + padding + top-generator marker;
+    # log(A/B) is the 7th of the 8 scalars after them
+    ratio_channel = 2 * (config.max_strands - 1) + 1 + 1 + 6
+
+    seen = set()
+    for seed in range(12):
+        state = env.init(jax.random.PRNGKey(seed))
+        log_ratio = float(state._log_ratio)
+        assert -5.0 <= log_ratio <= 5.0
+        seen.add(round(log_ratio, 3))
+        obs = np.asarray(state.observation)
+        assert obs[0, ratio_channel] == pytest.approx(log_ratio / 5.0, abs=1e-5)
+    assert len(seen) > 6, "log(A/B) must vary across episodes, not be fixed"
+
+
+def test_the_ratio_governs_the_crossing_change_trade_off() -> None:
+    """A/B decides *when to trade* crossing changes for moves, not whether a
+    redundant one costs something.
+
+    With cost = lambda*cc + moves, a route using one crossing change and two
+    moves beats a crossing-change-free route of six moves exactly when
+    lambda < 4. That crossover is the whole point of conditioning on the ratio,
+    and it is what a Pareto-covering policy has to learn.
+    """
+    budget = 8
+
+    def payoff(log_ratio: float, crossings: int, moves: int) -> float:
+        ratio = float(np.exp(log_ratio))
+        cost = ratio * crossings + moves
+        worst = (ratio + 1.0) * budget
+        return 1.0 - 2.0 * min(cost / worst, 1.0)
+
+    for log_ratio, prefer_crossing in ((np.log(1.0), True), (np.log(9.0), False)):
+        with_crossing = payoff(log_ratio, crossings=1, moves=2)
+        without = payoff(log_ratio, crossings=0, moves=6)
+        assert (with_crossing > without) is prefer_crossing, (
+            f"at lambda={np.exp(log_ratio):.0f} the preference should "
+            f"{'favour' if prefer_crossing else 'avoid'} the crossing change"
+        )
+
+
+def test_crossing_changes_cost_something_at_every_ratio() -> None:
+    from rf_knots.actions import CROSSING_CHANGE
+
+    def solve(log_ratio: float, use_crossing: bool) -> float:
+        config = BraidConfig(
+            max_len=12,
+            max_strands=4,
+            scramble_budget=1,
+            simplify_budget=8,
+            allow_crossing_change=True,
+            multi_objective=True,
+            log_ratio_range=(log_ratio, log_ratio),
+        )
+        env = BraidUnknot(config)
+        state = env.init_from_word([1], n=2, log_ratio=log_ratio)
+        if use_crossing:
+            state = env.step(state, jnp.int32(env.spec.encode(CROSSING_CHANGE, position=0)))
+        state = env.step(state, jnp.int32(env.spec.encode(DESTABILIZE)))
+        assert bool(state.terminated)
+        assert int(state._crossing_changes) == int(use_crossing)
+        return float(np.asarray(state.rewards)[1 - int(state._scrambler)])
+
+    for log_ratio in (-3.0, 0.0, 3.0):
+        assert solve(log_ratio, False) > solve(log_ratio, True)

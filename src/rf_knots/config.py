@@ -35,6 +35,14 @@ class BraidConfig:
     simplify_budget: int = 48
     allow_crossing_change: bool = False
     simplifier_speed_bonus: float = 0.0
+    # Multi-objective mode. The cost of an unknotting is
+    #     A * crossing_changes + B * total_moves
+    # and only the ratio matters to the policy, since minimising A*cc + B*m has
+    # the same argmin as lambda*cc + m with lambda = A/B. So an episode samples
+    # log(lambda) uniformly from this range and the network is conditioned on it,
+    # covering the whole Pareto front instead of one point on it.
+    multi_objective: bool = False
+    log_ratio_range: tuple[float, float] = (0.0, 0.0)
 
     def __post_init__(self) -> None:
         if self.max_len < 6:
