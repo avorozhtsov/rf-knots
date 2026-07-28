@@ -1,0 +1,40 @@
+[project]
+name = "rf-knots"
+version = "0.1.0"
+description = "Braid-word unknotting environments for Pgx, and a propose/solve league on top of them"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "Artem Vorozhtsov" }]
+dependencies = [
+  "jax>=0.4.30",
+  "numpy>=1.26",
+  "pgx>=2.6.0",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+rf-knots = "rf_knots.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rf_knots"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
