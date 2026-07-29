@@ -1,5 +1,17 @@
 # 10 — Invariants as leverage, and the choice of representation
 
+> **Scope constraint added since this was written.** The experiment is unknotting
+> with **zero human knowledge**, which reclassifies rather than cancels most of what
+> follows. Proposals 4 and 5 below hand the network human-computed answers, so they
+> are **oracle arms**: run them to bound the upside before building the fair
+> version, quote them as oracles, never as the headline. Proposals 1, 2 and 3 are
+> unaffected — a transposition table is search bookkeeping, certified lower bounds
+> verify output rather than feed input, and potential-based shaping on word length
+> and strand count uses only raw state. Note also that the observation *already*
+> carries three human-knowledge channels (the `top_generator` plane and the two
+> `top_count` scalars), so the standard is currently applied unevenly; the audit is
+> in [12 §4](12-serial-formulation.md).
+
 Written after reading Sossinsky's *Узлы: хронология одной математической теории*,
 chapter 7 (finite-order invariants), which turns out to contain the reframing this
 project needs.

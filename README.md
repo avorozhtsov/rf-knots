@@ -83,5 +83,22 @@ uv run rf-knots calibrate --tier tier0 --samples 64
 
 ## Status
 
-M1 of the roadmap in [research/08-roadmap.md](research/08-roadmap.md). The environment is
-complete and tested; training (M2) reuses `../pgx-mcts-bench` with an environment swap.
+M2 of the roadmap in [research/08-roadmap.md](research/08-roadmap.md). The environment is
+complete and tested; training runs in `../pgx-mcts-bench`, which depends on this repo by path.
+
+What is established, on generated torus-knot instances scored against proved unknotting numbers:
+
+* **Exactly optimal crossing changes** — 1.00 against `u(T(2,3)) = 1`, 2.00 against
+  `u(T(2,5)) = 2`, 3.00 against `u(T(2,7)) = 3` and `u(T(3,4)) = 3`. Those are theorems
+  (Milnor conjecture, Kronheimer–Mrowka), which is the point of using torus knots.
+* **A staged ladder discriminates.** Highest stage cleared spans 0 to 9 across candidates.
+  Search dominates capacity: 128 simulations reach stage 8, 16 simulations reach stage 0,
+  and 7.7× the parameters buys nothing that 2× the simulations does not.
+* **The serial (Turing-machine) formulation works** — `O(1)` action space in word length,
+  a head the agent must move. It cleared the full ladder and beat the strongest parallel
+  candidate on crossing-change optimality, once its policy head was made positional.
+  See [research/12-serial-formulation.md](research/12-serial-formulation.md).
+
+Open, in rough order of value: certified lower bounds (`|σ|/2`, `|s|/2`, `|τ|`) with
+branch-and-bound, which is what turns a search result into a theorem; a learned head register;
+hard unknot diagrams; knot equivalence as a two-tape machine.

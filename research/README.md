@@ -22,6 +22,7 @@ order-of-magnitude estimates and marked as such.
 | [09-vs-learning-to-unknot.md](09-vs-learning-to-unknot.md) | Would this supersede arXiv:2010.16263? What the real contribution is |
 | [10-invariants-and-representations.md](10-invariants-and-representations.md) | Unknotting number as a graph distance; where invariants help and where they are useless; mosaics vs. grid diagrams |
 | [11-network-growth-branch.md](11-network-growth-branch.md) | Growth as an executable branch: whether capacity is the constraint at all, the receptive-field split, and what would kill it |
+| [12-serial-formulation.md](12-serial-formulation.md) | The serial/Turing formulation: why it scored 0 then 9, the missing head register and how big it must be, what "zero human knowledge" actually excludes, and knot equivalence as a two-tape machine |
 
 Implementation reference: [../docs/representation.md](../docs/representation.md) — how a knot is
 encoded and what the agent may do to it, with the Reidemeister/Markov correspondence.
@@ -55,6 +56,16 @@ encoded and what the agent may do to it, with the Reidemeister/Markov correspond
    (~50% pretraining compute saved), and the AlphaZero-practice version — warm-start the bigger
    net on the accumulated self-play buffer. Better still: pick an architecture that is *invariant*
    to problem size so the curriculum changes the data, not the net. See [06](06-network-growth.md).
+   **But measure first:** 7.7× the parameters bought nothing that 2× the simulations
+   did, so establish a capacity-bound regime before growing anything —
+   [11](11-network-growth-branch.md).
+
+6. **GPU rental.** Not yet, and the reason is measured: MCTS is batch-1 latency
+   bound (605 µs per simulation, 77% of it the forward pass on a 48K-parameter
+   network), so a GPU's kernel-launch overhead makes it *worse*. Batch the leaf
+   evaluations across parallel games first — that alone measured 7.8× on the same
+   laptop. Then rented CPU is the cheap win: a sweep that takes this machine two
+   weeks is order $85 on 64 vCPU.
 
 ## What has changed since this was written
 
@@ -70,6 +81,21 @@ the originals are marked rather than deleted:
   project should not be pitched as "a better unknotter", and that the real
   contribution is the question of where hard instances come from and whether
   training against them transfers.
+* **What "zero human knowledge" excludes.** The experiment is unknotting with zero
+  human knowledge, which makes computed invariants an *oracle* arm rather than a
+  fair one — useful for bounding the upside before the learned version is built,
+  never the headline. This reclassifies proposals 4 and 5 in
+  [10](10-invariants-and-representations.md). It also exposes that the observation
+  already carries three human-knowledge channels, so the standard was being applied
+  unevenly. Audit in [12 §4](12-serial-formulation.md).
+* **The serial formulation works, and the reason it did not was a readout bug.**
+  It scored 0 against the parallel candidates' 7–8, then 9 of 9 once the policy
+  head became positional. The head register that motivated the whole design was
+  never built, so those numbers are a floor. [12](12-serial-formulation.md).
+* **The A/B objective is not inert after all — it is inert in one formulation.**
+  Parallel candidates emit the same policy at both ends of `log(A/B)` to two
+  decimal places, as the Pareto argument predicted. Serial candidates respond by
+  5–6× in moves, because head travel is charged. [12 §2](12-serial-formulation.md).
 * **Whether the network needs growing at all.** [06](06-network-growth.md) assumed
   capacity was a constraint and sized a schedule up to 30M parameters. The ladder
   measured otherwise: 7.7× the parameters (`wide-net`, 372K) reached the same stage

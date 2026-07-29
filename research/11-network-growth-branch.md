@@ -123,6 +123,11 @@ regardless of how the stage counts look.
 This is worth running early. It is cheap, it is a clean yes/no, and it tests the mechanism rather
 than the outcome.
 
+It also does double duty as the **zero-human-knowledge audit**. Those two channels are a
+human-computed answer to a question the network was supposed to work out, which is the same class
+of object as a polynomial feature — see [12 §4](12-serial-formulation.md). So the ablation is both
+"did growth buy receptive field" and "can the system be run at the standard the experiment claims".
+
 ## Cost
 
 Five arms × 8 seeds, resuming from a stage-8 snapshot and climbing to 12, is roughly 60 core-hours
