@@ -1,5 +1,7 @@
 # rf-knots
 
+> **Continuing this work?** Read [HANDOFF.md](HANDOFF.md) first.
+
 Braid-word unknotting environments for [Pgx](https://github.com/sotetsuk/pgx), built as the
 foundation for a population self-play system where agents both *propose* and *solve* problems
 from a fixed, machine-verifiable family.
