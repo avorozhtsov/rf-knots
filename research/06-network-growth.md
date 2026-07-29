@@ -1,5 +1,12 @@
 # 06 — Growing the network across curriculum levels
 
+> **Revised by measurement.** This note assumes capacity is a constraint and sizes a schedule up to
+> 30M parameters. The ladder found 7.7× the parameters bought nothing over 2× the simulations, while
+> 16 simulations reached stage 0 — search dominates at this scale. The operators below are still the
+> right operators; the premise and the schedule are not. See
+> [11-network-growth-branch.md](11-network-growth-branch.md) for the executable version, including
+> the receptive-field arithmetic that decides where depth growth can help at all.
+
 Question: *are there approaches to gradually increase the complexity of the NN, inheriting
 results from previous levels / smaller nets?* Yes, three distinct families. Use all three, in
 this order of priority.

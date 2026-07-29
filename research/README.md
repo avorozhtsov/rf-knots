@@ -21,6 +21,7 @@ order-of-magnitude estimates and marked as such.
 | [08-roadmap.md](08-roadmap.md) | Concrete milestones, starting from the existing pgx-mcts-bench code |
 | [09-vs-learning-to-unknot.md](09-vs-learning-to-unknot.md) | Would this supersede arXiv:2010.16263? What the real contribution is |
 | [10-invariants-and-representations.md](10-invariants-and-representations.md) | Unknotting number as a graph distance; where invariants help and where they are useless; mosaics vs. grid diagrams |
+| [11-network-growth-branch.md](11-network-growth-branch.md) | Growth as an executable branch: whether capacity is the constraint at all, the receptive-field split, and what would kill it |
 
 Implementation reference: [../docs/representation.md](../docs/representation.md) — how a knot is
 encoded and what the agent may do to it, with the Reidemeister/Markov correspondence.
@@ -69,6 +70,14 @@ the originals are marked rather than deleted:
   project should not be pitched as "a better unknotter", and that the real
   contribution is the question of where hard instances come from and whether
   training against them transfers.
+* **Whether the network needs growing at all.** [06](06-network-growth.md) assumed
+  capacity was a constraint and sized a schedule up to 30M parameters. The ladder
+  measured otherwise: 7.7× the parameters (`wide-net`, 372K) reached the same stage
+  as 2× the simulations (`search-heavy`, 48K), while 16 simulations reached stage 0.
+  Search dominates; capacity was not measurable. The growth operators in 06 are
+  still the right operators, but the branch now has to establish a capacity-bound
+  regime before it can measure anything —
+  see [11](11-network-growth-branch.md).
 
 ## The one design idea I'd defend hardest
 
