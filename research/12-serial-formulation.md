@@ -85,18 +85,68 @@ forces an honest caveat: **serial `moves` and parallel `moves` are not the same
 quantity.** The serial number is edits *plus* travel. The dynamic range is real;
 whether that is the objective you want is a design decision, not a measurement.
 
-## 3. The gap: there is no register
+## 3. The register: written registers fail, accumulators are the design
 
 The formulation was proposed with a **memory in the head** — an embedding, order
-128 floats. That was never built. The state is `(pgx_state, head)` where `head` is
-an integer index, and the observation is a slice of the word. Nothing is carried
-between plies. It is a scan machine with no accumulator.
-
-So everything in §2 is a **floor**: the serial formulation cleared the ladder and
+128 floats. The original build had none: state was `(pgx_state, head)` with `head`
+an integer index, nothing carried between plies. A scan machine with no
+accumulator. So §2 is a **floor** — the serial formulation cleared the ladder and
 beat the parallel nets on crossing-change optimality *without* the memory that
 motivated it.
 
-Two consequences.
+### The cheap version was tried, and it is a clean negative
+
+`serial_registers` gives the head K binary registers with one TOGGLE action each —
+the finite control state of a Turing machine, written by the agent, so no gradient
+through the memory and no BPTT. A toggle costs a ply, since free writes would make
+it an oracle rather than a machine.
+
+```
+[s-reg8] stage 1 unknot+6: solved 0.50 after 60 it (capped)
+[s-reg4] stage 1 unknot+6: solved 0.83 after 36 it (plateau)
+```
+
+`s-reg8` collapsed onto the **exact rung where the pre-fix serial candidates died**.
+`s-reg4` cleared it but needed 36 iterations against 12 for the matched
+no-register arm, and from a fresh start reached rung 7 where `s-head-128` reached
+the equivalent of 9. **The cost is monotone in register count.**
+
+The mechanism is action-space dilution. A TOGGLE never changes the word, so every
+toggle is a simulation spent on a branch that cannot make progress; at K=8 that is
+8 of 34 actions, roughly a quarter of the search. The general lesson is worth more
+than the arm:
+
+> **A register that nothing reads is noise.** Giving an agent somewhere to put
+> memory does not give it a reason to. The read side has to come first.
+
+### What reads the register: an automatic accumulator
+
+The design that works keeps the `O(1)` action space and the same search budget, and
+changes only *what accumulates over the tape*. The controller still sees a window;
+the encoder additionally receives a head-relative scan of the whole word:
+
+| arm | accumulator | fair or oracle |
+|---|---|---|
+| `s-gru128` | unconstrained GRU-128 | fair |
+| `s-fsa32` | learned 32-state soft automaton | fair |
+| `s-ff4-p5` | learned 4×4 matrices over 𝔽₅ | fair |
+| `s-burau-oracle` | fixed Burau at `t = −1, 1/2` | **oracle** |
+
+The mechanism that makes the algebraic arms more than an arbitrary recurrence is
+`SequenceBraidNet.regularization_loss`, which penalises violations of the braid
+relations — `σᵢσᵢ⁻¹ = 1`, `σᵢσᵢ₊₁σᵢ = σᵢ₊₁σᵢσᵢ₊₁`, and far commutation. It forces
+the learned operators to be an actual representation of `Bₙ`.
+
+Working in a **finite field** rather than in floats is what makes this a machine
+rather than an approximation: arithmetic is exact and closed, so the register is a
+bounded alphabet, and the overflow problem of multiplying ~48 matrices disappears
+entirely. Constraints: `A ≠ 0`, `δ = −A² − A⁻² ≠ 0` (δ = 0 is the degenerate
+Temperley–Lieb algebra), and avoid characteristic 2, which collapses δ.
+
+Measured cost, batch-1 forward — the quantity MCTS is bound by — is 1.3× for the
+GRU (its loop is fused in C) and 2.9–4.2× for the hand-rolled scans. Affordable.
+
+Two consequences of having a register at all.
 
 **It cannot represent a knot invariant, and that is a theorem, not a training
 problem.** The Markov trace is a left-to-right matrix product — an associative
@@ -118,17 +168,39 @@ The cost is real: the same `(word, head)` reached by two paths carries two
 different registers, so the tree stops being a DAG over states and value estimates
 become path-dependent. MuZero lives with this.
 
-### Sizing, corrected
+### Sizing: why `s-ff4-p5` reaches Alexander and not Jones
 
-To *compute* an invariant by scanning, the register must hold the running algebra
-element, not the final value. For `max_strands = 5`:
+To *compute* an invariant by scanning, the carrier must hold the running algebra
+element, not the final value. The decisive fact is a decomposition rather than a
+dimension count. For `B₅`, the Temperley–Lieb algebra `TL₅` has dimension
+Catalan(5) = 42, and it **splits into irreducibles of dimension 1, 4 and 5**
+(through-strand counts 5, 3, 1; check `1² + 4² + 5² = 42`). The Markov trace —
+hence Jones — is a weighted sum of the ordinary traces of those three blocks, the
+weights being Chebyshev polynomials in `δ`.
 
-| object | dimension | floats (complex) | fits in 128? |
-|---|---:|---:|---|
-| reduced Burau (→ Alexander) at one value of `t` | 4 × 4 | 32 | yes, four values fit exactly |
-| Temperley–Lieb (→ Jones), `dim TL₅ = Catalan(5) = 42`, one `t` | 42 | 84 | yes, one value |
-| Jones at two values of `t` | — | 168 | no; needs ~256 |
-| Jones as a Laurent **polynomial** | degree grows with `L` | unbounded | never |
+And the 4-dimensional block `V₅,₃` **is** the reduced Burau representation. So:
+
+| carrier | dim | represents | yields |
+|---|---:|---|---|
+| `s-ff4-p5`, 4×4 over 𝔽₅ | 4 | reduced Burau = `V₅,₃` | Alexander / Conway, and *one of Jones's three blocks* |
+| 5×5 | 5 | the largest block `V₅,₁` | the smallest carrier that reaches past Burau |
+| block-diagonal 1⊕4⊕5 | 42 entries | all of `TL₅` | **Jones** |
+
+Four evaluation points means four choices of `A ∈ 𝔽ₚ`, so 4 × 42 field elements
+for Jones at four points. Jones also needs the writhe correction `(−A³)^{−w}`;
+writhe is a sum of signs, already computed in `reference.py`.
+
+Reduction mod `p` loses information — two knots with different Jones can agree at
+all four points — so this is a *fingerprint*, not a certificate of inequivalence.
+𝔽₅ is fine for asking whether the operators can satisfy the braid relations at all,
+which is the learning question; use a larger prime (97, 251) once that is settled,
+since four points over 𝔽₅ give only 625 buckets.
+
+For contrast, carrying the invariant as a real vector runs into a different wall:
+the Jones **polynomial** has degree growing with word length, so a 48-letter word
+gives on the order of 50 coefficients and they grow. No fixed-size real register
+can hold it. That is the argument for evaluating at fixed values of the variable —
+and, once you do, for evaluating in a finite field rather than in floats.
 
 `t` is the formal variable of the Jones polynomial: `V_K(t)` is a Laurent
 polynomial in `t^{1/2}` with integer coefficients — for the trefoil,

@@ -89,9 +89,19 @@ the originals are marked rather than deleted:
   already carries three human-knowledge channels, so the standard was being applied
   unevenly. Audit in [12 §4](12-serial-formulation.md).
 * **The serial formulation works, and the reason it did not was a readout bug.**
-  It scored 0 against the parallel candidates' 7–8, then 9 of 9 once the policy
-  head became positional. The head register that motivated the whole design was
-  never built, so those numbers are a floor. [12](12-serial-formulation.md).
+  It scored 0 against the parallel candidates' 7–8, then cleared the whole ladder
+  once the policy head became positional. [12](12-serial-formulation.md).
+* **Agent-written head registers are a clean negative.** Giving the head K binary
+  registers with a TOGGLE action each cost performance monotonically in K: at K=8
+  it collapsed onto the exact rung where the *pre-fix* serial candidates died. A
+  TOGGLE never changes the word, so it dilutes the action space with branches MCTS
+  cannot make progress on. The lesson is general — a register that nothing reads
+  is noise, and the read side has to come first. What reads it is an automatic
+  whole-tape accumulator. [12 §3](12-serial-formulation.md).
+* **Jones needs a bigger carrier than Burau.** `TL₅` decomposes into irreducibles
+  of dimension 1, 4 and 5, and the 4-dimensional block *is* the reduced Burau
+  representation — so a 4×4 carrier reaches Alexander and one of Jones's three
+  blocks, not Jones. [12 §3](12-serial-formulation.md).
 * **The A/B objective is not inert after all — it is inert in one formulation.**
   Parallel candidates emit the same policy at both ends of `log(A/B)` to two
   decimal places, as the Pareto argument predicted. Serial candidates respond by
