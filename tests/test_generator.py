@@ -130,3 +130,83 @@ def test_sources_carry_their_unknotting_number() -> None:
     assert [s.unknotting_number for s in ordered] == sorted(
         s.unknotting_number for s in ordered
     )
+
+
+# -- positive braids -----------------------------------------------------------
+
+
+def test_positive_braid_formula_reproduces_every_torus_knot() -> None:
+    """`u = (c - s + 1) / 2` has to agree with `(p-1)(q-1)/2` on the overlap.
+
+    Torus knots are positive braids, so the two theorems must give the same
+    number for every one of them. If they ever disagree, one of the derivations
+    is wrong and the whole positive-braid family is untrustworthy.
+    """
+    from rf_knots.generator import positive_braid_unknotting_number, torus_sources
+
+    checked = 0
+    for source in torus_sources(5, 16):
+        if not source.word:
+            continue
+        assert positive_braid_unknotting_number(
+            len(source.word), source.strands
+        ) == source.unknotting_number, source.name
+        checked += 1
+    assert checked >= 10, checked
+
+
+def test_positive_braid_sources_close_to_knots_with_integer_genus() -> None:
+    from rf_knots.generator import positive_braid_sources
+    from rf_knots.reference import num_components
+
+    sources = positive_braid_sources(5, 14, per_grade=3, seed=0)
+    assert sources, "no positive braids generated"
+    for source in sources:
+        assert all(letter > 0 for letter in source.word), source.name
+        assert max(abs(x) for x in source.word) < source.strands, source.name
+        # One component is the whole filter: the closure must be a knot.
+        assert num_components(list(source.word), source.strands) == 1, source.name
+        # Every generator has to appear, or the permutation cannot be an s-cycle.
+        assert {abs(x) for x in source.word} == set(range(1, source.strands))
+        # Euler characteristic of the braid's own Seifert surface: s disks, c
+        # bands, one boundary component, so 2 - 2g - 1 = s - c.
+        genus = (source.crossing_number - source.strands + 1) / 2
+        assert genus == int(genus), source.name
+        assert source.unknotting_number == int(genus), source.name
+        assert source.unknotting_number >= 1, "u = 0 is the unknot, already a source"
+
+
+def test_positive_braid_names_are_stable_across_processes() -> None:
+    """Every worker rebuilds the generator and the ladder looks stages up by
+    name, so two workers disagreeing would train and evaluate on different
+    knots without any error."""
+    from rf_knots.generator import positive_braid_sources
+
+    first = positive_braid_sources(5, 12, per_grade=3, seed=7)
+    second = positive_braid_sources(5, 12, per_grade=3, seed=7)
+    assert [(s.name, s.word) for s in first] == [(s.name, s.word) for s in second]
+    assert len({s.name for s in first}) == len(first), "names must be unique"
+
+    other = positive_braid_sources(5, 12, per_grade=3, seed=8)
+    assert [s.word for s in first] != [s.word for s in other], "seed must matter"
+
+
+def test_a_positive_braid_with_u_zero_really_is_the_unknot() -> None:
+    """The one part of the formula that can be checked computationally.
+
+    `u = 0` predicts the closure is already the unknot, and `bfs_unknot` decides
+    that with type-preserving moves only -- no crossing changes, no appeal to the
+    Milnor conjecture. The `u > 0` direction cannot be checked this way, since a
+    BFS failure is also what a depth limit looks like.
+    """
+    from rf_knots.actions import ActionSpec
+    from rf_knots.generator import positive_braid_sources
+    from rf_knots.reference import bfs_unknot
+
+    trivial = positive_braid_sources(4, 5, per_grade=2, seed=3, min_unknotting=0)
+    trivial = [s for s in trivial if s.unknotting_number == 0]
+    assert trivial, "expected some u = 0 positive braids to check"
+    spec = ActionSpec(max_len=32, max_strands=5)
+    for source in trivial:
+        solution = bfs_unknot(spec, source.word, source.strands, max_depth=6)
+        assert solution is not None, f"{source.name} {source.word} claims u=0"

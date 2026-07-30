@@ -96,6 +96,88 @@ class Source:
         return len(self.word)
 
 
+def positive_braid_unknotting_number(crossings: int, strands: int) -> int:
+    """`u = g = (c - s + 1) / 2` for a positive braid whose closure is a knot.
+
+    Two theorems stacked. Bennequin's inequality is sharp for positive braids, so
+    the Seifert surface the braid already carries -- `s` disks joined by `c` bands,
+    Euler characteristic `s - c`, one boundary component -- is genus-minimising:
+    `2 - 2g - 1 = s - c`. Then the Milnor conjecture (Kronheimer-Mrowka) gives
+    `u = g_4 = g` for positive braid knots.
+
+    Torus knots are the special case `(sigma_1 ... sigma_{p-1})^q`, which is why
+    this reproduces `(p-1)(q-1)/2` exactly -- checked in the tests against every
+    torus knot the generator builds.
+
+    The parity is not an extra condition: an `s`-cycle is an odd permutation
+    exactly when `s` is even, and a positive word of length `c` has parity
+    `(-1)^c`, so `c = s - 1 (mod 2)` follows from the closure being a knot.
+    """
+    if (crossings - strands + 1) % 2:
+        raise ValueError(
+            f"c={crossings}, s={strands} has the wrong parity to close to a knot"
+        )
+    return (crossings - strands + 1) // 2
+
+
+def positive_braid_sources(
+    max_strands: int,
+    max_crossings: int,
+    per_grade: int = 4,
+    seed: int = 0,
+    attempts_per_source: int = 400,
+    min_unknotting: int = 1,
+) -> list[Source]:
+    """Random positive braids whose closure is a knot, with `u` known exactly.
+
+    Torus knots give one diagram per unknotting number; this gives as many as you
+    like, which is the axis the ladder runs out of first. At `s = 5, c = 20` there
+    are `4^20` candidate words against a handful of torus knots.
+
+    Deterministic in `seed`, because every worker process rebuilds the generator
+    and the ladder looks stages up **by name** -- a list that differed between
+    workers would silently train and evaluate on different knots.
+
+    The filter is one condition: the closure has a single component. That already
+    forces every generator to appear, since a missing `sigma_i` leaves the strands
+    below and above `i` unmixed and the permutation cannot be an `s`-cycle.
+    """
+    from rf_knots.reference import num_components
+
+    rng = np.random.default_rng(seed)
+    sources: list[Source] = []
+    for strands in range(2, max_strands + 1):
+        for crossings in range(strands - 1, max_crossings + 1):
+            if (crossings - strands + 1) % 2:
+                continue
+            found = 0
+            seen: set[Word] = set()
+            for _ in range(attempts_per_source):
+                if found >= per_grade:
+                    break
+                word = tuple(
+                    int(g) for g in rng.integers(1, strands, size=crossings)
+                )
+                if word in seen or num_components(list(word), strands) != 1:
+                    continue
+                seen.add(word)
+                # u = 0 positive braids are the unknot wearing extra strands, and
+                # the unknot is already a source with its own scramble grading.
+                if positive_braid_unknotting_number(crossings, strands) < min_unknotting:
+                    continue
+                sources.append(
+                    Source(
+                        f"P({strands},{crossings})#{found}",
+                        word,
+                        strands,
+                        crossings,
+                        positive_braid_unknotting_number(crossings, strands),
+                    )
+                )
+                found += 1
+    return sorted(sources, key=lambda s: (s.crossing_number, s.name))
+
+
 def torus_sources(max_strands: int, max_crossings: int) -> list[Source]:
     """Every torus knot that fits, ordered by crossing number.
 
@@ -158,12 +240,25 @@ class GradedGenerator:
         *,
         max_crossings: int = 0,
         crossing_weight: int = 5,
+        positive_braids: int = 0,
+        positive_seed: int = 0,
     ):
         self.config = config
         self.crossing_weight = crossing_weight
+        pool = torus_sources(config.max_strands, max_crossings)
+        # Positive braids are opt-in: they multiply the number of *diagrams* at
+        # each unknotting number without changing any existing stage name, so a
+        # ladder that does not ask for them is bit-for-bit unaffected.
+        if positive_braids:
+            pool = pool + positive_braid_sources(
+                config.max_strands,
+                max_crossings,
+                per_grade=positive_braids,
+                seed=positive_seed,
+            )
         self.sources = [
             source
-            for source in torus_sources(config.max_strands, max_crossings)
+            for source in pool
             if source.strands <= config.max_strands
             and source.canonical_length + 2 <= config.max_len
         ]
