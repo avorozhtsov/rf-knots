@@ -53,6 +53,7 @@ def braid_svg(
     margin: int = 16,
     closure: bool = True,
     title: str | None = None,
+    standalone: bool = True,
 ) -> str:
     """Standalone SVG of the closed braid.
 
@@ -74,8 +75,26 @@ def braid_svg(
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width:.0f}" height="{height:.0f}" '
         f'viewBox="0 0 {width:.0f} {height:.0f}" font-family="ui-monospace,monospace">',
-        '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">',
     ]
+    if standalone:
+        # The strands are drawn in `currentColor`, which is right when this SVG is
+        # inlined into a document that sets a colour and wrong when the file is
+        # opened on its own: it falls back to near-black over whatever the viewer
+        # happens to use, so on a dark-themed page the diagram is invisible. A
+        # standalone file therefore carries its own ink and background, and
+        # follows the viewer's colour scheme rather than assuming a light one.
+        # Pass `standalone=False` when embedding into a styled document.
+        parts += [
+            "<style>"
+            ":root{--ink:#111;--bg:#fff}"
+            "@media (prefers-color-scheme:dark){:root{--ink:#e8e8e8;--bg:#141414}}"
+            "svg{color:var(--ink)}"
+            "</style>",
+            '<rect width="100%" height="100%" fill="var(--bg)"/>',
+        ]
+    parts.append(
+        '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'
+    )
 
     for row, letter in enumerate(letters):
         top = margin + row * row_height
