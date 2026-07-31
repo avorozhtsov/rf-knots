@@ -210,3 +210,45 @@ def test_a_positive_braid_with_u_zero_really_is_the_unknot() -> None:
     for source in trivial:
         solution = bfs_unknot(spec, source.word, source.strands, max_depth=6)
         assert solution is not None, f"{source.name} {source.word} claims u=0"
+
+
+# -- random mixed-sign knots ---------------------------------------------------
+
+
+def test_random_knots_are_knots_and_carry_no_label() -> None:
+    """The point of this family is the absence of structure.
+
+    Torus knots and positive braids are the knots we can label, and every one of
+    them is fibred, chiral, positive-signature, with u = g3 = g4. An agent can
+    master all of them without learning anything general. These have mixed signs
+    and no theorem, so `u` is explicitly unknown rather than quietly wrong.
+    """
+    from rf_knots.generator import UNKNOWN_UNKNOTTING, random_braid_sources
+    from rf_knots.reference import free_reduce, num_components
+
+    sources = random_braid_sources(5, (10, 12), per_grade=2, seed=0)
+    assert sources
+    for source in sources:
+        assert source.unknotting_number == UNKNOWN_UNKNOTTING
+        assert num_components(list(source.word), source.strands) == 1, source.name
+        # mixed signs: a family of all-positive words would be positive braids
+        # again, with the structure this set exists to avoid
+        assert min(source.word) < 0, source.name
+        # already free-reduced, so the crossing count is not a lie
+        assert tuple(free_reduce(list(source.word))) == source.word
+        assert len(source.word) == source.crossing_number
+        assert source.strands >= 3, "on two strands a reduced word is sigma_1^c"
+
+
+def test_random_knots_are_deterministic_and_seed_dependent() -> None:
+    """Every worker rebuilds the generator and the ladder resolves rungs by name;
+    two workers disagreeing about what `R(3,12)#0` is would train and evaluate on
+    different knots with nothing to raise an error."""
+    from rf_knots.generator import random_braid_sources
+
+    first = random_braid_sources(5, (10,), per_grade=2, seed=4)
+    again = random_braid_sources(5, (10,), per_grade=2, seed=4)
+    other = random_braid_sources(5, (10,), per_grade=2, seed=5)
+    assert [(s.name, s.word) for s in first] == [(s.name, s.word) for s in again]
+    assert [s.word for s in first] != [s.word for s in other]
+    assert len({s.name for s in first}) == len(first)

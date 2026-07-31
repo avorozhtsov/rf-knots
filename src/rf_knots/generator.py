@@ -36,6 +36,7 @@ longer than the canonical one", which reduces to the current win condition
 
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass
 
@@ -178,6 +179,89 @@ def positive_braid_sources(
     return sorted(sources, key=lambda s: (s.crossing_number, s.name))
 
 
+UNKNOWN_UNKNOTTING = -1
+"""`Source.unknotting_number` for a knot whose `u` is not known.
+
+Not zero, which would claim the closure is the unknot, and not `None`, which the
+frozen dataclass would have to widen its type for. Anything reading this field has
+to decide what to do when the answer is not a theorem -- and being forced to
+notice is the point.
+"""
+
+
+@functools.lru_cache(maxsize=8)
+def random_braid_sources(
+    max_strands: int,
+    crossings: tuple[int, ...],
+    per_grade: int = 3,
+    seed: int = 0,
+    attempts_per_source: int = 3000,
+    min_strands: int = 3,
+) -> list[Source]:
+    """Random **mixed-sign** braid words whose closure is a knot. `u` unknown.
+
+    Torus knots and positive braids are the knots we can label, and the price of
+    labelling them is that every one is fibred, chiral, positive-signature, and
+    satisfies `u = g3 = g4`. An agent can learn "reduce monotonically, crossing
+    changes always pay", be right on that entire family, and have learned nothing
+    that transfers. These are the knots without that structure -- and without a
+    label, which is why the reference for them is the ratcheting best-known bound
+    in `pgx_mcts_bench.bounds` rather than a theorem.
+
+    Two filters, and only two. The closure must have one component, or it is a
+    link rather than a knot. And a short breadth-first search must fail to unknot
+    it, which removes the words that are trivially the unknot in disguise --
+    failure there is not proof of knottedness, but it costs little and drops the
+    obvious cases.
+
+    `min_strands` is 3 because on two strands a word that survives free reduction
+    is `sigma_1^k`, which is the torus knot `T(2,k)` again.
+    """
+    from rf_knots.actions import ActionSpec
+    from rf_knots.reference import bfs_unknot, free_reduce, num_components
+
+    rng = np.random.default_rng(seed)
+    spec = ActionSpec(max_len=64, max_strands=max_strands)
+    sources: list[Source] = []
+    for count in crossings:
+        for strands in range(min_strands, max_strands + 1):
+            found, seen = 0, set()
+            for _ in range(attempts_per_source):
+                if found >= per_grade:
+                    break
+                letters = rng.integers(1, strands, size=count)
+                signs = rng.choice([-1, 1], size=count)
+                word = tuple(int(a * b) for a, b in zip(letters, signs, strict=True))
+                # Free reduction first: a word that collapses is really a shorter
+                # one, and its crossing count would be a lie.
+                reduced = tuple(free_reduce(list(word)))
+                if len(reduced) != count or reduced in seen:
+                    continue
+                if num_components(list(reduced), strands) != 1:
+                    continue
+                # Bounded, not exhaustive. An unbounded depth-5 search over a
+                # twenty-letter word costs fifty seconds, and every worker
+                # process builds this list -- while the words it would catch are
+                # rare at that length anyway. The filter is a cheap sieve for the
+                # obvious cases, and was never a proof of knottedness.
+                if bfs_unknot(
+                    spec, reduced, strands, max_depth=4, max_nodes=20_000
+                ) is not None:
+                    continue  # it is the unknot wearing a disguise
+                seen.add(reduced)
+                sources.append(
+                    Source(
+                        f"R({strands},{count})#{found}",
+                        reduced,
+                        strands,
+                        count,
+                        UNKNOWN_UNKNOTTING,
+                    )
+                )
+                found += 1
+    return sorted(sources, key=lambda s: (s.crossing_number, s.name))
+
+
 def torus_sources(max_strands: int, max_crossings: int) -> list[Source]:
     """Every torus knot that fits, ordered by crossing number.
 
@@ -242,6 +326,9 @@ class GradedGenerator:
         crossing_weight: int = 5,
         positive_braids: int = 0,
         positive_seed: int = 0,
+        random_crossings: tuple[int, ...] = (),
+        random_per_grade: int = 1,
+        random_seed: int = 0,
     ):
         self.config = config
         self.crossing_weight = crossing_weight
@@ -255,6 +342,13 @@ class GradedGenerator:
                 max_crossings,
                 per_grade=positive_braids,
                 seed=positive_seed,
+            )
+        if random_crossings:
+            pool = pool + random_braid_sources(
+                config.max_strands,
+                tuple(random_crossings),
+                per_grade=random_per_grade,
+                seed=random_seed,
             )
         self.sources = [
             source
