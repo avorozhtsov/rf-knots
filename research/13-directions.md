@@ -269,6 +269,104 @@ the scarce resource, it is what `u(K)` counts, and it survives translation intac
 The moves between crossing changes should be re-derived by the receiver under its
 own cost.
 
+### Turn one global move into a short serial option
+
+There is a more direct way to combine a strong parallel player such as
+`u1-puct` with a more general serial player such as `s-gru128`, `s-fsa32`, or
+`s-tape4`. Let `u1-puct` answer only the global question: **which braid
+rewrite should happen next?** Then ask the serial controller to realise that
+rewrite within a horizon of one, two, or three of its own actions:
+
+```
+serial preparation ... -> serial preparation -> teacher's braid rewrite
+```
+
+The final action is the move proposed by `u1-puct`. The zero, one, or two actions
+before it are receiver-side preparation: shift the window, scan, or update memory
+so that the proposed move becomes locally available. These preparation actions
+do not alter the braid word. Thus a length-one option executes an already visible
+teacher move, a length-two option needs one preparation action, and a length-three
+option needs two. The label is not a foreign action ID; it is a short sequence in
+the serial player's own action space whose final state is the teacher's proposed
+next word.
+
+This is an options formulation rather than policy averaging. The parallel expert
+chooses a state-space subgoal `w -> w'`; the serial expert controls how to reach
+it and pays for every shift and memory operation. At training time, breadth-first
+search over depth at most three can certify the shortest valid serial macro and
+provide policy targets for each prefix. At inference time the same construction
+can be used either as distillation — the serial net eventually acts alone — or as
+a fused agent in which the global expert proposes a fresh subgoal after every
+completed or abandoned option.
+
+Do not force a teacher move when no length-three macro exists. Record that as
+`unreachable within horizon`, let the serial policy act normally, and ask the
+global expert again after the window or memory state changes. Report coverage at
+each horizon separately: the fractions executable in one, two, and three actions,
+plus the charged move inflation. That measurement says whether the global expert
+is useful guidance or merely an expensive oracle whose answers the serial player
+usually cannot reach.
+
+### Teacher first, fusion second
+
+Do not begin by averaging weights or policy logits. `u1-puct` and the serial
+players solve different control problems: one assigns probability to absolute
+rewrites across the whole word, while the other assigns probability to local
+rewrites, shifts, scans, and memory actions. Equal-sized tensors would not make
+those meanings equal.
+
+The first combined candidate should therefore use a **frozen `u1-puct` teacher**.
+For every training state within the parallel player's supported length, project
+its answer into serial semantics:
+
+* copy probability mass for teacher moves already executable in the visible
+  window;
+* turn mass to the left or right of the window into targets for head travel;
+* use the certified one-to-three-action options above when a short realisation
+  exists;
+* leave tape writes, register changes, and other private memory actions to the
+  serial player's own search; and
+* distil the teacher's solve probability and conditional crossing-change and
+  move estimates into the corresponding auxiliary heads.
+
+These are soft hints, not facts. A teacher prediction may be wrong; only a replayed
+solution witness supplies the admissible bound described below. Keep the ordinary
+search loss and the witness-bound loss, and give teacher imitation a tunable
+coefficient so the student can contradict it when its own experience is better.
+
+The decisive advantage of this stage is that the teacher disappears at inference.
+`s-tape4`, `s-gru128`, or `s-fsa32` keeps its serial action space and can run on
+words longer than the parallel teacher's training envelope. The experiment asks
+whether privileged full-word supervision can teach better scanning and memory,
+not whether the serial agent can call an oracle forever. Name and compare these
+arms explicitly — for example `s-u1-distill-tape4`, `s-u1-distill-gru128`, and
+`s-u1-distill-fsa32` — against both parents and against serial arms trained only
+from shared witnesses.
+
+Only if distillation helps should the global expert remain inside the deployed
+model. A true dual-expert network has a full-word branch and a serial
+window-and-memory branch, joined by a learned gated residual rather than an
+average:
+
+```
+z = z_serial + sigmoid(g(state)) * project(z_global)
+```
+
+The global branch proposes a region or next-word subgoal; the serial branch
+chooses the locally legal action and maintains memory. Initialise each branch
+from its existing checkpoint, initialise the projection to zero so the fused
+model begins as the serial parent, train only the projection and gate for a short
+warm-up, then unfreeze both parents at a lower learning rate. The gate must be
+able to go to zero when the word is outside the global branch's supported length
+or when its advice conflicts with a verified witness.
+
+The minimum ablation is four ways to use the same data: serial alone, witness
+sharing only, frozen-teacher distillation, and permanent gated fusion. Report
+solve rate and charged cost, option coverage at horizons one to three, performance
+beyond the teacher's length range, and disagreement with `u1-puct`. A gain only
+inside the teacher's range is useful acceleration; a gain beyond it is actual
+knowledge transfer.
+
 ### Train on it as a bound, not as a target
 
 A known solution gives an *admissible upper bound* on the cost-to-go from every word

@@ -101,6 +101,13 @@ the originals are marked rather than deleted:
 * **The serial formulation works, and the reason it did not was a readout bug.**
   It scored 0 against the parallel candidates' 7–8, then cleared the whole ladder
   once the policy head became positional. [12](12-serial-formulation.md).
+* **Whole-tape accumulators are a clean negative too, and the oracle carries it.**
+  Six arms, identical settings: the two with *no* memory cleared 18 and 8 rungs,
+  every accumulator cleared 0 or 1. `s-burau-oracle` is handed exact Burau
+  matrices — nothing to learn, no relation penalty to satisfy — and was beaten
+  eighteen rungs to nothing by a plain window running the *worst* stride ablation.
+  Wall-clock, not per-iteration, and one seed.
+  [12 §3](12-serial-formulation.md).
 * **Agent-written head registers are a clean negative.** Giving the head K binary
   registers with a TOGGLE action each cost performance monotonically in K: at K=8
   it collapsed onto the exact rung where the *pre-fix* serial candidates died. A

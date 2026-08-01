@@ -121,7 +121,7 @@ than the arm:
 
 ### What reads the register: an automatic accumulator
 
-The design that works keeps the `O(1)` action space and the same search budget, and
+The design *proposed* keeps the `O(1)` action space and the same search budget, and
 changes only *what accumulates over the tape*. The controller still sees a window;
 the encoder additionally receives a head-relative scan of the whole word:
 
@@ -137,6 +137,49 @@ The mechanism that makes the algebraic arms more than an arbitrary recurrence is
 relations — `σᵢσᵢ⁻¹ = 1`, `σᵢσᵢ₊₁σᵢ = σᵢ₊₁σᵢσᵢ₊₁`, and far commutation. It pushes
 the learned operators toward a representation of `Bₙ`; the experiment below
 shows why a penalty does not make that constraint exact.
+
+#### Negative result: every accumulator arm is at the bottom, including the oracle
+
+Measured 2026-08-01, five arms sharing two machines under identical settings. The
+column is rungs cleared per run, not per iteration:
+
+| arm | accumulator | wall-clock | rungs cleared |
+|---|---|---:|---:|
+| `s-head-1stride` | **none** — plain window, and the *worst* stride set | 19 h | **18** |
+| `s-reg8` | written registers | 19 h | 9 |
+| `s-head-128` | **none** — plain window | 5 h | 8 |
+| `s-gru128` | learned GRU-128 | 11 h | 1 |
+| `s-fsa32` | learned 32-state automaton | 11 h | **0** |
+| `s-burau-oracle` | **fixed Burau matrices** | 19 h | **0** |
+
+Every whole-tape accumulator is at the bottom; the two arms with no memory at all
+are at the top. `s-fsa32` and `s-burau-oracle` were stopped after producing no rung
+at all — both alive and at ~90% CPU throughout, neither wedged nor starved.
+
+**The oracle row is the one that carries the argument.** `s-burau-oracle` is handed
+exact Burau matrices at `t = −1` and `1/2`; it has no representation to learn and no
+relation penalty to satisfy, so none of the failure modes diagnosed for `s-ff4-p5`
+below apply to it. It was still beaten eighteen rungs to nothing by a plain
+seven-letter window running the deliberately crippled single-stride ablation. That
+separates "the learned accumulators cannot learn their operators" from "scanning
+the whole tape does not pay here", and the evidence points at the second.
+
+Two things this does **not** establish, and both matter.
+
+*It is wall-clock, not per-iteration.* The scanning encoders cost 2.9–4.2× per
+batch-1 forward, which is the quantity MCTS is bound by, so part of the gap is
+simply that they take fewer steps per hour. The clean version of this comparison is
+`braid-ladder-rescore` at matched iteration counts, which has not been run. Until it
+is, the honest claim is that **at equal wall-clock the accumulator arms are far
+behind**, not that they are worse per unit of learning.
+
+*One seed.* Six arms all landing the same way is harder to dismiss than one, but it
+is still a single seed per arm, and this project has already had a three-seed result
+survive two rounds of reporting before turning out to be selection.
+
+What it does establish is that the section above was written the wrong way round:
+the accumulator was proposed as *the design that reads the register*, and on the
+evidence so far the register is better left unread than read by a whole-tape scan.
 
 #### Negative result: retire `s-ff4-p5`, retain the constrained version
 
