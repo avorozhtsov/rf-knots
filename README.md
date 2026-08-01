@@ -6,6 +6,34 @@ Braid-word unknotting environments for [Pgx](https://github.com/sotetsuk/pgx), b
 foundation for a population self-play system where agents both *propose* and *solve* problems
 from a fixed, machine-verifiable family.
 
+## What this project is
+
+**The task.** Every knot can be written as a braid word. Untying it means rewriting
+that word to the empty one, using the braid-group and Markov moves — and where those
+are not enough, paying for a **crossing change**, the move that cuts a strand and
+passes it through. The fewest crossing changes any sequence needs is the knot's
+**unknotting number** `u(K)`, an open invariant for most knots past ten crossings.
+
+**Why it is a good RL problem.** Instances are generated *from* the answer: scramble
+the unknot with `K` legal moves and you have a problem whose solution you already
+know, at any difficulty, for free and without a labelled dataset. Every move
+preserves the knot type, so a solution is machine-checkable and no reward model is
+needed. On torus knots `u` is a theorem, so an agent's answer can be scored against
+truth rather than against another agent.
+
+**The research question**, which is not "can a network untie knots" — it can:
+*where do hard instances come from, and does training against a proposer that
+searches for them transfer to instances no random generator would emit?* That is
+the claim [research/09](research/09-vs-learning-to-unknot.md) argues is worth
+making, and it is why the project is a propose/solve league rather than a solver.
+
+**What is here versus next door.** This repository is the mathematics and the
+environment: the encoding, the legal moves, the instance generator, knot
+invariants, and the research notes. Training, search and the curriculum ladder
+live in [pgx-mcts-bench](https://github.com/avorozhtsov/pgx-mcts-bench), which
+depends on this repository by path. Continuing existing work starts at
+[HANDOFF.md](HANDOFF.md).
+
 The design study is in [research/](research/); start with [research/README.md](research/README.md).
 
 ## The environment
@@ -89,8 +117,15 @@ unknotting number has been 2 since the knot tables. Every rung is worked out in
 | `src/rf_knots/actions.py` | flat action-space layout, encode/decode |
 | `src/rf_knots/braid.py` | JAX kernels: rewrites, legality masks, closure diagnostics |
 | `src/rf_knots/env.py` | the Pgx `Env` and `State` |
+| `src/rf_knots/generator.py` | source knots and the complexity grade the ladder climbs |
+| `src/rf_knots/invariants.py` | Alexander, Jones, determinant, genus and unknotting bounds |
+| `src/rf_knots/knot_table.py` | naming a knot, against the bundled table in `data/` |
 | `src/rf_knots/reference.py` | slow pure-Python oracle: Artin representation, BFS solver |
+| `src/rf_knots/render.py` | ASCII and SVG pictures of a braid and its closure |
 | `src/rf_knots/rollout.py` | random play, scramble generation, batched benchmarking |
+| `docs/representation.md` | how a knot is encoded and what may be done to it |
+| `docs/rungs.md` | every ladder rung, its rationale, and the knot it really is |
+| `scripts/` | one-off builders for the committed data files |
 | `research/` | design study behind all of this |
 
 ## Status
@@ -111,6 +146,13 @@ What is established, on generated torus-knot instances scored against proved unk
   candidate on crossing-change optimality, once its policy head was made positional.
   See [research/12-serial-formulation.md](research/12-serial-formulation.md).
 
-Open, in rough order of value: certified lower bounds (`|σ|/2`, `|s|/2`, `|τ|`) with
-branch-and-bound, which is what turns a search result into a theorem; a learned head register;
-hard unknot diagrams; knot equivalence as a two-tape machine.
+* **The ladder's hardest rungs were not what they claimed.** The rungs were graded on the
+  length of the braid word they were generated from, which is not an invariant. `R(3,18)#0`
+  is the seven-crossing knot `7_5` with `u = 2`; `R(3,22)#0` is the unknot. 19 of the 23
+  distinct rung knots now have an exact unknotting number, against 6 before. See
+  [docs/rungs.md](docs/rungs.md).
+
+Open, in rough order of value: the remaining certified lower bounds — `|σ|/2` is now computed
+per knot in `rf_knots.invariants`, but Rasmussen `|s|/2` and `|τ|` are not, and none of them is
+wired into a branch-and-bound, which is what turns a search result into a theorem; a learned
+head register; hard unknot diagrams; knot equivalence as a two-tape machine.

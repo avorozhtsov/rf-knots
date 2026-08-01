@@ -1,5 +1,9 @@
 # How a knot is represented, and what the agent is allowed to do to it
 
+> Companion documents: [rungs.md](rungs.md) — what the curriculum is made of, and which knot
+> each rung actually contains; `rf_knots.invariants` — the invariants that answer that question
+> from a braid word.
+
 This is the reference for the environment's mathematics. Everything here is
 enforced in code and checked in tests; where a claim is verified by a specific
 test, the test is named.

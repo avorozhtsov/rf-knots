@@ -24,8 +24,12 @@ order-of-magnitude estimates and marked as such.
 | [11-network-growth-branch.md](11-network-growth-branch.md) | Growth as an executable branch: whether capacity is the constraint at all, the receptive-field split, and what would kill it |
 | [12-serial-formulation.md](12-serial-formulation.md) | The serial/Turing formulation: why it scored 0 then 9, the missing head register and how big it must be, what "zero human knowledge" actually excludes, and knot equivalence as a two-tape machine |
 
-Implementation reference: [../docs/representation.md](../docs/representation.md) — how a knot is
-encoded and what the agent may do to it, with the Reidemeister/Markov correspondence.
+Implementation reference:
+* [../docs/representation.md](../docs/representation.md) — how a knot is encoded and what the
+  agent may do to it, with the Reidemeister/Markov correspondence.
+* [../docs/rungs.md](../docs/rungs.md) — the curriculum ladder: every rung, why it is in that
+  order, and which knot it actually contains. Reading it is the fastest way to see where the
+  measured results in these notes came from, and where one of their premises failed.
 
 ## Short answers
 
@@ -106,6 +110,12 @@ the originals are marked rather than deleted:
   Parallel candidates emit the same policy at both ends of `log(A/B)` to two
   decimal places, as the Pareto argument predicted. Serial candidates respond by
   5–6× in moves, because head travel is charged. [12 §2](12-serial-formulation.md).
+* **The unlabelled half of the ladder was mostly labelled all along.** Rungs
+  generated as random mixed-sign words carry `u = -1`, meaning *the generator*
+  has no label; that was read as *mathematics* having none. Computing the
+  invariants named 19 of 23 rung knots exactly — one is the unknot at 22 letters.
+  This does not touch proposals 1-3 in [10](10-invariants-and-representations.md),
+  which is where the tooling was proposed. [../docs/rungs.md](../docs/rungs.md).
 * **Whether the network needs growing at all.** [06](06-network-growth.md) assumed
   capacity was a constraint and sized a schedule up to 30M parameters. The ladder
   measured otherwise: 7.7× the parameters (`wide-net`, 372K) reached the same stage

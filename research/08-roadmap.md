@@ -84,9 +84,11 @@ no random generator would emit? This, not a win rate, is the paper.
 
 - [ ] point the trained Simplifier at the standard prime knot tables (≤12 crossings) and at the
       hard-unknot-diagram corpora; record unknotting-number **upper** bounds
-- [ ] compute **lower** bounds out-of-env: `|σ(K)|/2`, Rasmussen `|s(K)|/2`, Nakanishi/Alexander
-      obstructions; cache per knot type
-- [ ] report every knot where upper = lower (unknotting number *determined*)
+- [x] compute **lower** bounds out-of-env: `|σ(K)|/2` — done in `rf_knots.invariants`, with
+      identification against 2870 tabulated knots so a published `u` can be attached;
+      Rasmussen `|s(K)|/2` and the Nakanishi/Alexander obstructions are not built
+- [x] report every knot where upper = lower (unknotting number *determined*) — done for the
+      ladder's own knots, 19 of 23 exact: [../docs/rungs.md](../docs/rungs.md)
 - [ ] publish the Scrambler's hard-instance corpus with generation budgets — this is a dataset
       contribution independent of the RL claims
 

@@ -18,8 +18,10 @@ Two repos, both public, both pushed, both on `main`. `pgx-mcts-bench` depends on
 
 Read in this order:
 1. `rf-knots/docs/representation.md` — the encoding, the move set, Reidemeister/Markov
-2. `rf-knots/research/12-serial-formulation.md` — the most recent findings
-3. `rf-knots/research/README.md` — the design study and where evidence revised it
+2. `rf-knots/docs/rungs.md` — every rung, why it is where it is, and **what knot it
+   actually contains**; the invariants are in `docs/rungs-invariants.md`
+3. `rf-knots/research/12-serial-formulation.md` — the most recent findings
+4. `rf-knots/research/README.md` — the design study and where evidence revised it
 
 ## The ladder has two halves, and they are scored differently
 
@@ -27,9 +29,18 @@ Read in this order:
 Every `u` is a theorem (Milnor conjecture / Kronheimer–Mrowka), so the gap to
 truth is measurable. Promotion can exit on `objective` — reaching `u + tolerance`.
 
-**Rungs 17–30, the challenge set.** Random **mixed-sign** braid words, `u` unknown,
-marked `UNKNOWN_UNKNOTTING = -1`. Promotion there can only exit on `plateau` or at
-the cap: there is no theorem to reach.
+**Rungs 17–30, the challenge set.** Random **mixed-sign** braid words, marked
+`UNKNOWN_UNKNOTTING = -1`. Promotion there can only exit on `plateau` or at the
+cap, because the generator has no theorem to hand the runner.
+
+> **This half is mostly mislabelled, measured 2026-08-01.** `-1` records that the
+> *generator* has no label, and that was silently read as "mathematics has no
+> label". Computing the invariants says otherwise: `R(3,18)#0` is `7_5` (`u = 2`,
+> against a ratchet record of 6), `R(3,22)#0` is the **unknot**, and six rungs are
+> connected sums of trefoils and figure-eights, which no knot table lists because
+> tables list prime knots. 19 of the 23 distinct rung knots have an exact `u`.
+> Full table and what to do about it: [`docs/rungs.md`](docs/rungs.md).
+> Nothing in the environment, the generator or the ladder was changed.
 
 The change happened because the labelled families are the *structured* ones. Every
 torus knot and positive braid is fibred, chiral, positive-signature, and satisfies
@@ -57,6 +68,12 @@ Two things it already showed:
   upper bound can be loose — but it means nobody found the optimal sequence there.
   That gap is invisible on unlabelled knots, which is the calibration set earning
   its keep.
+
+**The ratchet can now be checked on the challenge half too.** Most of those knots
+turn out to have a published or derivable `u` ([`docs/rungs.md`](docs/rungs.md)),
+so a record can be compared against truth rather than only against other agents.
+The first comparison is not flattering: the standing record on `R(3,18)#0` is 6
+against `u = 2`.
 
 Runs claim automatically via `--bounds artifacts/bounds.jsonl`. **The currently
 running jobs were started without it**, so they are not claiming; add it on the
@@ -131,7 +148,10 @@ containers and untouched. Training is capped at `--cpus=1.2` with
    `s-fsa32`, `s-gru128` and `s-ff4-p5`, which are *learning* what it is handed.
 6. **Certified lower bounds** (`|σ|/2`, `|s|/2`, `|τ|`) with branch-and-bound —
    what turns an upper bound into `u(K) = n`. Unaffected by the zero-knowledge
-   constraint: bounds verify output, they are not features.
+   constraint: bounds verify output, they are not features. **Partly done:**
+   `rf_knots.invariants` computes `|σ|/2` per knot and names the knot against a
+   table of 2870, which is where the exact `u` on 19 rungs came from. What is
+   missing is `|s|/2`, `|τ|`, and any of it being wired into the search.
 7. **Batch the MCTS leaf evaluations.** 7.8× measured on this laptop, and the
    prerequisite for a GPU ever being worth renting.
 

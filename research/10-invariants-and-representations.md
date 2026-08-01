@@ -12,6 +12,13 @@
 > `top_count` scalars), so the standard is currently applied unevenly; the audit is
 > in [12 §4](12-serial-formulation.md).
 
+> **Partly built since.** Proposal 2's certified lower bound `|σ|/2`, and knot
+> identification against a table, are implemented in `rf_knots.invariants` and
+> `rf_knots.knot_table`, with the ladder's own knots worked out in
+> [../docs/rungs.md](../docs/rungs.md). They verify output rather than feed input,
+> so the zero-knowledge constraint above is untouched. Rasmussen `|s|/2`, `|τ|`,
+> and branch-and-bound over them remain unbuilt.
+
 Written after reading Sossinsky's *Узлы: хронология одной математической теории*,
 chapter 7 (finite-order invariants), which turns out to contain the reframing this
 project needs.
