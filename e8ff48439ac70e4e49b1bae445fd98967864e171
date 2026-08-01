@@ -1,0 +1,18 @@
+This commit also carries a change its message does not describe.
+
+`research/12-serial-formulation.md` gains 32 lines recording a negative result
+that has nothing to do with the documentation restructure the message is about:
+
+  **Negative result: retire `s-ff4-p5`, retain the constrained version.** A soft
+  braid-relation penalty plus rounded straight-through gradients did not force
+  the learned operators to be a representation of `B_n`. On `T(2,3)+4` the arm
+  capped after 40 iterations at solve rates 10/12, 10/12 and 1/12 for
+  `A:B = 1000:1`, `10:1` and `1:10`. After training, three of its eight rounded
+  4x4 matrices were singular, no positive/negative generator pair was an exact
+  inverse, and no adjacent braid relation held exactly. The arm is retired from
+  the live leaderboard but kept in code and artifacts; the idea worth keeping is
+  a *constrained* finite-field representation rather than a penalised one.
+
+That work is the author's own and was already in the working tree, unstaged, when
+the restructure was committed with a broad `git add`. It should have been its own
+commit. The content is unaltered; only the filing is wrong.
