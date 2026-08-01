@@ -33,6 +33,13 @@ has the right inertia on the sample. Shipping it would have been shipping a
 coincidence. `spherogram` computes a real Seifert matrix without needing Sage, so
 `signature()` defers to it and returns `None` when it is absent. The signatures
 in the committed rung data were computed with it and do not need it to be read.
+
+`spherogram` is deliberately not a declared optional dependency: it drags in
+IPython, matplotlib and twenty other packages, and adding it to `pyproject.toml`
+would put all of that in `uv.lock` for every image that builds from this
+repository. Reach for it explicitly when it is wanted:
+
+    uv run --with snappy python scripts/rung_invariants.py
 """
 
 from __future__ import annotations
