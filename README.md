@@ -69,6 +69,18 @@ How hard a K-move scramble really is, measured by exact optimal solution depth:
 uv run rf-knots calibrate --tier tier0 --samples 64
 ```
 
+Identify the knot a braid word closes to, and compute its invariants:
+
+```bash
+uv run rf-knots knot "1,1,2,2,1,1,2,1,-2,-1,2,1,-2,-2,-1,2,1,-2"
+```
+
+That word is a rung of the training ladder, recorded there as eighteen crossings
+with an unknown unknotting number. It is the seven-crossing knot `7_5`, whose
+unknotting number has been 2 since the knot tables. Every rung is worked out in
+[docs/rungs.md](docs/rungs.md), with the invariants in
+[docs/rungs-invariants.md](docs/rungs-invariants.md).
+
 ## Layout
 
 | Path | Contents |

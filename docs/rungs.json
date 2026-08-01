@@ -1,0 +1,2494 @@
+{
+ "knots": {
+  "R(3,10)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -4
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     -4
+    ],
+    [
+     4,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 4t + 5t^2 - 4t^3 + t^4",
+   "braid": [
+    -1,
+    2,
+    1,
+    -2,
+    1,
+    2,
+    2,
+    -1,
+    2,
+    1
+   ],
+   "determinant": 15,
+   "generator_crossing_number": 10,
+   "generator_unknotting_number": -1,
+   "genus_lower": 2,
+   "genus_upper": 4,
+   "identified_as": "8_21",
+   "identified_crossings": 8,
+   "identified_mirror": true,
+   "jones": [
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     -2
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     4,
+     -3
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     6,
+     -2
+    ],
+    [
+     7,
+     1
+    ]
+   ],
+   "jones_pretty": "2t - 2t^2 + 3t^3 - 3t^4 + 2t^5 - 2t^6 + t^7",
+   "name": "R(3,10)#0",
+   "notes": [],
+   "signature": -2,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 1,
+   "unknotting_lower_bound": 1,
+   "unknotting_number": 1,
+   "unknotting_upper_bound": 1,
+   "word_length": 10,
+   "writhe": 4
+  },
+  "R(3,12)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -3
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     -3
+    ],
+    [
+     4,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 3t + 5t^2 - 3t^3 + t^4",
+   "braid": [
+    1,
+    2,
+    1,
+    1,
+    -2,
+    -1,
+    -1,
+    -1,
+    -2,
+    1,
+    2,
+    -1
+   ],
+   "determinant": 13,
+   "generator_crossing_number": 12,
+   "generator_unknotting_number": -1,
+   "genus_lower": 2,
+   "genus_upper": 5,
+   "identified_as": "6_3",
+   "identified_crossings": 6,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -3,
+     -1
+    ],
+    [
+     -2,
+     2
+    ],
+    [
+     -1,
+     -2
+    ],
+    [
+     0,
+     3
+    ],
+    [
+     1,
+     -2
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     -1
+    ]
+   ],
+   "jones_pretty": "-t^-3 + 2t^-2 - 2t^-1 + 3 - 2t + 2t^2 - t^3",
+   "name": "R(3,12)#0",
+   "notes": [],
+   "signature": 0,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 1,
+   "unknotting_lower_bound": 0,
+   "unknotting_number": 1,
+   "unknotting_upper_bound": 1,
+   "word_length": 12,
+   "writhe": 0
+  },
+  "R(3,14)#0": {
+   "alexander": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     -3
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     -3
+    ],
+    [
+     4,
+     2
+    ]
+   ],
+   "alexander_pretty": "2 - 3t + 3t^2 - 3t^3 + 2t^4",
+   "braid": [
+    -1,
+    2,
+    -1,
+    2,
+    -1,
+    -2,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    1,
+    2
+   ],
+   "determinant": 13,
+   "generator_crossing_number": 14,
+   "generator_unknotting_number": -1,
+   "genus_lower": 2,
+   "genus_upper": 6,
+   "identified_as": "7_3",
+   "identified_crossings": 7,
+   "identified_mirror": true,
+   "jones": [
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     -1
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     5,
+     -2
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     7,
+     -2
+    ],
+    [
+     8,
+     1
+    ],
+    [
+     9,
+     -1
+    ]
+   ],
+   "jones_pretty": "t^2 - t^3 + 2t^4 - 2t^5 + 3t^6 - 2t^7 + t^8 - t^9",
+   "name": "R(3,14)#0",
+   "notes": [],
+   "signature": -4,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 2,
+   "unknotting_lower_bound": 2,
+   "unknotting_number": 2,
+   "unknotting_upper_bound": 2,
+   "word_length": 14,
+   "writhe": 6
+  },
+  "R(3,16)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     2,
+     -3
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     4,
+     -7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     -3
+    ],
+    [
+     8,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 3t^2 + 6t^3 - 7t^4 + 6t^5 - 3t^6 + t^8",
+   "braid": [
+    -1,
+    -1,
+    -2,
+    -2,
+    -1,
+    -2,
+    -2,
+    -2,
+    -2,
+    -2,
+    1,
+    -2,
+    -2,
+    -1,
+    2,
+    2
+   ],
+   "determinant": 23,
+   "generator_crossing_number": 16,
+   "generator_unknotting_number": -1,
+   "genus_lower": 4,
+   "genus_upper": 7,
+   "identified_as": "K12n647",
+   "identified_crossings": 12,
+   "identified_mirror": true,
+   "jones": [
+    [
+     -14,
+     -1
+    ],
+    [
+     -13,
+     2
+    ],
+    [
+     -12,
+     -3
+    ],
+    [
+     -11,
+     4
+    ],
+    [
+     -10,
+     -5
+    ],
+    [
+     -9,
+     4
+    ],
+    [
+     -8,
+     -3
+    ],
+    [
+     -7,
+     2
+    ],
+    [
+     -4,
+     1
+    ]
+   ],
+   "jones_pretty": "-t^-14 + 2t^-13 - 3t^-12 + 4t^-11 - 5t^-10 + 4t^-9 - 3t^-8 + 2t^-7 + t^-4",
+   "name": "R(3,16)#0",
+   "notes": [
+    "K12n647 identified, but its unknotting number has not been looked up in data/unknotting_numbers.json"
+   ],
+   "signature": 6,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": null,
+   "unknotting_lower_bound": 3,
+   "unknotting_number": null,
+   "unknotting_upper_bound": null,
+   "word_length": 16,
+   "writhe": -10
+  },
+  "R(3,18)#0": {
+   "alexander": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     -4
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     -4
+    ],
+    [
+     4,
+     2
+    ]
+   ],
+   "alexander_pretty": "2 - 4t + 5t^2 - 4t^3 + 2t^4",
+   "braid": [
+    1,
+    1,
+    2,
+    2,
+    1,
+    1,
+    2,
+    1,
+    -2,
+    -1,
+    2,
+    1,
+    -2,
+    -2,
+    -1,
+    2,
+    1,
+    -2
+   ],
+   "determinant": 17,
+   "generator_crossing_number": 18,
+   "generator_unknotting_number": -1,
+   "genus_lower": 2,
+   "genus_upper": 8,
+   "identified_as": "7_5",
+   "identified_crossings": 7,
+   "identified_mirror": true,
+   "jones": [
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     -1
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     -3
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     7,
+     -3
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     9,
+     -1
+    ]
+   ],
+   "jones_pretty": "t^2 - t^3 + 3t^4 - 3t^5 + 3t^6 - 3t^7 + 2t^8 - t^9",
+   "name": "R(3,18)#0",
+   "notes": [],
+   "signature": -4,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 2,
+   "unknotting_lower_bound": 2,
+   "unknotting_number": 2,
+   "unknotting_upper_bound": 2,
+   "word_length": 18,
+   "writhe": 6
+  },
+  "R(3,20)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -4
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     3,
+     -15
+    ],
+    [
+     4,
+     19
+    ],
+    [
+     5,
+     -15
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     -4
+    ],
+    [
+     8,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 4t + 9t^2 - 15t^3 + 19t^4 - 15t^5 + 9t^6 - 4t^7 + t^8",
+   "braid": [
+    -1,
+    -1,
+    -2,
+    -2,
+    1,
+    1,
+    -2,
+    1,
+    -2,
+    1,
+    1,
+    -2,
+    1,
+    1,
+    2,
+    1,
+    -2,
+    -1,
+    -2,
+    1
+   ],
+   "determinant": 77,
+   "generator_crossing_number": 20,
+   "generator_unknotting_number": -1,
+   "genus_lower": 4,
+   "genus_upper": 9,
+   "identified_as": "10_104",
+   "identified_crossings": 10,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -5,
+     -1
+    ],
+    [
+     -4,
+     3
+    ],
+    [
+     -3,
+     -6
+    ],
+    [
+     -2,
+     10
+    ],
+    [
+     -1,
+     -12
+    ],
+    [
+     0,
+     13
+    ],
+    [
+     1,
+     -12
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     -6
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     -1
+    ]
+   ],
+   "jones_pretty": "-t^-5 + 3t^-4 - 6t^-3 + 10t^-2 - 12t^-1 + 13 - 12t + 10t^2 - 6t^3 + 3t^4 - t^5",
+   "name": "R(3,20)#0",
+   "notes": [
+    "Jones polynomial shared with 10_104, 10_71; separated by the Alexander polynomial"
+   ],
+   "signature": 0,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 1,
+   "unknotting_lower_bound": 0,
+   "unknotting_number": 1,
+   "unknotting_upper_bound": 1,
+   "word_length": 20,
+   "writhe": 0
+  },
+  "R(3,22)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ]
+   ],
+   "alexander_pretty": "1",
+   "braid": [
+    1,
+    2,
+    -1,
+    -2,
+    -2,
+    1,
+    2,
+    1,
+    2,
+    2,
+    2,
+    1,
+    2,
+    -1,
+    -2,
+    -1,
+    -2,
+    1,
+    1,
+    -2,
+    -2,
+    -1
+   ],
+   "determinant": 1,
+   "generator_crossing_number": 22,
+   "generator_unknotting_number": -1,
+   "genus_lower": 0,
+   "genus_upper": 10,
+   "identified_as": "0_1",
+   "identified_crossings": 0,
+   "identified_mirror": false,
+   "jones": [
+    [
+     0,
+     1
+    ]
+   ],
+   "jones_pretty": "1",
+   "name": "R(3,22)#0",
+   "notes": [],
+   "signature": 0,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 0,
+   "unknotting_lower_bound": 0,
+   "unknotting_number": 0,
+   "unknotting_upper_bound": 0,
+   "word_length": 22,
+   "writhe": 2
+  },
+  "R(3,24)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -3
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     -8
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     5,
+     -8
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     -3
+    ],
+    [
+     8,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 3t + 6t^2 - 8t^3 + 9t^4 - 8t^5 + 6t^6 - 3t^7 + t^8",
+   "braid": [
+    2,
+    -1,
+    -1,
+    -1,
+    -2,
+    1,
+    1,
+    1,
+    2,
+    1,
+    1,
+    2,
+    -1,
+    -1,
+    -2,
+    -1,
+    -1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    1,
+    1
+   ],
+   "determinant": 45,
+   "generator_crossing_number": 24,
+   "generator_unknotting_number": -1,
+   "genus_lower": 4,
+   "genus_upper": 11,
+   "identified_as": "K12n570",
+   "identified_crossings": 12,
+   "identified_mirror": true,
+   "jones": [
+    [
+     1,
+     -1
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     -3
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     -7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     -7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     -3
+    ],
+    [
+     10,
+     2
+    ],
+    [
+     11,
+     -1
+    ]
+   ],
+   "jones_pretty": "-t + 3t^2 - 3t^3 + 6t^4 - 7t^5 + 7t^6 - 7t^7 + 5t^8 - 3t^9 + 2t^10 - t^11",
+   "name": "R(3,24)#0",
+   "notes": [
+    "K12n570 identified, but its unknotting number has not been looked up in data/unknotting_numbers.json"
+   ],
+   "signature": -4,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": null,
+   "unknotting_lower_bound": 2,
+   "unknotting_number": null,
+   "unknotting_upper_bound": null,
+   "word_length": 24,
+   "writhe": 6
+  },
+  "R(5,10)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     2,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - t + t^2",
+   "braid": [
+    3,
+    -2,
+    4,
+    1,
+    1,
+    -2,
+    -3,
+    -2,
+    3,
+    1
+   ],
+   "determinant": 3,
+   "generator_crossing_number": 10,
+   "generator_unknotting_number": -1,
+   "genus_lower": 1,
+   "genus_upper": 3,
+   "identified_as": "3_1",
+   "identified_crossings": 3,
+   "identified_mirror": true,
+   "jones": [
+    [
+     1,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     -1
+    ]
+   ],
+   "jones_pretty": "t + t^3 - t^4",
+   "name": "R(5,10)#0",
+   "notes": [],
+   "signature": -2,
+   "strands": 5,
+   "summands": [],
+   "unknotting_exact": 1,
+   "unknotting_lower_bound": 1,
+   "unknotting_number": 1,
+   "unknotting_upper_bound": 1,
+   "word_length": 10,
+   "writhe": 2
+  },
+  "R(5,12)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -4
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     -4
+    ],
+    [
+     4,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 4t + 5t^2 - 4t^3 + t^4",
+   "braid": [
+    1,
+    -4,
+    -2,
+    -1,
+    -1,
+    2,
+    -4,
+    -3,
+    4,
+    3,
+    -4,
+    2
+   ],
+   "determinant": 15,
+   "generator_crossing_number": 12,
+   "generator_unknotting_number": -1,
+   "genus_lower": 2,
+   "genus_upper": 4,
+   "identified_as": null,
+   "identified_crossings": null,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -6,
+     -1
+    ],
+    [
+     -5,
+     2
+    ],
+    [
+     -4,
+     -2
+    ],
+    [
+     -3,
+     3
+    ],
+    [
+     -2,
+     -3
+    ],
+    [
+     -1,
+     2
+    ],
+    [
+     0,
+     -1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "jones_pretty": "-t^-6 + 2t^-5 - 2t^-4 + 3t^-3 - 3t^-2 + 2t^-1 - 1 + t",
+   "name": "R(5,12)#0",
+   "notes": [
+    "not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot",
+    "composite: 4_1 # 3_1. Knot tables list prime knots, which is why the fingerprint found nothing.",
+    "u = 2 exactly: the summands give u <= 2, and |sigma|/2 with Scharlemann's theorem gives the same lower bound."
+   ],
+   "signature": 2,
+   "strands": 5,
+   "summands": [
+    "4_1",
+    "3_1"
+   ],
+   "unknotting_exact": 2,
+   "unknotting_lower_bound": 2,
+   "unknotting_number": null,
+   "unknotting_upper_bound": 2,
+   "word_length": 12,
+   "writhe": -2
+  },
+  "R(5,14)#0": {
+   "alexander": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     -5
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     3,
+     -5
+    ],
+    [
+     4,
+     2
+    ]
+   ],
+   "alexander_pretty": "2 - 5t + 7t^2 - 5t^3 + 2t^4",
+   "braid": [
+    1,
+    4,
+    3,
+    2,
+    -4,
+    2,
+    4,
+    -3,
+    2,
+    2,
+    4,
+    -3,
+    2,
+    4
+   ],
+   "determinant": 21,
+   "generator_crossing_number": 14,
+   "generator_unknotting_number": -1,
+   "genus_lower": 2,
+   "genus_upper": 5,
+   "identified_as": null,
+   "identified_crossings": null,
+   "identified_mirror": false,
+   "jones": [
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     -1
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     -3
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     -4
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     9,
+     -2
+    ],
+    [
+     10,
+     1
+    ]
+   ],
+   "jones_pretty": "t^2 - t^3 + 3t^4 - 3t^5 + 4t^6 - 4t^7 + 2t^8 - 2t^9 + t^10",
+   "name": "R(5,14)#0",
+   "notes": [
+    "not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot",
+    "composite: 3_1 # 5_2. Knot tables list prime knots, which is why the fingerprint found nothing.",
+    "u = 2 exactly: the summands give u <= 2, and |sigma|/2 with Scharlemann's theorem gives the same lower bound."
+   ],
+   "signature": -4,
+   "strands": 5,
+   "summands": [
+    "3_1",
+    "5_2"
+   ],
+   "unknotting_exact": 2,
+   "unknotting_lower_bound": 2,
+   "unknotting_number": null,
+   "unknotting_upper_bound": 2,
+   "word_length": 14,
+   "writhe": 8
+  },
+  "R(5,16)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     -2
+    ],
+    [
+     4,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 2t + 3t^2 - 2t^3 + t^4",
+   "braid": [
+    1,
+    4,
+    -1,
+    -1,
+    -3,
+    -3,
+    1,
+    1,
+    4,
+    3,
+    -1,
+    3,
+    4,
+    -1,
+    -3,
+    2
+   ],
+   "determinant": 9,
+   "generator_crossing_number": 16,
+   "generator_unknotting_number": -1,
+   "genus_lower": 2,
+   "genus_upper": 6,
+   "identified_as": "8_20",
+   "identified_crossings": 8,
+   "identified_mirror": true,
+   "jones": [
+    [
+     -1,
+     -1
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     -1
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     5,
+     -1
+    ]
+   ],
+   "jones_pretty": "-t^-1 + 2 - t + 2t^2 - t^3 + t^4 - t^5",
+   "name": "R(5,16)#0",
+   "notes": [],
+   "signature": 0,
+   "strands": 5,
+   "summands": [],
+   "unknotting_exact": 1,
+   "unknotting_lower_bound": 0,
+   "unknotting_number": 1,
+   "unknotting_upper_bound": 1,
+   "word_length": 16,
+   "writhe": 2
+  },
+  "R(5,18)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     2,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - t + t^2",
+   "braid": [
+    -3,
+    -4,
+    -2,
+    3,
+    1,
+    4,
+    -3,
+    -1,
+    3,
+    -1,
+    3,
+    3,
+    4,
+    -2,
+    -1,
+    -2,
+    -2,
+    -4
+   ],
+   "determinant": 3,
+   "generator_crossing_number": 18,
+   "generator_unknotting_number": -1,
+   "genus_lower": 1,
+   "genus_upper": 7,
+   "identified_as": "3_1",
+   "identified_crossings": 3,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -4,
+     -1
+    ],
+    [
+     -3,
+     1
+    ],
+    [
+     -1,
+     1
+    ]
+   ],
+   "jones_pretty": "-t^-4 + t^-3 + t^-1",
+   "name": "R(5,18)#0",
+   "notes": [],
+   "signature": 2,
+   "strands": 5,
+   "summands": [],
+   "unknotting_exact": 1,
+   "unknotting_lower_bound": 1,
+   "unknotting_number": 1,
+   "unknotting_upper_bound": 1,
+   "word_length": 18,
+   "writhe": -4
+  },
+  "R(5,20)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -3
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     -7
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     -3
+    ],
+    [
+     6,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 3t + 6t^2 - 7t^3 + 6t^4 - 3t^5 + t^6",
+   "braid": [
+    -4,
+    3,
+    -1,
+    -1,
+    -4,
+    -2,
+    -4,
+    -4,
+    -4,
+    1,
+    2,
+    4,
+    -2,
+    -1,
+    -1,
+    -3,
+    -4,
+    -1,
+    -4,
+    1
+   ],
+   "determinant": 27,
+   "generator_crossing_number": 20,
+   "generator_unknotting_number": -1,
+   "genus_lower": 3,
+   "genus_upper": 8,
+   "identified_as": null,
+   "identified_crossings": null,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -12,
+     -1
+    ],
+    [
+     -11,
+     3
+    ],
+    [
+     -10,
+     -3
+    ],
+    [
+     -9,
+     4
+    ],
+    [
+     -8,
+     -6
+    ],
+    [
+     -7,
+     3
+    ],
+    [
+     -6,
+     -3
+    ],
+    [
+     -5,
+     3
+    ],
+    [
+     -3,
+     1
+    ]
+   ],
+   "jones_pretty": "-t^-12 + 3t^-11 - 3t^-10 + 4t^-9 - 6t^-8 + 3t^-7 - 3t^-6 + 3t^-5 + t^-3",
+   "name": "R(5,20)#0",
+   "notes": [
+    "not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot",
+    "composite: 3_1 # 3_1 # 3_1. Knot tables list prime knots, which is why the fingerprint found nothing.",
+    "u = 3 exactly: the summands give u <= 3, and |sigma|/2 with Scharlemann's theorem gives the same lower bound."
+   ],
+   "signature": 6,
+   "strands": 5,
+   "summands": [
+    "3_1",
+    "3_1",
+    "3_1"
+   ],
+   "unknotting_exact": 3,
+   "unknotting_lower_bound": 3,
+   "unknotting_number": null,
+   "unknotting_upper_bound": 3,
+   "word_length": 20,
+   "writhe": -10
+  },
+  "R(5,22)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -5
+    ],
+    [
+     2,
+     12
+    ],
+    [
+     3,
+     -20
+    ],
+    [
+     4,
+     23
+    ],
+    [
+     5,
+     -20
+    ],
+    [
+     6,
+     12
+    ],
+    [
+     7,
+     -5
+    ],
+    [
+     8,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 5t + 12t^2 - 20t^3 + 23t^4 - 20t^5 + 12t^6 - 5t^7 + t^8",
+   "braid": [
+    4,
+    -2,
+    -4,
+    3,
+    -1,
+    -3,
+    -4,
+    -1,
+    -1,
+    -2,
+    4,
+    -2,
+    -4,
+    -2,
+    -4,
+    -3,
+    4,
+    3,
+    -4,
+    -4,
+    3,
+    2
+   ],
+   "determinant": 99,
+   "generator_crossing_number": 22,
+   "generator_unknotting_number": -1,
+   "genus_lower": 4,
+   "genus_upper": 9,
+   "identified_as": null,
+   "identified_crossings": null,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -13,
+     1
+    ],
+    [
+     -12,
+     -4
+    ],
+    [
+     -11,
+     7
+    ],
+    [
+     -10,
+     -10
+    ],
+    [
+     -9,
+     14
+    ],
+    [
+     -8,
+     -15
+    ],
+    [
+     -7,
+     14
+    ],
+    [
+     -6,
+     -13
+    ],
+    [
+     -5,
+     9
+    ],
+    [
+     -4,
+     -6
+    ],
+    [
+     -3,
+     4
+    ],
+    [
+     -2,
+     -1
+    ],
+    [
+     -1,
+     1
+    ]
+   ],
+   "jones_pretty": "t^-13 - 4t^-12 + 7t^-11 - 10t^-10 + 14t^-9 - 15t^-8 + 14t^-7 - 13t^-6 + 9t^-5 - 6t^-4 + 4t^-3 - t^-2 + t^-1",
+   "name": "R(5,22)#0",
+   "notes": [
+    "not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot",
+    "composite: 6_2 or K12n25 # 3_1 # 3_1. Knot tables list prime knots, which is why the fingerprint found nothing."
+   ],
+   "signature": 6,
+   "strands": 5,
+   "summands": [
+    "6_2 or K12n25",
+    "3_1",
+    "3_1"
+   ],
+   "unknotting_exact": null,
+   "unknotting_lower_bound": 3,
+   "unknotting_number": null,
+   "unknotting_upper_bound": null,
+   "word_length": 22,
+   "writhe": -8
+  },
+  "R(5,24)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -3
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     -3
+    ],
+    [
+     4,
+     -2
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     -9
+    ],
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     -2
+    ],
+    [
+     9,
+     -3
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     11,
+     -3
+    ],
+    [
+     12,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 3t + 5t^2 - 3t^3 - 2t^4 + 7t^5 - 9t^6 + 7t^7 - 2t^8 - 3t^9 + 5t^10 - 3t^11 + t^12",
+   "braid": [
+    2,
+    4,
+    -3,
+    -2,
+    -1,
+    -2,
+    -1,
+    4,
+    -3,
+    -1,
+    -3,
+    -3,
+    -3,
+    1,
+    1,
+    -2,
+    -4,
+    -1,
+    4,
+    -2,
+    -1,
+    -2,
+    4,
+    -1
+   ],
+   "determinant": 3,
+   "generator_crossing_number": 24,
+   "generator_unknotting_number": -1,
+   "genus_lower": 6,
+   "genus_upper": 10,
+   "identified_as": null,
+   "identified_crossings": null,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -14,
+     -1
+    ],
+    [
+     -13,
+     2
+    ],
+    [
+     -12,
+     -4
+    ],
+    [
+     -11,
+     5
+    ],
+    [
+     -10,
+     -5
+    ],
+    [
+     -9,
+     4
+    ],
+    [
+     -8,
+     -2
+    ],
+    [
+     -7,
+     -1
+    ],
+    [
+     -6,
+     4
+    ],
+    [
+     -5,
+     -4
+    ],
+    [
+     -4,
+     5
+    ],
+    [
+     -3,
+     -3
+    ],
+    [
+     -2,
+     2
+    ],
+    [
+     -1,
+     -1
+    ]
+   ],
+   "jones_pretty": "-t^-14 + 2t^-13 - 4t^-12 + 5t^-11 - 5t^-10 + 4t^-9 - 2t^-8 - t^-7 + 4t^-6 - 4t^-5 + 5t^-4 - 3t^-3 + 2t^-2 - t^-1",
+   "name": "R(5,24)#0",
+   "notes": [
+    "not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot"
+   ],
+   "signature": 6,
+   "strands": 5,
+   "summands": [],
+   "unknotting_exact": null,
+   "unknotting_lower_bound": 3,
+   "unknotting_number": null,
+   "unknotting_upper_bound": null,
+   "word_length": 24,
+   "writhe": -10
+  },
+  "R(5,26)#0": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -4
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     3,
+     -15
+    ],
+    [
+     4,
+     20
+    ],
+    [
+     5,
+     -23
+    ],
+    [
+     6,
+     23
+    ],
+    [
+     7,
+     -23
+    ],
+    [
+     8,
+     20
+    ],
+    [
+     9,
+     -15
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     11,
+     -4
+    ],
+    [
+     12,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - 4t + 9t^2 - 15t^3 + 20t^4 - 23t^5 + 23t^6 - 23t^7 + 20t^8 - 15t^9 + 9t^10 - 4t^11 + t^12",
+   "braid": [
+    4,
+    -2,
+    -2,
+    -3,
+    2,
+    4,
+    1,
+    1,
+    1,
+    1,
+    -2,
+    -2,
+    -4,
+    2,
+    -3,
+    -1,
+    -2,
+    -2,
+    -2,
+    -2,
+    -3,
+    4,
+    2,
+    3,
+    4,
+    4
+   ],
+   "determinant": 167,
+   "generator_crossing_number": 26,
+   "generator_unknotting_number": -1,
+   "genus_lower": 6,
+   "genus_upper": 11,
+   "identified_as": null,
+   "identified_crossings": null,
+   "identified_mirror": false,
+   "jones": [
+    [
+     -7,
+     1
+    ],
+    [
+     -6,
+     -3
+    ],
+    [
+     -5,
+     6
+    ],
+    [
+     -4,
+     -10
+    ],
+    [
+     -3,
+     14
+    ],
+    [
+     -2,
+     -18
+    ],
+    [
+     -1,
+     21
+    ],
+    [
+     0,
+     -21
+    ],
+    [
+     1,
+     21
+    ],
+    [
+     2,
+     -18
+    ],
+    [
+     3,
+     14
+    ],
+    [
+     4,
+     -10
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     -3
+    ],
+    [
+     7,
+     1
+    ]
+   ],
+   "jones_pretty": "t^-7 - 3t^-6 + 6t^-5 - 10t^-4 + 14t^-3 - 18t^-2 + 21t^-1 - 21 + 21t - 18t^2 + 14t^3 - 10t^4 + 6t^5 - 3t^6 + t^7",
+   "name": "R(5,26)#0",
+   "notes": [
+    "not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot"
+   ],
+   "signature": -2,
+   "strands": 5,
+   "summands": [],
+   "unknotting_exact": null,
+   "unknotting_lower_bound": 1,
+   "unknotting_number": null,
+   "unknotting_upper_bound": null,
+   "word_length": 26,
+   "writhe": 0
+  },
+  "T(2,3)": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     2,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - t + t^2",
+   "braid": [
+    1,
+    1,
+    1
+   ],
+   "determinant": 3,
+   "generator_crossing_number": 3,
+   "generator_unknotting_number": 1,
+   "genus_lower": 1,
+   "genus_upper": 1,
+   "identified_as": "3_1",
+   "identified_crossings": 3,
+   "identified_mirror": true,
+   "jones": [
+    [
+     1,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     -1
+    ]
+   ],
+   "jones_pretty": "t + t^3 - t^4",
+   "name": "T(2,3)",
+   "notes": [],
+   "signature": -2,
+   "strands": 2,
+   "summands": [],
+   "unknotting_exact": 1,
+   "unknotting_lower_bound": 1,
+   "unknotting_number": 1,
+   "unknotting_upper_bound": 1,
+   "word_length": 3,
+   "writhe": 3
+  },
+  "T(2,5)": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     -1
+    ],
+    [
+     4,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - t + t^2 - t^3 + t^4",
+   "braid": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "determinant": 5,
+   "generator_crossing_number": 5,
+   "generator_unknotting_number": 2,
+   "genus_lower": 2,
+   "genus_upper": 2,
+   "identified_as": "5_1 or 10_132",
+   "identified_crossings": null,
+   "identified_mirror": true,
+   "jones": [
+    [
+     2,
+     1
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     5,
+     -1
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     -1
+    ]
+   ],
+   "jones_pretty": "t^2 + t^4 - t^5 + t^6 - t^7",
+   "name": "T(2,5)",
+   "notes": [
+    "ambiguous: 10_132, 5_1 agree on both the Jones and the Alexander polynomial, so this names a set, not a knot"
+   ],
+   "signature": -4,
+   "strands": 2,
+   "summands": [],
+   "unknotting_exact": null,
+   "unknotting_lower_bound": 2,
+   "unknotting_number": null,
+   "unknotting_upper_bound": null,
+   "word_length": 5,
+   "writhe": 5
+  },
+  "T(2,9)": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     -1
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     5,
+     -1
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     -1
+    ],
+    [
+     8,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - t + t^2 - t^3 + t^4 - t^5 + t^6 - t^7 + t^8",
+   "braid": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "determinant": 9,
+   "generator_crossing_number": 9,
+   "generator_unknotting_number": 4,
+   "genus_lower": 4,
+   "genus_upper": 4,
+   "identified_as": "9_1",
+   "identified_crossings": 9,
+   "identified_mirror": true,
+   "jones": [
+    [
+     4,
+     1
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     -1
+    ],
+    [
+     8,
+     1
+    ],
+    [
+     9,
+     -1
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     11,
+     -1
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     13,
+     -1
+    ]
+   ],
+   "jones_pretty": "t^4 + t^6 - t^7 + t^8 - t^9 + t^10 - t^11 + t^12 - t^13",
+   "name": "T(2,9)",
+   "notes": [],
+   "signature": -8,
+   "strands": 2,
+   "summands": [],
+   "unknotting_exact": 4,
+   "unknotting_lower_bound": 4,
+   "unknotting_number": 4,
+   "unknotting_upper_bound": 4,
+   "word_length": 9,
+   "writhe": 9
+  },
+  "T(3,4)": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     5,
+     -1
+    ],
+    [
+     6,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - t + t^3 - t^5 + t^6",
+   "braid": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    1,
+    2
+   ],
+   "determinant": 3,
+   "generator_crossing_number": 8,
+   "generator_unknotting_number": 3,
+   "genus_lower": 3,
+   "genus_upper": 3,
+   "identified_as": "8_19",
+   "identified_crossings": 8,
+   "identified_mirror": false,
+   "jones": [
+    [
+     3,
+     1
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     8,
+     -1
+    ]
+   ],
+   "jones_pretty": "t^3 + t^5 - t^8",
+   "name": "T(3,4)",
+   "notes": [],
+   "signature": -6,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 3,
+   "unknotting_lower_bound": 3,
+   "unknotting_number": 3,
+   "unknotting_upper_bound": 3,
+   "word_length": 8,
+   "writhe": 8
+  },
+  "T(3,5)": {
+   "alexander": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     -1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     -1
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     7,
+     -1
+    ],
+    [
+     8,
+     1
+    ]
+   ],
+   "alexander_pretty": "1 - t + t^3 - t^4 + t^5 - t^7 + t^8",
+   "braid": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    1,
+    2
+   ],
+   "determinant": 1,
+   "generator_crossing_number": 10,
+   "generator_unknotting_number": 4,
+   "genus_lower": 4,
+   "genus_upper": 4,
+   "identified_as": "10_124",
+   "identified_crossings": 10,
+   "identified_mirror": false,
+   "jones": [
+    [
+     4,
+     1
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     10,
+     -1
+    ]
+   ],
+   "jones_pretty": "t^4 + t^6 - t^10",
+   "name": "T(3,5)",
+   "notes": [],
+   "signature": -8,
+   "strands": 3,
+   "summands": [],
+   "unknotting_exact": 4,
+   "unknotting_lower_bound": 4,
+   "unknotting_number": 4,
+   "unknotting_upper_bound": 4,
+   "word_length": 10,
+   "writhe": 10
+  },
+  "unknot": {
+   "alexander": [
+    [
+     0,
+     1
+    ]
+   ],
+   "alexander_pretty": "1",
+   "braid": [],
+   "determinant": 1,
+   "generator_crossing_number": 0,
+   "generator_unknotting_number": 0,
+   "genus_lower": 0,
+   "genus_upper": 0,
+   "identified_as": "0_1",
+   "identified_crossings": 0,
+   "identified_mirror": false,
+   "jones": [
+    [
+     0,
+     1
+    ]
+   ],
+   "jones_pretty": "1",
+   "name": "unknot",
+   "notes": [],
+   "signature": 0,
+   "strands": 1,
+   "summands": [],
+   "unknotting_exact": 0,
+   "unknotting_lower_bound": 0,
+   "unknotting_number": 0,
+   "unknotting_upper_bound": 0,
+   "word_length": 0,
+   "writhe": 0
+  }
+ },
+ "pool": {
+  "max_crossings": 22,
+  "positive_braids": 3,
+  "positive_seed": 0,
+  "random_crossings": [
+   10,
+   12,
+   14,
+   16,
+   18,
+   20,
+   22,
+   24,
+   26
+  ],
+  "random_per_grade": 1,
+  "random_seed": 0
+ },
+ "rungs": [
+  {
+   "index": 0,
+   "scramble": 2,
+   "source": "unknot"
+  },
+  {
+   "index": 1,
+   "scramble": 6,
+   "source": "unknot"
+  },
+  {
+   "index": 2,
+   "scramble": 0,
+   "source": "T(2,3)"
+  },
+  {
+   "index": 3,
+   "scramble": 2,
+   "source": "T(2,3)"
+  },
+  {
+   "index": 4,
+   "scramble": 4,
+   "source": "T(2,3)"
+  },
+  {
+   "index": 5,
+   "scramble": 0,
+   "source": "T(2,5)"
+  },
+  {
+   "index": 6,
+   "scramble": 2,
+   "source": "T(2,5)"
+  },
+  {
+   "index": 7,
+   "scramble": 4,
+   "source": "T(2,5)"
+  },
+  {
+   "index": 8,
+   "scramble": 8,
+   "source": "T(2,5)"
+  },
+  {
+   "index": 9,
+   "scramble": 0,
+   "source": "T(3,4)"
+  },
+  {
+   "index": 10,
+   "scramble": 2,
+   "source": "T(3,4)"
+  },
+  {
+   "index": 11,
+   "scramble": 4,
+   "source": "T(3,4)"
+  },
+  {
+   "index": 12,
+   "scramble": 8,
+   "source": "T(3,4)"
+  },
+  {
+   "index": 13,
+   "scramble": 0,
+   "source": "T(2,9)"
+  },
+  {
+   "index": 14,
+   "scramble": 4,
+   "source": "T(2,9)"
+  },
+  {
+   "index": 15,
+   "scramble": 0,
+   "source": "T(3,5)"
+  },
+  {
+   "index": 16,
+   "scramble": 4,
+   "source": "T(3,5)"
+  },
+  {
+   "index": 17,
+   "scramble": 0,
+   "source": "R(3,10)#0"
+  },
+  {
+   "index": 18,
+   "scramble": 4,
+   "source": "R(3,10)#0"
+  },
+  {
+   "index": 19,
+   "scramble": 0,
+   "source": "R(5,10)#0"
+  },
+  {
+   "index": 20,
+   "scramble": 0,
+   "source": "R(3,12)#0"
+  },
+  {
+   "index": 21,
+   "scramble": 4,
+   "source": "R(3,12)#0"
+  },
+  {
+   "index": 22,
+   "scramble": 0,
+   "source": "R(5,12)#0"
+  },
+  {
+   "index": 23,
+   "scramble": 0,
+   "source": "R(3,14)#0"
+  },
+  {
+   "index": 24,
+   "scramble": 0,
+   "source": "R(5,14)#0"
+  },
+  {
+   "index": 25,
+   "scramble": 0,
+   "source": "R(3,16)#0"
+  },
+  {
+   "index": 26,
+   "scramble": 0,
+   "source": "R(5,16)#0"
+  },
+  {
+   "index": 27,
+   "scramble": 0,
+   "source": "R(3,18)#0"
+  },
+  {
+   "index": 28,
+   "scramble": 0,
+   "source": "R(5,18)#0"
+  },
+  {
+   "index": 29,
+   "scramble": 0,
+   "source": "R(3,20)#0"
+  },
+  {
+   "index": 30,
+   "scramble": 0,
+   "source": "R(5,20)#0"
+  },
+  {
+   "index": 31,
+   "scramble": 0,
+   "source": "R(3,22)#0"
+  },
+  {
+   "index": 32,
+   "scramble": 4,
+   "source": "R(3,22)#0"
+  },
+  {
+   "index": 33,
+   "scramble": 0,
+   "source": "R(5,22)#0"
+  },
+  {
+   "index": 34,
+   "scramble": 4,
+   "source": "R(5,22)#0"
+  },
+  {
+   "index": 35,
+   "scramble": 0,
+   "source": "R(3,24)#0"
+  },
+  {
+   "index": 36,
+   "scramble": 4,
+   "source": "R(3,24)#0"
+  },
+  {
+   "index": 37,
+   "scramble": 0,
+   "source": "R(5,24)#0"
+  },
+  {
+   "index": 38,
+   "scramble": 4,
+   "source": "R(5,24)#0"
+  },
+  {
+   "index": 39,
+   "scramble": 0,
+   "source": "R(5,26)#0"
+  },
+  {
+   "index": 40,
+   "scramble": 4,
+   "source": "R(5,26)#0"
+  }
+ ],
+ "source": "/Users/artemvorozhtsov/projects/pgx-mcts-bench/src/pgx_mcts_bench/ladder.py"
+}

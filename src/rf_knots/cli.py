@@ -233,5 +233,46 @@ def calibrate(
     typer.echo(f"beyond cutoff    : {sum(p is None for p in paths)}/{samples}")
 
 
+@app.command()
+def knot(word: str, strands: int = 0) -> None:
+    """Invariants of a braid word, and the name of the knot it closes to.
+
+        uv run rf-knots knot "1,1,2,2,1,1,2,1,-2,-1,2,1,-2,-2,-1,2,1,-2"
+
+    The word is comma-separated Artin generators: `2` is sigma_2, `-2` its
+    inverse. `--strands` defaults to the smallest braid group the word fits in.
+    """
+    from rf_knots.invariants import format_polynomial, invariants
+
+    letters = tuple(int(x) for x in word.replace(" ", "").split(",") if x)
+    n = strands or (max((abs(x) for x in letters), default=0) + 1)
+    inv = invariants(letters, n)
+
+    typer.echo(f"braid            : {list(inv.word)} on {inv.strands} strands")
+    typer.echo(f"word length      : {inv.crossings}   writhe {inv.writhe}")
+    typer.echo(f"Alexander        : {format_polynomial(inv.alexander_polynomial)}")
+    typer.echo(f"determinant      : {inv.determinant}")
+    typer.echo(f"Jones            : {format_polynomial(inv.jones_polynomial)}")
+    sigma = inv.signature if inv.signature is not None else "(needs spherogram)"
+    typer.echo(f"signature        : {sigma}")
+    genus = (str(inv.genus_lower) if inv.genus_lower == inv.genus_upper
+             else f"{inv.genus_lower}..{inv.genus_upper}")
+    typer.echo(f"genus            : {genus}")
+    if inv.name:
+        mirror = " (mirror image)" if inv.mirror else ""
+        typer.echo(f"identified as    : {inv.name}{mirror}, {inv.identified_crossings} crossings")
+        # The distinction that matters: the word is as long as it is, but the
+        # knot is as big as it is, and only the second one bounds u.
+        if inv.identified_crossings is not None and inv.identified_crossings < inv.crossings:
+            typer.echo(f"                   the word is {inv.crossings} letters for a "
+                       f"{inv.identified_crossings}-crossing knot")
+    if inv.unknotting is not None:
+        typer.echo(f"unknotting number: {inv.unknotting}  (published)")
+    elif inv.unknotting_lower is not None:
+        typer.echo(f"unknotting number: >= {inv.unknotting_lower}  (from |sigma|/2)")
+    for note in inv.notes:
+        typer.echo(f"note             : {note}")
+
+
 if __name__ == "__main__":
     app()

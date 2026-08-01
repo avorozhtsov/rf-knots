@@ -18,6 +18,13 @@ dev = [
   "pytest>=8.2",
   "ruff>=0.6",
 ]
+# Only `rf_knots.invariants.signature` and `connected_summands` need this, and
+# both degrade to `None` without it. It also builds `data/knot_table.json`, which
+# is committed -- so identification, the Alexander and the Jones polynomials all
+# work on a plain install.
+knots = [
+  "snappy>=3.2",
+]
 
 [project.scripts]
 rf-knots = "rf_knots.cli:app"

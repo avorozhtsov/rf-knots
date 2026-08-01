@@ -1,0 +1,22 @@
+{
+ "source": "Knot Atlas, katlas.org/wiki/<name>, read 2026-08-01",
+ "note": "The only numbers in this package that were not derived by its own code. A knot absent from `values` has not been looked up; that is a statement about this file, not about whether the unknotting number is known. K12n570 and K12n647 were looked up and the Knot Atlas lists no unknotting number for them, so they are absent for a different reason -- see docs/rungs.md.",
+ "values": {
+  "0_1": 0,
+  "3_1": 1,
+  "4_1": 1,
+  "5_1": 2,
+  "5_2": 1,
+  "6_2": 1,
+  "6_3": 1,
+  "7_3": 2,
+  "7_5": 2,
+  "8_19": 3,
+  "8_20": 1,
+  "8_21": 1,
+  "9_1": 4,
+  "10_104": 1,
+  "10_124": 4,
+  "10_132": 1
+ }
+}
