@@ -138,10 +138,13 @@ relations — `σᵢσᵢ⁻¹ = 1`, `σᵢσᵢ₊₁σᵢ = σᵢ₊₁σᵢσ
 the learned operators toward a representation of `Bₙ`; the experiment below
 shows why a penalty does not make that constraint exact.
 
-#### Negative result: every accumulator arm is at the bottom, including the oracle
+#### The accumulators are slow, not bad — two measurements that disagree
 
-Measured 2026-08-01, five arms sharing two machines under identical settings. The
-column is rungs cleared per run, not per iteration:
+Measured 2026-08-01. Read together these say something more useful than either
+says alone, and the first one on its own is misleading.
+
+**By wall-clock, every accumulator is at the bottom.** Six arms, two machines,
+identical settings; the column is rungs cleared per run:
 
 | arm | accumulator | wall-clock | rungs cleared |
 |---|---|---:|---:|
@@ -152,34 +155,55 @@ column is rungs cleared per run, not per iteration:
 | `s-fsa32` | learned 32-state automaton | 11 h | **0** |
 | `s-burau-oracle` | **fixed Burau matrices** | 19 h | **0** |
 
-Every whole-tape accumulator is at the bottom; the two arms with no memory at all
-are at the top. `s-fsa32` and `s-burau-oracle` were stopped after producing no rung
-at all — both alive and at ~90% CPU throughout, neither wedged nor starved.
+**By training, the same arms take the top three places.** Each evaluated from the
+weights it had on clearing rung 8 (`T(2,5)+8`, u = 2), at a common 128 simulations
+and 12 games, ranked by solve-weighted cost:
 
-**The oracle row is the one that carries the argument.** `s-burau-oracle` is handed
-exact Burau matrices at `t = −1` and `1/2`; it has no representation to learn and no
-relation penalty to satisfy, so none of the failure modes diagnosed for `s-ff4-p5`
-below apply to it. It was still beaten eighteen rungs to nothing by a plain
-seven-letter window running the deliberately crippled single-stride ablation. That
-separates "the learned accumulators cannot learn their operators" from "scanning
-the whole tape does not pay here", and the evidence points at the second.
+| arm | accumulator | solved | cc | **cc/sr** |
+|---|---|---:|---:|---:|
+| `s-gru128` | GRU-128 scan | **0.92** | 2.64 | **2.88** |
+| `s-fsa32` | automaton scan | 0.75 | 2.22 | **2.96** |
+| `s-burau-oracle` | Burau oracle scan | 0.67 | 2.00 | **3.00** |
+| `s-head-128` | none | 0.58 | 2.00 | 3.43 |
+| `s-paint4` | painted strands | 0.58 | 2.00 | 3.43 |
+| `s-head-1stride` | none (worst stride) | 0.83 | 3.20 | 3.84 |
+| `s-window-128` | none (act anywhere) | 0.42 | 2.00 | 4.80 |
+| `s-reg8` | written registers | 0.58 | 3.00 | 5.14 |
 
-Two things this does **not** establish, and both matter.
+The ordering inverts almost exactly. `s-gru128` cleared one rung in eleven hours
+and is the best arm here; `s-burau-oracle` cleared none in nineteen and beats every
+window arm.
 
-*It is wall-clock, not per-iteration.* The scanning encoders cost 2.9–4.2× per
-batch-1 forward, which is the quantity MCTS is bound by, so part of the gap is
-simply that they take fewer steps per hour. The clean version of this comparison is
-`braid-ladder-rescore` at matched iteration counts, which has not been run. Until it
-is, the honest claim is that **at equal wall-clock the accumulator arms are far
-behind**, not that they are worse per unit of learning.
+**The reconciliation is throughput.** A whole-tape scan costs 2.9–4.2x per batch-1
+forward, and batch-1 forward latency is what MCTS is bound by -- 77% of a
+simulation. So an accumulator arm takes roughly a quarter of the training steps per
+hour, and the wall-clock table is largely a measurement of that. What it is *not*
+is a measurement of whether scanning the tape helps.
 
-*One seed.* Six arms all landing the same way is harder to dismiss than one, but it
-is still a single seed per arm, and this project has already had a three-seed result
-survive two rounds of reporting before turning out to be selection.
+So the claim to carry forward is **the accumulators are slow, not bad**, and the
+thing to fix is the throughput, not the mechanism. Batched leaf evaluation is the
+obvious lever: 7.8x measured on the same laptop, and it would close most of a 4x
+gap.
 
-What it does establish is that the section above was written the wrong way round:
-the accumulator was proposed as *the design that reads the register*, and on the
-evidence so far the register is better left unread than read by a whole-tape scan.
+**What neither table establishes.** The training comparison does not match training
+either -- the arms reached rung 8 on anywhere from 4 to 104 iterations, and the two
+`final`-weight rows never completed a rung in the current run, so they are a
+different weight vintage from the rest. Solve rates run 0.42–0.92 on twelve games,
+so `cc/sr` moves on one or two episodes and the gap between second and fifth place
+sits inside that. One seed throughout.
+
+The experiment that would settle it is the one neither of these is: every arm
+trained for a *fixed* iteration count on a single rung, several seeds, and only
+then evaluated. Until that runs, "accumulators are worse" is unsupported and
+"accumulators are better" is equally unsupported; what is supported is that the
+19-hour table cannot be read as evidence about the mechanism.
+
+**A process note, because it cost something.** Three arms -- `s-burau-oracle`,
+`s-fsa32` and `s-gru128` -- were stopped for producing nothing, on the strength of
+the wall-clock table alone, and they are the top three of the training table. The
+caveat was written down at the time and the check was named; it simply was not run
+first. Stopping work is a decision, and it deserved the same evidence bar as
+publishing a result.
 
 #### Negative result: retire `s-ff4-p5`, retain the constrained version
 
