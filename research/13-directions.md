@@ -10,6 +10,17 @@ general, what would have to be built, **the cheapest experiment that would decid
 it**, and what would kill it. An entry with no killing condition is not a
 direction, it is an enthusiasm.
 
+| | direction |
+|---|---|
+| 1 | [An adaptive schedule, ordered by what the networks already believe](#1-an-adaptive-schedule-ordered-by-what-the-networks-already-believe) |
+| 2 | [An arena between solvers, with recombination](#2-an-arena-between-solvers-with-recombination) |
+| 3 | [A challenge set that is actually unlabelled](#3-a-challenge-set-that-is-actually-unlabelled) |
+| 4 | [Every player learns from the best solution anyone found](#4-every-player-learns-from-the-best-solution-anyone-found) |
+
+They are not independent: 4 homogenises the population that 1 and 2 need to
+disagree, and all four need the same store, which is why the last section is about
+that rather than about any of them.
+
 ---
 
 ## 1. An adaptive schedule, ordered by what the networks already believe
@@ -35,25 +46,81 @@ the quantity a curriculum wants and a single agent cannot produce.
 **What it needs.**
 * A value-estimate sweep: every checkpoint scores every candidate instance. Cheap —
   one forward pass per (network, instance), no search.
-* A scheduling rule over those estimates. The obvious three, in increasing order of
-  ambition: *easiest-first* (max over players of predicted value), *frontier* (the
-  `4p(1-p)` term from [01](01-game-design.md), now with `p` estimated across the
-  population rather than measured), and *disagreement* (highest variance across
-  players — the instances the population has not agreed about are where the
-  information is).
+* A scheduling rule over those estimates — approaches A to C below.
 * Instance supply that is not a fixed list, so the schedule has something to choose
   from. The generator already produces more than the ladder uses.
 
-**Cheapest deciding experiment.** Do not build a scheduler. Take the existing
-checkpoints, score the 41 rungs with each value head, and correlate the predicted
-ordering against the *measured* difficulty already in the ladder results (iterations
-to promotion). If value heads do not rank known rungs in the order the ladder
-actually found them hard, they cannot rank unknown ones either, and the direction
-dies for the cost of a sweep. This uses runs that already exist.
+### Approach A — measure first: does a value head rank anything correctly?
 
-**What would kill it.** Value heads that are well-calibrated only on what they were
-trained on — which is the usual failure and would show up as the correlation above
-being strong within cleared rungs and absent beyond the frontier. That is precisely
+Do not build a scheduler. Take the existing checkpoints, score the 41 rungs with
+each value head, and correlate the predicted ordering against the *measured*
+difficulty already in the ladder results (iterations to promotion). If value heads
+do not rank known rungs in the order the ladder actually found them hard, they
+cannot rank unknown ones either, and everything below dies for the cost of a sweep.
+This uses runs that already exist and is the prerequisite for B and C.
+
+### Approach B — a block schedule over trust-weighted solve probabilities
+
+Train by schedule, but start from the highest rung the current checkpoints already
+clear rather than from rung 0, and present instances in **blocks**: score once per
+block, order within it, then run the block. Blocks are what make the sweep
+affordable and stop the ordering thrashing between iterations.
+
+Within a block, order by how solvable the population believes each instance to be,
+discounting players by how much their past promises were worth.
+
+**Order on `max` and not on `min`.** The intuition to start with instances *some*
+player thinks are easy is `max_x`. The pessimistic `min_x` says "every player thinks
+it is easy", which is a much more conservative curriculum — and, more importantly,
+it puts the trust term on the wrong side. With `min_x(p_x · trust_x)` the player who
+*sets* the ordering is whoever has the lowest product, which an untrusted player
+achieves by being untrusted: their low trust drags the min down, the instance looks
+hard, it gets deprioritised. Trust exists to discount an unreliable opinion, and
+inside a `min` it amplifies it. Under `max_x(p_x · trust_x)` an overconfident
+player's `p` is scaled down *before* it can win the max, which is the intended
+behaviour.
+
+**Prefer recalibration to a scalar trust.** `trust(x)` is to be estimated from the
+historical log-likelihood of a player's predictions — which is exactly the data that
+fits a per-player calibration map. One scalar cannot separate "overconfident
+everywhere" from "overconfident only near `p ≈ 1`", and it is the second that
+matters, because `p ≈ 1` is the region the schedule selects on. Fit Platt or
+isotonic per player, order on the recalibrated `p̂`, and the trust factor is
+absorbed. Keep a scalar only as the shrinkage prior for players with too few
+observations to fit anything.
+
+**Condition trust on the search budget.** The value head is not `p(solve)`. It
+predicts the return under this environment's multi-objective cost with FiLM
+conditioning on `log(A/B)`, and it is a *prior*: MCTS at 128 simulations solves what
+the raw head does not, which is the largest effect the ladder has measured. So
+calibration is a property of `(network, simulation budget, scramble depth)`, not of
+a network. Measured at 16 simulations, `search-light` will look like a liar for
+being under-searched. Store the budget alongside the prediction or trust is
+meaningless.
+
+**Beware the order statistic.** `min` and `max` over a population are order
+statistics, so their bias grows with population size: adding a sixteenth player
+shifts every ordering, and the curriculum changes silently when the roster does. A
+trust-weighted high quantile behaves the same way at the top of the distribution and
+is stable under roster changes. Use it if the population is not fixed.
+
+**Retirement is not optional.** Ordering by predicted-easiest is the mechanism that
+produces the self-calibration-toward-easy drift [01](01-game-design.md) cites
+PopuLoRA for. An instance must leave the pool once every player solves it reliably,
+and the block boundary is the natural place to apply that test.
+
+### Approach C — frontier and disagreement
+
+The same machinery, different objective: order by the `4p(1-p)` frontier term from
+[01](01-game-design.md) with `p` estimated across the population rather than
+measured, or by *disagreement* — the variance of `p̂_x` across players. Instances the
+population has not agreed about are where the information is, and disagreement has
+the useful property of being immune to a common bias: it does not care whether the
+whole population is overconfident, only whether they differ.
+
+**What would kill the direction.** Value heads that are well-calibrated only on what
+they were trained on — the usual failure, which would show up in A as a correlation
+that is strong within cleared rungs and absent beyond the frontier. That is exactly
 the region a curriculum needs it to work in. A weaker version survives: use value
 estimates to *re-order what is already known to be solvable*, and keep a fixed
 frontier.
@@ -149,11 +216,113 @@ step even though the code is small.
 
 ---
 
-## What these three have in common
+## 4. Every player learns from the best solution anyone found
 
-All three want the same missing object: **per-instance results, retained across
-runs and across arms.** The schedule in 1 orders instances by what players believe
-about them, the arena in 2 compares arms instance by instance, and 3 decides which
-instances should exist at all. Today the ladder records a rung number and an
-average. Building that store is the prerequisite for all three, it is small, and it
-should probably happen first.
+**The idea.** After each rung the population has, between them, a best solution for
+each knot. Train every network against it, not only the one that found it. The
+population then propagates forward together instead of each arm rediscovering the
+same reduction.
+
+**Why here.** The obvious objection to cross-agent imitation is that a bad teacher
+poisons the student. That objection does not apply in this environment. Every move
+preserves the knot type, so a shared solution is **verifiable, not trusted** — a
+receiving player can check it by replaying it. The worst a bad teacher can do here
+is be expensive, and expense is measurable. This is a property of a
+machine-verifiable domain that most distillation schemes do not get for free, and
+it is the same property the whole project is built on.
+
+### The action-space problem mostly dissolves
+
+The apparent difficulty is that players do not share an action space: the parallel
+formulation's action is `(move kind, position)` over the whole word, while the
+serial one is a head with `O(1)` actions relative to its position, a window width,
+and a stride set. Mapping one action sequence to another pairwise is `n²` awkward
+translations.
+
+It is the wrong intermediate representation. **Every action is a deterministic
+rewrite of the braid word**, so a solution is fully determined by the states it
+passes through:
+
+```
+w_0 -> w_1 -> ... -> w_n
+```
+
+A receiving player needs no correspondence with the sender's action space. At each
+step it searches *its own* legal actions for the one whose result is `w_{i+1}` —
+which is `reference.apply` against the legality mask the environment already
+computes, with `reference.equal_up_to_rotation` for moves that cross the seam. One
+canonical form, `n` players, no pairwise table.
+
+**The serial head is the one real cost.** A serial receiver can only act at the
+head, so translation must insert head travel: a shortest path over
+`serial_shift_strides`, exactly solvable by breadth-first search and cheap. But
+those inserted moves are *charged*. The objective is
+`A · crossing_changes + B · total_moves`, and [12](12-serial-formulation.md)
+measured serial arms responding to `log(A/B)` by 5-6x precisely because head travel
+costs them. So a parallel-optimal trajectory, translated, is **not optimal in the
+serial player's own metric**, and imitating it teaches a target that is wrong by
+construction.
+
+The fix is to share the part that does not depend on the metric: **the crossing-change
+decisions** — which crossing is changed, and at what point in the reduction. That is
+the scarce resource, it is what `u(K)` counts, and it survives translation intact.
+The moves between crossing changes should be re-derived by the receiver under its
+own cost.
+
+### Train on it as a bound, not as a target
+
+A known solution gives an *admissible upper bound* on the cost-to-go from every word
+on its path. Using it as an equality target for the value head asserts the path is
+optimal, which is exactly what is not known — the ratchet exists because these are
+upper bounds. A one-sided hinge, penalising only value estimates worse than the
+known path implies, is correct even when the shared solution is beatable, and stays
+correct as the ratchet improves. For the policy head the AlphaZero rule from
+[06 Part III](06-network-growth.md) applies: distil the search-improved targets
+`π ∝ N^(1/τ)` along the trajectory, not the raw action sequence.
+
+### The cost is diversity, and it is not small
+
+This is a homogenising force, and it runs directly against directions 1 and 2. The
+schedule needs players to disagree about difficulty; the arena needs them to fail on
+*different* instances; item difficulty is unestimable from correlated solvers
+([01](01-game-design.md)). The strongest measured result in the project is that the
+ranking of arms **inverts** between structured and unstructured knots — training
+every net on the same best solutions after every rung is a machine for destroying
+exactly that.
+
+So: keep a subpopulation that never receives shared solutions. It is the control
+that says whether sharing helped, and the reservoir that keeps the arena in 2 worth
+running.
+
+**Prerequisite, already on the books.** `bounds.jsonl` records the knot's defining
+word and the crossing-change *count*, not the sequence — storing the unknotting
+sequence as the witness was already an open item, motivated by wanting to
+re-verify a claimed bound rather than trust it. This direction cannot start until
+that exists. Same object, two independent reasons to build it.
+
+**Cheapest deciding experiment.** Do not train anything. Build the translator and
+measure it: replay each arm's best trajectory on cleared rungs, translate it into
+every other arm's action space through the word sequence, and report two numbers —
+the fraction that translates at all, and the move-count inflation when it does.
+"Doable but complicated for some pairs" is a claim that can be measured before a
+single gradient step. If parallel-to-serial inflates moves threefold, full-trajectory
+sharing is dead on arrival and only the crossing-change decisions should be shared.
+
+**What would kill it.** Arms whose best solutions are already near-identical, so
+there is nothing to share; translation inflation large enough that the shared target
+is worse than the receiver's own solution; or a measured collapse in instance-wise
+diversity, which the coverage metric in direction 2 detects directly.
+
+---
+
+## What these four have in common
+
+All four want the same missing object: **per-instance results, retained across runs
+and across arms.** The schedule in 1 orders instances by what players believe about
+them and needs `(player, instance, budget, predicted value, outcome)` rows to
+estimate trust at all; the arena in 2 compares arms instance by instance; 3 decides
+which instances should exist; and 4 needs the *witness* — the move sequence, not
+just its length — attached to each best-known bound.
+
+Today the ladder records a rung number and an average. Building that store is the
+prerequisite for all four, it is small, and it should happen first.
