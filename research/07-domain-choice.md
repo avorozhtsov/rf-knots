@@ -1,5 +1,11 @@
 # 07 — Which domain, and the direction problem
 
+> **Decided.** Knots, via braid words; the reasoning is summarised in the project README's
+> scope section. Kept because the comparison against rational sums and LMFDB is the argument
+> for *why*, and the L-function bridge is still the long-range target in
+> [08-roadmap.md](08-roadmap.md) M5.
+
+
 ## Your question restated
 
 > Should we play with unknotting number, or start with "real math" restricted to a family like

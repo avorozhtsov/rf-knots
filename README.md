@@ -1,6 +1,9 @@
 # rf-knots
 
-> **Continuing this work?** Read [HANDOFF.md](HANDOFF.md) first.
+> **Continuing this work?** Start with [what this project is](#what-this-project-is) below, then
+> [docs/rungs.md](docs/rungs.md) for what the curriculum is made of. The operational state of the
+> training runs — what is running, on which machine, and what is next — lives in
+> `../pgx-mcts-bench/HANDOFF.md`, next to the runs it describes.
 
 Braid-word unknotting environments for [Pgx](https://github.com/sotetsuk/pgx), built as the
 foundation for a population self-play system where agents both *propose* and *solve* problems
@@ -31,8 +34,8 @@ making, and it is why the project is a propose/solve league rather than a solver
 environment: the encoding, the legal moves, the instance generator, knot
 invariants, and the research notes. Training, search and the curriculum ladder
 live in [pgx-mcts-bench](https://github.com/avorozhtsov/pgx-mcts-bench), which
-depends on this repository by path. Continuing existing work starts at
-[HANDOFF.md](HANDOFF.md).
+depends on this repository by path; its `HANDOFF.md` is the operational state of
+the training runs.
 
 The design study is in [research/](research/); start with [research/README.md](research/README.md).
 
@@ -125,6 +128,8 @@ unknotting number has been 2 since the knot tables. Every rung is worked out in
 | `src/rf_knots/rollout.py` | random play, scramble generation, batched benchmarking |
 | `docs/representation.md` | how a knot is encoded and what may be done to it |
 | `docs/rungs.md` | every ladder rung, its rationale, and the knot it really is |
+| `docs/lessons.md` | process notes: the mistakes that cost time, and what to do instead |
+| `research/13-directions.md` | the big next moves, unscheduled |
 | `scripts/` | one-off builders for the committed data files |
 | `research/` | design study behind all of this |
 

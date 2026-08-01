@@ -1,5 +1,12 @@
 # 03 — Unknotting as a pgx environment
 
+> **Historical: this is the design, not the build.** The environment exists; what it
+> actually does is [../docs/representation.md](../docs/representation.md), which is enforced
+> in code and checked in tests. Kept for the two things nothing else records: *why braids*
+> rather than planar diagrams, and the alternative encodings that were considered and
+> rejected.
+
+
 **Verdict: yes, implementable, with the braid-word encoding.** Planar-diagram (PD/Gauss code)
 encodings are painful under JAX's fixed-shape constraint; braid words are not.
 

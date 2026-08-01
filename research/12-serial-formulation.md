@@ -134,8 +134,37 @@ the encoder additionally receives a head-relative scan of the whole word:
 
 The mechanism that makes the algebraic arms more than an arbitrary recurrence is
 `SequenceBraidNet.regularization_loss`, which penalises violations of the braid
-relations — `σᵢσᵢ⁻¹ = 1`, `σᵢσᵢ₊₁σᵢ = σᵢ₊₁σᵢσᵢ₊₁`, and far commutation. It forces
-the learned operators to be an actual representation of `Bₙ`.
+relations — `σᵢσᵢ⁻¹ = 1`, `σᵢσᵢ₊₁σᵢ = σᵢ₊₁σᵢσᵢ₊₁`, and far commutation. It pushes
+the learned operators toward a representation of `Bₙ`; the experiment below
+shows why a penalty does not make that constraint exact.
+
+#### Negative result: retire `s-ff4-p5`, retain the constrained version
+
+The experiment falsified the stronger claim as implemented: a **soft** relation
+penalty plus rounded straight-through gradients did not force a representation.
+On `T(2,3)+4`, the arm capped after 40 iterations with solve rates `10/12`,
+`10/12`, and `1/12` at `A:B = 1000:1`, `10:1`, and `1:10`.  After training,
+three of its eight rounded 4×4 matrices were singular, none of the four
+positive/negative generator pairs were exact inverses, and none of the three
+adjacent braid relations held exactly.  Exact arithmetic after rounding cannot
+recover information already destroyed by singular, relation-violating maps.
+
+`s-ff4-p5` is therefore retired from the live leaderboard but kept in code and
+artifacts as a negative result.  The idea worth retaining is a **constrained
+finite-field representation**:
+
+1. Generate each positive generator directly in `GL(d, 𝔽ₚ)`, never in the full
+   matrix algebra, so singular operators are impossible.
+2. Define the negative generator as the exact finite-field inverse of the
+   positive generator; do not learn it independently.
+3. Enforce braid and far-commutation relations by construction or by projection
+   onto the exact constraint set after every update.  A soft residual may rank
+   alternatives inside that set, but must not define membership in it.
+4. Only after the exact `d=4, p=5` version learns should dimension, prime, or the
+   `1⊕4⊕5` carrier be increased.
+
+This preserves the original bounded-alphabet, exact-arithmetic motivation while
+removing the degeneracy actually observed in the learned operators.
 
 Working in a **finite field** rather than in floats is what makes this a machine
 rather than an approximation: arithmetic is exact and closed, so the register is a
@@ -267,7 +296,7 @@ So the zero-knowledge baseline has to ablate them, and the honest ordering is:
    *into* the network, not what verifies its output.
 
 The channel ablation in
-[11 §"The falsifiable version"](11-network-growth-branch.md) therefore does double
+[11 §"The falsifiable version"](06-network-growth.md) therefore does double
 duty: it tests whether depth growth buys receptive field, and it is the
 zero-knowledge audit.
 

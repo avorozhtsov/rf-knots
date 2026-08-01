@@ -1,5 +1,11 @@
 # 05 — Compute budget
 
+> **Partly settled by measurement.** The GPU question is answered and the answer is no, for
+> now: MCTS here is batch-1 latency bound, so a GPU's launch overhead makes it worse until
+> leaf evaluations are batched. The tier arithmetic below still stands. See Part I of
+> [06-network-growth.md](06-network-growth.md) for the measurement.
+
+
 ## First, the reality check on "all knots with 5 crossings"
 
 There are **two** prime knots with 5 crossings:

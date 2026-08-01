@@ -16,17 +16,23 @@ order-of-magnitude estimates and marked as such.
 | [03-knot-env-pgx.md](03-knot-env-pgx.md) | Concrete pgx environment design for unknotting; feasibility verdict |
 | [04-related-work.md](04-related-work.md) | Annotated bibliography (self-play proposers, RL for knots, murmurations) |
 | [05-compute-budget.md](05-compute-budget.md) | GPU estimates per tier, and why "all 5-crossing knots" is the wrong unit |
-| [06-network-growth.md](06-network-growth.md) | Growing the network across curriculum levels without retraining from scratch |
+| [06-network-growth.md](06-network-growth.md) | Growing the network: the operators, the measurement that says capacity is not the constraint, and how to run the branch so it can fail |
 | [07-domain-choice.md](07-domain-choice.md) | Knots vs. rational sums vs. LMFDB; the "how do we set direction" problem |
 | [08-roadmap.md](08-roadmap.md) | Concrete milestones, starting from the existing pgx-mcts-bench code |
 | [09-vs-learning-to-unknot.md](09-vs-learning-to-unknot.md) | Would this supersede arXiv:2010.16263? What the real contribution is |
 | [10-invariants-and-representations.md](10-invariants-and-representations.md) | Unknotting number as a graph distance; where invariants help and where they are useless; mosaics vs. grid diagrams |
-| [11-network-growth-branch.md](11-network-growth-branch.md) | Growth as an executable branch: whether capacity is the constraint at all, the receptive-field split, and what would kill it |
 | [12-serial-formulation.md](12-serial-formulation.md) | The serial/Turing formulation: why it scored 0 then 9, the missing head register and how big it must be, what "zero human knowledge" actually excludes, and knot equivalence as a two-tape machine |
+| [13-directions.md](13-directions.md) | The big next moves, unscheduled: an adaptive schedule ordered by the value heads, an arena between solvers with recombination, and a challenge set that is actually unlabelled |
+
+Note 11 was merged into [06](06-network-growth.md): it was the same question, and the survey
+reads wrong without the measurement that followed it. Notes 03, 05 and 07 carry a header saying
+what in them is now decided or superseded.
 
 Implementation reference:
 * [../docs/representation.md](../docs/representation.md) — how a knot is encoded and what the
   agent may do to it, with the Reidemeister/Markov correspondence.
+* [../docs/lessons.md](../docs/lessons.md) — process notes: the mistakes that cost time, and
+  what to do instead. Read before running a sweep or trusting a measurement.
 * [../docs/rungs.md](../docs/rungs.md) — the curriculum ladder: every rung, why it is in that
   order, and which knot it actually contains. Reading it is the fastest way to see where the
   measured results in these notes came from, and where one of their premises failed.
@@ -62,7 +68,7 @@ Implementation reference:
    to problem size so the curriculum changes the data, not the net. See [06](06-network-growth.md).
    **But measure first:** 7.7× the parameters bought nothing that 2× the simulations
    did, so establish a capacity-bound regime before growing anything —
-   [11](11-network-growth-branch.md).
+   [06](06-network-growth.md).
 
 6. **GPU rental.** Not yet, and the reason is measured: MCTS is batch-1 latency
    bound (605 µs per simulation, 77% of it the forward pass on a 48K-parameter
@@ -123,7 +129,7 @@ the originals are marked rather than deleted:
   Search dominates; capacity was not measurable. The growth operators in 06 are
   still the right operators, but the branch now has to establish a capacity-bound
   regime before it can measure anything —
-  see [11](11-network-growth-branch.md).
+  see [06](06-network-growth.md).
 
 ## The one design idea I'd defend hardest
 
