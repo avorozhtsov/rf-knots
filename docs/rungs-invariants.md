@@ -34,10 +34,10 @@ ladder has been grading itself on the wrong number.
 | 19 | `R(5,10)#0` | +0 | 3_1 (mirror) | 3 | 1 |
 | 20 | `R(3,12)#0` | +0 | 6_3 | 6 | 1 |
 | 21 | `R(3,12)#0` | +4 | 6_3 | 6 | 1 |
-| 22 | `R(5,12)#0` | +0 | 4_1 # 3_1 | -- | 2 |
+| 22 | `R(5,12)#0` | +0 | 3_1 # 4_1 | -- | 2 |
 | 23 | `R(3,14)#0` | +0 | 7_3 (mirror) | 7 | 2 |
 | 24 | `R(5,14)#0` | +0 | 3_1 # 5_2 | -- | 2 |
-| 25 | `R(3,16)#0` | +0 | K12n647 (mirror) | 12 | ? |
+| 25 | `R(3,16)#0` | +0 | 12n_647 (mirror) | 12 | 4 |
 | 26 | `R(5,16)#0` | +0 | 8_20 (mirror) | 8 | 1 |
 | 27 | `R(3,18)#0` | +0 | 7_5 (mirror) | 7 | 2 |
 | 28 | `R(5,18)#0` | +0 | 3_1 | 3 | 1 |
@@ -45,10 +45,10 @@ ladder has been grading itself on the wrong number.
 | 30 | `R(5,20)#0` | +0 | 3_1 # 3_1 # 3_1 | -- | 3 |
 | 31 | `R(3,22)#0` | +0 | 0_1 | 0 | 0 |
 | 32 | `R(3,22)#0` | +4 | 0_1 | 0 | 0 |
-| 33 | `R(5,22)#0` | +0 | 6_2 or K12n25 # 3_1 # 3_1 | -- | ? |
-| 34 | `R(5,22)#0` | +4 | 6_2 or K12n25 # 3_1 # 3_1 | -- | ? |
-| 35 | `R(3,24)#0` | +0 | K12n570 (mirror) | 12 | ? |
-| 36 | `R(3,24)#0` | +4 | K12n570 (mirror) | 12 | ? |
+| 33 | `R(5,22)#0` | +0 | 6_2 or 12n_25 # 3_1 # 3_1 | -- | ? |
+| 34 | `R(5,22)#0` | +4 | 6_2 or 12n_25 # 3_1 # 3_1 | -- | ? |
+| 35 | `R(3,24)#0` | +0 | 12n_570 (mirror) | 12 | 2 |
+| 36 | `R(3,24)#0` | +4 | 12n_570 (mirror) | 12 | 2 |
 | 37 | `R(5,24)#0` | +0 | -- | -- | ? |
 | 38 | `R(5,24)#0` | +4 | -- | -- | ? |
 | 39 | `R(5,26)#0` | +0 | -- | -- | ? |
@@ -67,18 +67,18 @@ ladder has been grading itself on the wrong number.
 | `R(3,10)#0` = 8_21 | 3 | 10 | 8 | 4 | 15 | -2 | 2-4 | 1 | 1 |
 | `R(5,10)#0` = 3_1 | 5 | 10 | 3 | 2 | 3 | -2 | 1-3 | 1 | 1 |
 | `R(3,12)#0` = 6_3 | 3 | 12 | 6 | 0 | 13 | 0 | 2-5 | 0 | 1 |
-| `R(5,12)#0` = 4_1 # 3_1 | 5 | 12 | -- | -2 | 15 | 2 | 2-4 | 2 | 2 |
+| `R(5,12)#0` = 3_1 # 4_1 | 5 | 12 | -- | -2 | 15 | 2 | 2-4 | 2 | 2 |
 | `R(3,14)#0` = 7_3 | 3 | 14 | 7 | 6 | 13 | -4 | 2-6 | 2 | 2 |
 | `R(5,14)#0` = 3_1 # 5_2 | 5 | 14 | -- | 8 | 21 | -4 | 2-5 | 2 | 2 |
-| `R(3,16)#0` = K12n647 | 3 | 16 | 12 | -10 | 23 | 6 | 4-7 | 3 | ? |
+| `R(3,16)#0` = 12n_647 | 3 | 16 | 12 | -10 | 23 | 6 | 4-7 | 3 | 4 |
 | `R(5,16)#0` = 8_20 | 5 | 16 | 8 | 2 | 9 | 0 | 2-6 | 0 | 1 |
 | `R(3,18)#0` = 7_5 | 3 | 18 | 7 | 6 | 17 | -4 | 2-8 | 2 | 2 |
 | `R(5,18)#0` = 3_1 | 5 | 18 | 3 | -4 | 3 | 2 | 1-7 | 1 | 1 |
 | `R(3,20)#0` = 10_104 | 3 | 20 | 10 | 0 | 77 | 0 | 4-9 | 0 | 1 |
 | `R(5,20)#0` = 3_1 # 3_1 # 3_1 | 5 | 20 | -- | -10 | 27 | 6 | 3-8 | 3 | 3 |
 | `R(3,22)#0` = 0_1 | 3 | 22 | -- | 2 | 1 | 0 | 0-10 | 0 | 0 |
-| `R(5,22)#0` = 6_2 or K12n25 # 3_1 # 3_1 | 5 | 22 | -- | -8 | 99 | 6 | 4-9 | 3 | ? |
-| `R(3,24)#0` = K12n570 | 3 | 24 | 12 | 6 | 45 | -4 | 4-11 | 2 | ? |
+| `R(5,22)#0` = 6_2 or 12n_25 # 3_1 # 3_1 | 5 | 22 | -- | -8 | 99 | 6 | 4-9 | 3 | ? |
+| `R(3,24)#0` = 12n_570 | 3 | 24 | 12 | 6 | 45 | -4 | 4-11 | 2 | 2 |
 | `R(5,24)#0` = -- | 5 | 24 | -- | -10 | 3 | 6 | 6-10 | 3 | ? |
 | `R(5,26)#0` = -- | 5 | 26 | -- | 0 | 167 | -2 | 6-11 | 1 | ? |
 
@@ -145,7 +145,7 @@ ladder has been grading itself on the wrong number.
 * Alexander: `1 - 4t + 5t^2 - 4t^3 + t^4`
 * Jones: `-t^-6 + 2t^-5 - 2t^-4 + 3t^-3 - 3t^-2 + 2t^-1 - 1 + t`
 * note: not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot
-* note: composite: 4_1 # 3_1. Knot tables list prime knots, which is why the fingerprint found nothing.
+* note: composite: 3_1 # 4_1. Knot tables list prime knots, which is why the fingerprint found nothing.
 * note: u = 2 exactly: the summands give u <= 2, and |sigma|/2 with Scharlemann's theorem gives the same lower bound.
 
 ### `R(3,14)#0` = 7_3
@@ -163,12 +163,11 @@ ladder has been grading itself on the wrong number.
 * note: composite: 3_1 # 5_2. Knot tables list prime knots, which is why the fingerprint found nothing.
 * note: u = 2 exactly: the summands give u <= 2, and |sigma|/2 with Scharlemann's theorem gives the same lower bound.
 
-### `R(3,16)#0` = K12n647
+### `R(3,16)#0` = 12n_647
 
 * braid: `[-1, -1, -2, -2, -1, -2, -2, -2, -2, -2, 1, -2, -2, -1, 2, 2]` on 3 strands
 * Alexander: `1 - 3t^2 + 6t^3 - 7t^4 + 6t^5 - 3t^6 + t^8`
 * Jones: `-t^-14 + 2t^-13 - 3t^-12 + 4t^-11 - 5t^-10 + 4t^-9 - 3t^-8 + 2t^-7 + t^-4`
-* note: K12n647 identified, but its unknotting number has not been looked up in data/unknotting_numbers.json
 
 ### `R(5,16)#0` = 8_20
 
@@ -216,14 +215,13 @@ ladder has been grading itself on the wrong number.
 * Alexander: `1 - 5t + 12t^2 - 20t^3 + 23t^4 - 20t^5 + 12t^6 - 5t^7 + t^8`
 * Jones: `t^-13 - 4t^-12 + 7t^-11 - 10t^-10 + 14t^-9 - 15t^-8 + 14t^-7 - 13t^-6 + 9t^-5 - 6t^-4 + 4t^-3 - t^-2 + t^-1`
 * note: not in the bundled table (tabulated knots up to 12 crossings); this bounds the table, not the knot
-* note: composite: 6_2 or K12n25 # 3_1 # 3_1. Knot tables list prime knots, which is why the fingerprint found nothing.
+* note: composite: 6_2 or 12n_25 # 3_1 # 3_1. Knot tables list prime knots, which is why the fingerprint found nothing.
 
-### `R(3,24)#0` = K12n570
+### `R(3,24)#0` = 12n_570
 
 * braid: `[2, -1, -1, -1, -2, 1, 1, 1, 2, 1, 1, 2, -1, -1, -2, -1, -1, 2, 2, 2, 2, 2, 1, 1]` on 3 strands
 * Alexander: `1 - 3t + 6t^2 - 8t^3 + 9t^4 - 8t^5 + 6t^6 - 3t^7 + t^8`
 * Jones: `-t + 3t^2 - 3t^3 + 6t^4 - 7t^5 + 7t^6 - 7t^7 + 5t^8 - 3t^9 + 2t^10 - t^11`
-* note: K12n570 identified, but its unknotting number has not been looked up in data/unknotting_numbers.json
 
 ### `R(5,24)#0`
 

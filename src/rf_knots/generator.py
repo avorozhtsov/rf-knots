@@ -249,13 +249,20 @@ def random_braid_sources(
                 ) is not None:
                     continue  # it is the unknot wearing a disguise
                 seen.add(reduced)
+                source_name = f"R({strands},{count})#{found}"
+                # The canonical ladder stream has been identified against the
+                # bundled knot table. Match the actual word as well as its
+                # stream name so custom seeds cannot inherit an unrelated u.
+                from rf_knots.knot_table import scheduled_unknotting_number
+
+                known_u = scheduled_unknotting_number(source_name, reduced, strands)
                 sources.append(
                     Source(
-                        f"R({strands},{count})#{found}",
+                        source_name,
                         reduced,
                         strands,
                         count,
-                        UNKNOWN_UNKNOTTING,
+                        UNKNOWN_UNKNOTTING if known_u is None else known_u,
                     )
                 )
                 found += 1

@@ -122,9 +122,10 @@ they had one on 6 rungs. The detail is in
   with Scharlemann's theorem -- an unknotting-number-one knot is prime, so every
   composite knot has `u >= 2` -- from below.
 
-What is left genuinely open is four knots: `K12n647` and `K12n570`, for which the
-Knot Atlas lists no unknotting number, and `R(5,24)#0` and `R(5,26)#0`, which are
-prime at 15 and 16 crossings and so past the end of the tables.
+KnotInfo closes two gaps left by the older Knot Atlas data: `12n_647` has
+`u = 4`, and `12n_570` has `u = 2`. What remains unresolved by this repository's
+table is `R(5,24)#0` and `R(5,26)#0`, which are prime at 15 and 16 crossings and
+so past its twelve-crossing limit.
 
 This does not invalidate the ladder as a curriculum -- an agent still has to
 solve what it is given, and a bloated diagram of a small knot is a legitimate
@@ -158,9 +159,11 @@ Option 2 is the only way to get the challenge set the block was intended to be.
   and 1. Where that happens the rung reports every candidate rather than picking
   the first. `T(2,5)` is one of them, and is only pinned because the generator
   built it from a formula and the Milnor conjecture supplies its `u`.
-* The unknotting numbers marked as published were read off the Knot Atlas, and
-  are the only numbers in this repository not derived by its own code. They live
-  in `src/rf_knots/data/unknotting_numbers.json` with their source.
+* The unknotting numbers marked as published were read from the 2026-08-01
+  KnotInfo database snapshot, and are the only numbers in this repository not
+  derived by its own code. They live in
+  `src/rf_knots/data/unknotting_numbers.json` with the source URL and snapshot
+  hash.
 * `sigma` comes from a Seifert matrix computed by `spherogram`. The reasoning
   behind not computing it here is in the docstring of `rf_knots/invariants.py`,
   and is worth reading before anyone tries again: a locally-defined rule that

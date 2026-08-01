@@ -1,0 +1,30 @@
+{
+  "schema": "rf-knots-benchmark-catalog-v1",
+  "external": [
+    {
+      "name": "hard-unknots-dryad-2026",
+      "doi": "10.5061/dryad.vx0k6dk6v",
+      "published": "2026-06-08",
+      "expected_archives": [
+        "bfacf.zip",
+        "childrensgame.zip",
+        "compressedunknots.zip",
+        "hardgoeritz.zip",
+        "hardunknots.zip",
+        "kauffmanchallenge.zip",
+        "largehardunknots.zip",
+        "randomunknots.zip",
+        "tsunknots.zip",
+        "veryhardunknots.zip"
+      ],
+      "note": "Download separately, record each archive SHA-256, and freeze exact instances before evaluation. The source currently lists 384 very-hard diagrams whereas arXiv:2603.07955 reports 385."
+    }
+  ],
+  "local": [
+    {
+      "name": "rf-knots-rungs",
+      "manifest": "rungs-v1.json",
+      "note": "Content-addressed partition of the 23 distinct current rung knots; not an external challenge benchmark."
+    }
+  ]
+}

@@ -1,0 +1,616 @@
+{
+  "instances": [
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:08ac9cc40bc714d49f904515ca30be716d2a6f9d8c5752ea450fd0c3d0ada219",
+      "known_unknotting_number": 1,
+      "payload": {
+        "strands": 3,
+        "word": [
+          -1,
+          2,
+          1,
+          -2,
+          1,
+          2,
+          2,
+          -1,
+          2,
+          1
+        ]
+      },
+      "source_id": "R(3,10)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:f243676c2eacb2e51aaad362a487ccb304f51473d370b7ad83aee5cabaca18ee",
+      "known_unknotting_number": 1,
+      "payload": {
+        "strands": 3,
+        "word": [
+          1,
+          2,
+          1,
+          1,
+          -2,
+          -1,
+          -1,
+          -1,
+          -2,
+          1,
+          2,
+          -1
+        ]
+      },
+      "source_id": "R(3,12)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:56ca662991219737ee759a247a77aa49b91cfdf4c4f615364627d3f282aa06b6",
+      "known_unknotting_number": 2,
+      "payload": {
+        "strands": 3,
+        "word": [
+          -1,
+          2,
+          -1,
+          2,
+          -1,
+          -2,
+          1,
+          1,
+          2,
+          2,
+          2,
+          2,
+          1,
+          2
+        ]
+      },
+      "source_id": "R(3,14)#0",
+      "split": "validation"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:6f3348ef6f0b2e71c15cec31f853fcf0e671e31bb9620f32cf230fe37a9a2896",
+      "known_unknotting_number": 4,
+      "payload": {
+        "strands": 3,
+        "word": [
+          -1,
+          -1,
+          -2,
+          -2,
+          -1,
+          -2,
+          -2,
+          -2,
+          -2,
+          -2,
+          1,
+          -2,
+          -2,
+          -1,
+          2,
+          2
+        ]
+      },
+      "source_id": "R(3,16)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:5c193c9dd7cf7c1cdfaf51c97c4ecce4f1349cec41594f967ecb1ba52905ac6c",
+      "known_unknotting_number": 2,
+      "payload": {
+        "strands": 3,
+        "word": [
+          1,
+          1,
+          2,
+          2,
+          1,
+          1,
+          2,
+          1,
+          -2,
+          -1,
+          2,
+          1,
+          -2,
+          -2,
+          -1,
+          2,
+          1,
+          -2
+        ]
+      },
+      "source_id": "R(3,18)#0",
+      "split": "validation"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:7544a4908f1b322e5faee2110d15514b9c9563a96e784db6e59c67b9f9f532b9",
+      "known_unknotting_number": 1,
+      "payload": {
+        "strands": 3,
+        "word": [
+          -1,
+          -1,
+          -2,
+          -2,
+          1,
+          1,
+          -2,
+          1,
+          -2,
+          1,
+          1,
+          -2,
+          1,
+          1,
+          2,
+          1,
+          -2,
+          -1,
+          -2,
+          1
+        ]
+      },
+      "source_id": "R(3,20)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:fd6152206c9c9fad5f4e09c8bfb0472316a14408b8cacd31f7b42e6c01bd2534",
+      "known_unknotting_number": 0,
+      "payload": {
+        "strands": 3,
+        "word": [
+          1,
+          2,
+          -1,
+          -2,
+          -2,
+          1,
+          2,
+          1,
+          2,
+          2,
+          2,
+          1,
+          2,
+          -1,
+          -2,
+          -1,
+          -2,
+          1,
+          1,
+          -2,
+          -2,
+          -1
+        ]
+      },
+      "source_id": "R(3,22)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:149ea6d1f85e81858d52b043c9512f9c6f51616712edc8f6415bdfd62fdb170d",
+      "known_unknotting_number": 2,
+      "payload": {
+        "strands": 3,
+        "word": [
+          2,
+          -1,
+          -1,
+          -1,
+          -2,
+          1,
+          1,
+          1,
+          2,
+          1,
+          1,
+          2,
+          -1,
+          -1,
+          -2,
+          -1,
+          -1,
+          2,
+          2,
+          2,
+          2,
+          2,
+          1,
+          1
+        ]
+      },
+      "source_id": "R(3,24)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:853414caa2bd2bca599ec777e6d38c8622e7b5d07dcdd31c505ffc11353bcdb3",
+      "known_unknotting_number": 1,
+      "payload": {
+        "strands": 5,
+        "word": [
+          3,
+          -2,
+          4,
+          1,
+          1,
+          -2,
+          -3,
+          -2,
+          3,
+          1
+        ]
+      },
+      "source_id": "R(5,10)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:a26766327a7a157c70633406c93aba3707b7cd5a302234434562a52755807a10",
+      "known_unknotting_number": 2,
+      "payload": {
+        "strands": 5,
+        "word": [
+          1,
+          -4,
+          -2,
+          -1,
+          -1,
+          2,
+          -4,
+          -3,
+          4,
+          3,
+          -4,
+          2
+        ]
+      },
+      "source_id": "R(5,12)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:0d16fd4c53341b37485213a639b9dbfdb39d9eedeab5a14820a9f9f1b7bd9bc7",
+      "known_unknotting_number": 2,
+      "payload": {
+        "strands": 5,
+        "word": [
+          1,
+          4,
+          3,
+          2,
+          -4,
+          2,
+          4,
+          -3,
+          2,
+          2,
+          4,
+          -3,
+          2,
+          4
+        ]
+      },
+      "source_id": "R(5,14)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:32623cef908216e03e5d5c0ab5ef0b7c2c47081e6c9414989feb53b36db8dcc6",
+      "known_unknotting_number": 1,
+      "payload": {
+        "strands": 5,
+        "word": [
+          1,
+          4,
+          -1,
+          -1,
+          -3,
+          -3,
+          1,
+          1,
+          4,
+          3,
+          -1,
+          3,
+          4,
+          -1,
+          -3,
+          2
+        ]
+      },
+      "source_id": "R(5,16)#0",
+      "split": "test"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:a48efc408b51cfd5625422e97b8afe08eb0d67fdef96faf2b86d3bcbbd5624b7",
+      "known_unknotting_number": 1,
+      "payload": {
+        "strands": 5,
+        "word": [
+          -3,
+          -4,
+          -2,
+          3,
+          1,
+          4,
+          -3,
+          -1,
+          3,
+          -1,
+          3,
+          3,
+          4,
+          -2,
+          -1,
+          -2,
+          -2,
+          -4
+        ]
+      },
+      "source_id": "R(5,18)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:e2247f8a483528df5c72d10c6ba29968d4dc3ec00d02743404a10a22c5cae258",
+      "known_unknotting_number": 3,
+      "payload": {
+        "strands": 5,
+        "word": [
+          -4,
+          3,
+          -1,
+          -1,
+          -4,
+          -2,
+          -4,
+          -4,
+          -4,
+          1,
+          2,
+          4,
+          -2,
+          -1,
+          -1,
+          -3,
+          -4,
+          -1,
+          -4,
+          1
+        ]
+      },
+      "source_id": "R(5,20)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:3d53db54d9c7b6f5c128b61e380fc025a0d43b5dd4a00130b2fc251a6dfc47fc",
+      "payload": {
+        "strands": 5,
+        "word": [
+          4,
+          -2,
+          -4,
+          3,
+          -1,
+          -3,
+          -4,
+          -1,
+          -1,
+          -2,
+          4,
+          -2,
+          -4,
+          -2,
+          -4,
+          -3,
+          4,
+          3,
+          -4,
+          -4,
+          3,
+          2
+        ]
+      },
+      "source_id": "R(5,22)#0",
+      "split": "test"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:14334750856286508917a50c96f394105cb1bcc99d3666ed9e81f2d0060564c2",
+      "payload": {
+        "strands": 5,
+        "word": [
+          2,
+          4,
+          -3,
+          -2,
+          -1,
+          -2,
+          -1,
+          4,
+          -3,
+          -1,
+          -3,
+          -3,
+          -3,
+          1,
+          1,
+          -2,
+          -4,
+          -1,
+          4,
+          -2,
+          -1,
+          -2,
+          4,
+          -1
+        ]
+      },
+      "source_id": "R(5,24)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:731edb37b6a5bf02f5285b93888fe3bc5771cf527a43a368c2978a0ac1b88309",
+      "payload": {
+        "strands": 5,
+        "word": [
+          4,
+          -2,
+          -2,
+          -3,
+          2,
+          4,
+          1,
+          1,
+          1,
+          1,
+          -2,
+          -2,
+          -4,
+          2,
+          -3,
+          -1,
+          -2,
+          -2,
+          -2,
+          -2,
+          -3,
+          4,
+          2,
+          3,
+          4,
+          4
+        ]
+      },
+      "source_id": "R(5,26)#0",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:e7c15a9b13e8d0ec34ddb999fc36c0823fb2c0e46c526c59aff8b23072506951",
+      "known_unknotting_number": 1,
+      "payload": {
+        "strands": 2,
+        "word": [
+          1,
+          1,
+          1
+        ]
+      },
+      "source_id": "T(2,3)",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:14d66dcf71cf605d4aa24fa1bfbf2e90ad7fcb66edf5345b9cc15ae11558a7d5",
+      "payload": {
+        "strands": 2,
+        "word": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "source_id": "T(2,5)",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:145b79708489c4ae3012d22cab0d02b5f2f8d553c7ed28fe269fac0bfaaa86ef",
+      "known_unknotting_number": 4,
+      "payload": {
+        "strands": 2,
+        "word": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "source_id": "T(2,9)",
+      "split": "validation"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:e0b0147996cc3327e1b3f9f52db689c459f53de5e9417f932afda4c6d94730c4",
+      "known_unknotting_number": 3,
+      "payload": {
+        "strands": 3,
+        "word": [
+          1,
+          2,
+          1,
+          2,
+          1,
+          2,
+          1,
+          2
+        ]
+      },
+      "source_id": "T(3,4)",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:3a0fc1eb3b128fad79f74f97ac54c422a0619553063af6945778c4ff0e8cf1ca",
+      "known_unknotting_number": 4,
+      "payload": {
+        "strands": 3,
+        "word": [
+          1,
+          2,
+          1,
+          2,
+          1,
+          2,
+          1,
+          2,
+          1,
+          2
+        ]
+      },
+      "source_id": "T(3,5)",
+      "split": "train"
+    },
+    {
+      "encoding": "braid-word-v1",
+      "instance_id": "braid:98036447526a796c8f89c010e81af3850f62df59425f06a92fd2b76d3db7cc58",
+      "known_unknotting_number": 0,
+      "payload": {
+        "strands": 1,
+        "word": []
+      },
+      "source_id": "unknot",
+      "split": "train"
+    }
+  ],
+  "name": "rf-knots-rungs",
+  "schema": "rf-knots-benchmark-v1",
+  "source": {
+    "note": "23 distinct source knots; rung repetitions are intentionally removed",
+    "path": "docs/rungs.json",
+    "sha256": "669a980d9fdf3e2c5f6e6a5d1f3b8a9ccdf995353ec10eb23d596864c32343da"
+  },
+  "version": "1"
+}

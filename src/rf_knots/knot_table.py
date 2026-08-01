@@ -3,7 +3,9 @@
 The table is `data/knot_table.json`: one entry per tabulated knot up to twelve
 crossings -- Rolfsen through ten, then Hoste-Thistlethwaite -- each carrying a
 braid word and the fingerprint computed *from that word by this repository's own
-code*. That matters more than it sounds. A
+code*. KnotInfo identifiers are canonical (`12n_570`), while the complete
+`identifier_sources` table records the Spherogram spelling (`K12n570`) used to
+obtain each braid. That matters more than it sounds. A
 transcribed table of published polynomials would be a place to make a silent
 mistake, and worse, a place where a convention mismatch -- a mirror, a variable
 substitution -- would look like a failed identification rather than a bug. Every
@@ -36,6 +38,7 @@ from rf_knots.invariants import Invariants
 DATA = Path(__file__).with_name("data")
 TABLE_PATH = DATA / "knot_table.json"
 UNKNOTTING_PATH = DATA / "unknotting_numbers.json"
+SCHEDULED_UNKNOTTING_PATH = DATA / "scheduled_unknotting_numbers.json"
 
 
 @functools.lru_cache(maxsize=1)
@@ -44,6 +47,35 @@ def unknotting_numbers() -> dict:
     if not UNKNOTTING_PATH.exists():
         return {"source": "", "values": {}}
     return json.loads(UNKNOTTING_PATH.read_text())
+
+
+@functools.lru_cache(maxsize=1)
+def scheduled_unknotting_numbers() -> dict:
+    """Exact values attached to deterministic scheduled braid words.
+
+    Names such as ``R(3,18)#0`` identify positions in a pseudorandom stream, not
+    knots.  The stored word and strand count therefore form part of the key: a
+    different seed must not silently inherit the old stream's theorem.
+    """
+    if not SCHEDULED_UNKNOTTING_PATH.exists():
+        return {"source": "", "values": {}}
+    return json.loads(SCHEDULED_UNKNOTTING_PATH.read_text())
+
+
+def scheduled_unknotting_number(
+    name: str,
+    word: tuple[int, ...] | None = None,
+    strands: int | None = None,
+) -> int | None:
+    """Return exact ``u`` for a scheduled source, optionally validating its word."""
+    entry = scheduled_unknotting_numbers()["values"].get(name)
+    if entry is None:
+        return None
+    if word is not None and tuple(entry["word"]) != tuple(word):
+        return None
+    if strands is not None and int(entry["strands"]) != int(strands):
+        return None
+    return int(entry["unknotting_number"])
 
 
 # A knot table starts at the trefoil, because the unknot is not a table entry --
@@ -60,6 +92,13 @@ def load_table() -> dict:
         return {"by_fingerprint": {}, "knots": {"0_1": UNKNOT}, "max_crossings": 0}
     raw = json.loads(TABLE_PATH.read_text())
     raw["knots"].setdefault("0_1", UNKNOT)
+    sources = raw.get("identifier_sources", {})
+    aliases = {
+        source_name: canonical
+        for canonical, names in sources.items()
+        for source_name in names.values()
+    }
+    raw["aliases"] = aliases
     index: dict[str, list[tuple[str, bool]]] = {}
     for name, entry in raw["knots"].items():
         # Every candidate is kept, not just the first. 384 fingerprints in this
@@ -74,8 +113,8 @@ def load_table() -> dict:
         # figure-eight, anything amphichiral -- has the same key both ways round,
         # and registering it twice would report it as ambiguous with itself.
         index.setdefault(mirrored, {}).setdefault(name, mirrored != direct)
-    return {"by_fingerprint": {k: sorted(v.items()) for k, v in index.items()},
-            "knots": raw["knots"], "max_crossings": raw.get("max_crossings", 0)}
+    raw["by_fingerprint"] = {k: sorted(v.items()) for k, v in index.items()}
+    return raw
 
 
 def _key(determinant: int, jones) -> str:
@@ -155,5 +194,16 @@ def _replace(inv: Invariants, **changes) -> Invariants:
 
 
 def lookup(name: str) -> dict | None:
-    """The table's entry for a named knot, or `None`."""
-    return load_table()["knots"].get(name)
+    """The table's entry for a KnotInfo name or a recorded source alias."""
+    table = load_table()
+    canonical = table.get("aliases", {}).get(name, name)
+    return table["knots"].get(canonical)
+
+
+def canonical_name(name: str) -> str | None:
+    """Return the canonical KnotInfo identifier for a known name or alias."""
+    table = load_table()
+    canonical = table.get("aliases", {}).get(name, name)
+    if canonical in table["knots"] or canonical in table.get("identifier_sources", {}):
+        return canonical
+    return None

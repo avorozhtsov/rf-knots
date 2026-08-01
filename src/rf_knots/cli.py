@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
@@ -270,8 +271,69 @@ def knot(word: str, strands: int = 0) -> None:
         typer.echo(f"unknotting number: {inv.unknotting}  (published)")
     elif inv.unknotting_lower is not None:
         typer.echo(f"unknotting number: >= {inv.unknotting_lower}  (from |sigma|/2)")
+    from rf_knots.lower_bounds import claims_for, strongest
+
+    lower_claims = claims_for(inv)
+    lower = strongest(lower_claims)
+    if lower is not None:
+        methods = ", ".join(claim.method for claim in lower_claims if claim.value == lower)
+        typer.echo(f"certified lower   : {lower}  ({methods})")
     for note in inv.notes:
         typer.echo(f"note             : {note}")
+
+
+@app.command("evidence-verify")
+def evidence_verify(path: Path) -> None:
+    """Replay and hash-check every record in an evidence JSONL store."""
+    from rf_knots.evidence import EvidenceStore
+
+    records = EvidenceStore(path).records(skip_torn_last_line=False)
+    witnesses = sum(record.witness is not None for record in records)
+    exact = sum(record.exact_unknotting_number is not None for record in records)
+    typer.echo(f"ok: {len(records)} records, {witnesses} replayable witnesses, {exact} exact u")
+
+
+@app.command("benchmark-check")
+def benchmark_check(path: Path) -> None:
+    """Validate a frozen benchmark manifest and print its split counts."""
+    from rf_knots.benchmarks import BenchmarkManifest
+
+    manifest = BenchmarkManifest.read(path)
+    counts = {split: sum(x.split == split for x in manifest.instances)
+              for split in ("train", "validation", "test")}
+    typer.echo(f"ok: {manifest.name} v{manifest.version}, {len(manifest.instances)} instances")
+    typer.echo(f"splits: {counts}")
+
+
+@app.command("baseline")
+def baseline(
+    name: str,
+    word: str,
+    strands: int = 0,
+    timeout: float = 60.0,
+) -> None:
+    """Run one fixed baseline: snappy, reapr, or regina."""
+    from rf_knots.baselines import BaselineUnavailable, run_reapr, run_regina, run_snappy
+
+    letters = tuple(int(x) for x in word.replace(" ", "").split(",") if x)
+    n = strands or (max((abs(x) for x in letters), default=0) + 1)
+    runners = {
+        "snappy": lambda: run_snappy(letters, n),
+        "reapr": lambda: run_reapr(letters, n, timeout=timeout),
+        "regina": lambda: run_regina(letters, n),
+    }
+    if name not in runners:
+        raise typer.BadParameter("name must be snappy, reapr, or regina")
+    try:
+        result = runners[name]()
+    except BaselineUnavailable as error:
+        typer.echo(f"unavailable: {error}", err=True)
+        raise typer.Exit(2) from error
+    typer.echo(f"baseline         : {result.name}")
+    typer.echo(f"status           : {result.status}")
+    typer.echo(f"wall clock       : {result.elapsed_seconds:.6f}s")
+    typer.echo(f"crossings        : {result.input_crossings} -> {result.output_crossings}")
+    typer.echo(f"detail           : {result.detail}")
 
 
 if __name__ == "__main__":

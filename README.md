@@ -112,6 +112,11 @@ unknotting number has been 2 since the knot tables. Every rung is worked out in
 [docs/rungs.md](docs/rungs.md), with the invariants in
 [docs/rungs-invariants.md](docs/rungs-invariants.md).
 
+The bundled table uses KnotInfo identifiers as canonical names: for example,
+`12n_570`. Its committed metadata records the KnotInfo database URL, retrieval
+date and snapshot hash, together with the corresponding Spherogram identifier
+(`K12n570`) used to obtain each braid. Runtime lookup accepts either spelling.
+
 ## Layout
 
 | Path | Contents |

@@ -20,6 +20,7 @@ is one fewer number to get wrong.
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -27,6 +28,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from rf_knots.invariants import jones_polynomial, to_pairs  # noqa: E402
+
+KNOTINFO = {
+    "name": "KnotInfo",
+    "url": "https://knotinfo.org/",
+    "database_url": "https://knotinfo.org/knotinfo_data_complete.xls",
+    "retrieved_at": "2026-08-01",
+    "sha256": "bd454dcb6bcd5effe205b27ca9de172bb21cf87ce190e15f870e1b07a714ccbe",
+    "scope": ("identifier correspondence only; braid representatives come from Spherogram "
+              "and invariants are computed by rf-knots"),
+}
 
 # Published unknotting numbers deliberately live in
 # `src/rf_knots/data/unknotting_numbers.json` rather than in this table. They are
@@ -57,6 +68,15 @@ def census_names(spherogram):
                 index += 1
 
 
+def knotinfo_name(spherogram_name: str) -> str:
+    """Convert Spherogram's `K12n570` spelling to KnotInfo's `12n_570`."""
+    match = re.fullmatch(r"K(\d+)([an])(\d+)", spherogram_name)
+    if match is None:
+        return spherogram_name
+    crossings, kind, index = match.groups()
+    return f"{crossings}{kind}_{index}"
+
+
 # The Kauffman bracket is evaluated in TL_n, whose dimension is Catalan(n): 429
 # at 7 strands, 1430 at 8, 4862 at 9, 208012 at 12. The hundred knots whose
 # spherogram braid needs nine strands cost more than the other 2870 put
@@ -70,15 +90,25 @@ MAX_STRANDS = 8
 def main() -> int:
     import spherogram
 
-    out = {"knots": {}, "max_crossings": 12, "skipped": []}
+    out = {
+        "schema_version": 2,
+        "canonical_names": "KnotInfo",
+        "catalogue_provenance": KNOTINFO,
+        "identifier_sources": {},
+        "knots": {},
+        "max_crossings": 12,
+        "skipped": [],
+    }
     started = time.time()
     failures = []
     names = list(rolfsen_names()) + list(census_names(spherogram))
     print(f"{len(names)} knots to fingerprint", flush=True)
 
-    for position, (name, crossings) in enumerate(names, start=1):
+    for position, (spherogram_name, crossings) in enumerate(names, start=1):
+        name = knotinfo_name(spherogram_name)
+        out["identifier_sources"][name] = {"KnotInfo": name, "Spherogram": spherogram_name}
         try:
-            word = tuple(int(x) for x in spherogram.Link(name).braid_word())
+            word = tuple(int(x) for x in spherogram.Link(spherogram_name).braid_word())
             strands = max((abs(x) for x in word), default=0) + 1
             if strands > MAX_STRANDS:
                 out["skipped"].append({"name": name, "strands": strands})

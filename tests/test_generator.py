@@ -215,7 +215,7 @@ def test_a_positive_braid_with_u_zero_really_is_the_unknot() -> None:
 # -- random mixed-sign knots ---------------------------------------------------
 
 
-def test_random_knots_are_knots_and_carry_no_label() -> None:
+def test_noncanonical_random_knots_are_knots_and_carry_no_label() -> None:
     """The point of this family is the absence of structure.
 
     Torus knots and positive braids are the knots we can label, and every one of
@@ -226,7 +226,7 @@ def test_random_knots_are_knots_and_carry_no_label() -> None:
     from rf_knots.generator import UNKNOWN_UNKNOTTING, random_braid_sources
     from rf_knots.reference import free_reduce, num_components
 
-    sources = random_braid_sources(5, (10, 12), per_grade=2, seed=0)
+    sources = random_braid_sources(5, (10, 12), per_grade=2, seed=4)
     assert sources
     for source in sources:
         assert source.unknotting_number == UNKNOWN_UNKNOTTING
@@ -238,6 +238,36 @@ def test_random_knots_are_knots_and_carry_no_label() -> None:
         assert tuple(free_reduce(list(source.word))) == source.word
         assert len(source.word) == source.crossing_number
         assert source.strands >= 3, "on two strands a reduced word is sigma_1^c"
+
+
+def test_canonical_scheduled_random_knots_receive_word_validated_exact_u() -> None:
+    from rf_knots.generator import UNKNOWN_UNKNOTTING, random_braid_sources
+    from rf_knots.knot_table import scheduled_unknotting_number
+
+    sources = random_braid_sources(
+        5,
+        (10, 12, 14, 16, 18),
+        per_grade=1,
+        seed=0,
+    )
+    by_name = {source.name: source for source in sources}
+    expected = {
+        "R(3,10)#0": 1,
+        "R(5,10)#0": 1,
+        "R(3,12)#0": 1,
+        "R(5,12)#0": 2,
+        "R(3,14)#0": 2,
+        "R(5,14)#0": 2,
+        "R(3,16)#0": 4,
+        "R(5,16)#0": 1,
+        "R(3,18)#0": 2,
+        "R(5,18)#0": 1,
+    }
+    assert {name: by_name[name].unknotting_number for name in expected} == expected
+    source = by_name["R(3,18)#0"]
+    assert scheduled_unknotting_number(source.name, source.word, source.strands) == 2
+    assert scheduled_unknotting_number(source.name, source.word[::-1], source.strands) is None
+    assert UNKNOWN_UNKNOTTING not in expected.values()
 
 
 def test_random_knots_are_deterministic_and_seed_dependent() -> None:
