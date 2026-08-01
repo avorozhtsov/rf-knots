@@ -30,6 +30,7 @@ INSERT is indexed as ``3L + ((g-1)*2 + s)*L + p`` with ``g in 1..N-1`` and
 
 from __future__ import annotations
 
+import functools
 from dataclasses import dataclass
 
 import numpy as np
@@ -70,9 +71,22 @@ class ActionSpec:
     def num_generators(self) -> int:
         return self.max_strands - 1
 
-    @property
+    @functools.cached_property
     def starts(self) -> np.ndarray:
-        """Start index of each kind's block, length ``NUM_KINDS``."""
+        """Start index of each kind's block, length ``NUM_KINDS``.
+
+        Cached, and the reason is measured rather than theoretical. `encode` calls
+        `start_of`, which calls this, so a plain property rebuilds a Python list
+        and runs `cumsum` on **every action encoded** -- and every legality check
+        in the serial environment encodes actions. A `py-spy` profile of a live
+        training arm put 5% of its wall clock in here, allocating an array that
+        depends on nothing but `max_len` and `max_strands`.
+
+        The array is returned read-only. It is now shared between callers rather
+        than freshly built for each, and a caller that wrote through it would
+        corrupt the action space for everyone holding the same spec -- an error
+        worth raising at the write rather than debugging later.
+        """
         length = self.max_len
         insert_block = 2 * length * self.num_generators
         sizes = [
@@ -86,7 +100,9 @@ class ActionSpec:
             1,  # PASS
             length,  # CROSSING_CHANGE
         ]
-        return np.concatenate([[0], np.cumsum(sizes)]).astype(np.int32)
+        offsets = np.concatenate([[0], np.cumsum(sizes)]).astype(np.int32)
+        offsets.flags.writeable = False
+        return offsets
 
     @property
     def num_actions(self) -> int:
