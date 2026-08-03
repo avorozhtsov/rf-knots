@@ -14,12 +14,23 @@ direction, it is an enthusiasm.
 |---|---|
 | 1 | [An adaptive schedule, ordered by what the networks already believe](#1-an-adaptive-schedule-ordered-by-what-the-networks-already-believe) |
 | 2 | [An arena between solvers, with recombination](#2-an-arena-between-solvers-with-recombination) |
-| 3 | [A challenge set that is actually unlabelled](#3-a-challenge-set-that-is-actually-unlabelled) |
-| 4 | [Every player learns from the best solution anyone found](#4-every-player-learns-from-the-best-solution-anyone-found) |
+| 3 | [Every player learns from the best solution anyone found](#3-every-player-learns-from-the-best-solution-anyone-found) |
 
-They are not independent: 4 homogenises the population that 1 and 2 need to
-disagree, and all four need the same store, which is why the last section is about
+They are not independent: 3 homogenises the population that 1 and 2 need to
+disagree, and all three need the same store, which is why the last section is about
 that rather than about any of them.
+
+[16-scientists-collaboration.md](16-scientists-collaboration.md) turns the three
+directions into one controlled programme: a moving frontier of knot
+representations, diverse rung-18 scientists, calibrated per-scientist scheduling,
+verified best-witness exchange, periodic improvement attempts, and compute-matched
+static, no-sharing, supervised, and single-scientist controls.
+
+The first corrected 200-round, ratio-10 engineering seed gives a narrower result:
+sharing improved held-out coverage under both schedules, but adaptive ordering was
+slightly worse than static ordering on identical solved-task sets. The bank is not
+an all-`u=1` set: independent lower bounds certify `u >= 2` for 87/200 BASE
+identities. See [the exact paired results and execution gate](16-scientists-collaboration.md#corrected-ratio-10-four-arm-pilot-2026-08-03).
 
 ---
 
@@ -186,102 +197,13 @@ the engineering, no learned router will.
 reason — complementary on paper, correlated in practice. The per-instance re-score
 in 2 measures exactly this and should be run first.
 
-### 2.2 Fixed window/scan/tape triad
-
-The first permanent composite is `s-triad-wst`: three independently trained,
-initially frozen towers whose roles are deliberately different:
-
-* `s-window-128` supplies positional local editing and may act anywhere in its
-  seven-cell window;
-* `s-scan-gru` supplies a forced full-necklace scan and global recurrent summary;
-* `s-tape4` supplies a persistent four-symbol annotation tape transported through
-  braid rewrites.
-
-The experiment is pinned to the completed-rung snapshots visible when it was
-approved on 2026-08-01. These identities are part of the candidate definition,
-not replaceable aliases for "latest":
-
-| tower | completed rung | checkpoint SHA-256 |
-|---|---:|---|
-| `s-window-128` | 18 | `e6d4285f7b268f123f683d80e6cfcf7daef0b1d8145f7b559054ce19e6a8949c` |
-| `s-scan-gru` | 10 | `ed49509639dc198575c0ec919b000716bfb983e7c0db21d38cfc65d6214ab0b3` |
-| `s-tape4` | 8 | `ddf87bd8a019bc721567123cfd5d62596298cfe9363e1c188dfa88e5fd18697f` |
-
-The child inherits **no rung credit** from them. Before training, it is evaluated
-from rung 0 upward; the first rung that fails the ordinary solve-rate, worst-ratio,
-or known-unknotting-number criterion is its recommended training start.
-
-The frozen two-seed sweep fixed that start at **rung 10, `T(3,4)+2`**. Both
-seeds cleared rungs 0--7 at the exact known crossing optimum. At rung 8 their
-pooled `A:B=1000:1` cost was 42 crossing changes over 19 solves, or 2.21 against
-`u=2`, within the 0.25 tolerance; pooled solve rate across all ratios was 67/72.
-Rung 9 was exact at 3.00. At rung 10 the two crossing-dominant means were 3.50
-and 3.25 against `u=3`, averaging 3.375 and failing the tolerance. The deployed
-ladder still starts the child at rung 0 so these clearances are reproduced in its
-own log; rung 10 is where useful mixer training is expected to begin.
-
-Raw logits cannot be averaged directly: each independently trained softmax head is
-free to choose its own additive offset and temperature. For each tower, centre its
-represented logits and divide by their RMS. For action `a`, let `S(a)` be the
-towers that actually represent it, and let a zero-initialized router produce
-scores `z_i(a)` from the concatenated penultimate features. The fused logit is
-
-```
-F(a) = sum_{i in S(a)} softmax_{S(a)}(z(a))_i * normalized(F_i(a)) + R(a)
-```
-
-where the residual head `R` is also initialized to zero. Thus the initial policy
-is exactly the average of the available normalized opinions: an action gets no
-automatic advantage merely because three towers rather than one can name it.
-Missing actions contribute nothing rather than a misleading zero logit. The same
-features feed zero-residual fusion of the advanced solve-probability, conditional
-crossing-change, and conditional-move estimates.
-
-The shared semantic action space is the union of the parents' actions. In
-particular, **shift while preserving the tape** is distinct from shifts that write
-symbols 0 through 3: writing symbol 0 erases a mark and is not the non-tape
-parents' old shift. Freeze all three towers and their BatchNorm statistics during
-the first mixer-only phase. Only after the frozen frontier and mixer warm-up are
-measured may the policy/value heads be unfrozen at a smaller learning rate; trunk
-unfreezing is a separate ablation.
-
-**What would kill it.** Frozen averaging that fails earlier than the weakest parent;
-a mixer that improves the training prefix but loses solve rate on either parent's
-specialty instances; or inference cost high enough that matched-compute search
-performs better with one parent. Compare the triad against all three pinned parent
-snapshots, not against subsequently promoted replacements.
+A concrete window/scan/tape recombination attempt, including its pinned checkpoints
+and evaluation protocol, is recorded separately in
+[15-recombination-triad-attempt.md](15-recombination-triad-attempt.md).
 
 ---
 
-## 3. A challenge set that is actually unlabelled
-
-**The idea.** Filter generated instances on their *invariants* rather than on a
-shallow unknotting search, so the unlabelled half of the ladder is unlabelled.
-
-**Why here.** It is not speculative; it is repair. The generator's filters are "one
-component" and "a depth-4 search failed to unknot it", and
-[../docs/rungs.md](../docs/rungs.md) shows what got through: a 22-letter word that
-is the unknot, six connected sums, and five knots with published unknotting
-numbers. 19 of the 23 rung knots have an exact `u`. The challenge set is mostly
-calibration set wearing a disguise.
-
-**What it needs.** `rf_knots.invariants` already computes the fingerprint and names
-the knot against 2870 tabulated ones. The generator would reject on identification
-and on decomposition, and keep what survives.
-
-**Cheapest deciding experiment.** Generate a thousand candidate words at each
-crossing count and count how many survive the invariant filter. If genuinely
-unlabelled knots are common at 20+ letters, the fix is a filter. If they are rare,
-the interesting question changes: the ladder should *attach* the published `u` and
-grow the calibration set, which is the scarce resource anyway.
-
-**What would kill it.** Nothing kills it — the measurement is worth having either
-way. It is here because it is a fork in what the ladder is for, and that is a big
-step even though the code is small.
-
----
-
-## 4. Every player learns from the best solution anyone found
+## 3. Every player learns from the best solution anyone found
 
 **The idea.** After each rung the population has, between them, a best solution for
 each knot. Train every network against it, not only the one that found it. The
@@ -478,14 +400,14 @@ diversity, which the coverage metric in direction 2 detects directly.
 
 ---
 
-## What these four have in common
+## What these three have in common
 
-All four want the same missing object: **per-instance results, retained across runs
+All three want the same missing object: **per-instance results, retained across runs
 and across arms.** The schedule in 1 orders instances by what players believe about
 them and needs `(player, instance, budget, predicted value, outcome)` rows to
-estimate trust at all; the arena in 2 compares arms instance by instance; 3 decides
-which instances should exist; and 4 needs the *witness* — the move sequence, not
-just its length — attached to each best-known bound.
+estimate trust at all; the arena in 2 compares arms instance by instance; and 3
+needs the *witness* — the move sequence, not just its length — attached to each
+best-known bound.
 
 Today the ladder records a rung number and an average. Building that store is the
-prerequisite for all four, it is small, and it should happen first.
+prerequisite for all three, it is small, and it should happen first.

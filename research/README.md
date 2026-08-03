@@ -22,7 +22,10 @@ order-of-magnitude estimates and marked as such.
 | [09-vs-learning-to-unknot.md](09-vs-learning-to-unknot.md) | Would this supersede arXiv:2010.16263? What the real contribution is |
 | [10-invariants-and-representations.md](10-invariants-and-representations.md) | Unknotting number as a graph distance; where invariants help and where they are useless; mosaics vs. grid diagrams |
 | [12-serial-formulation.md](12-serial-formulation.md) | The serial/Turing formulation: why it scored 0 then 9, the missing head register and how big it must be, what "zero human knowledge" actually excludes, and knot equivalence as a two-tape machine |
-| [13-directions.md](13-directions.md) | The big next moves, unscheduled: an adaptive schedule ordered by the value heads, an arena between solvers with recombination, and a challenge set that is actually unlabelled |
+| [13-directions.md](13-directions.md) | The big next moves, unscheduled: an adaptive schedule ordered by the value heads, an arena between solvers with recombination, and cross-player learning from verified best solutions |
+| [14-potential-cost-shaping.md](14-potential-cost-shaping.md) | Whether exposing exact accumulated objective cost fixes the serial policy's ratio inversions; two-seed controlled ablation and verdict |
+| [15-recombination-triad-attempt.md](15-recombination-triad-attempt.md) | A concrete window/scan/tape recombination attempt with pinned checkpoints, fusion design, and failure criteria |
+| [16-scientists-collaboration.md](16-scientists-collaboration.md) | A corrected 2,700-representation collaboration experiment combining adaptive scheduling, a diverse solver population, and verified best-solution sharing with causal controls |
 
 Note 11 was merged into [06](06-network-growth.md): it was the same question, and the survey
 reads wrong without the measurement that followed it. Notes 03, 05 and 07 carry a header saying
