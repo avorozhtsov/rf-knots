@@ -782,6 +782,254 @@ run, if explicitly approved, should repeat the four-arm ratio-10 experiment over
 three paired seeds and treat ordering as a possibly negative intervention. No
 cloud resources were rented for this engineering run.
 
+### Matched distillation-degradation gate, 2026-08-03
+
+The poor final BASE200 retention required a direct intervention test. At the
+round-48 static-sharing transaction, before the next scheduled update, each
+scientist had at least ten admitted receiver-native witnesses. The checkpoint,
+optimizer, and replay were forked under three minibatch seeds into no-update,
+native-RL, one-witness, and ten-witness treatments. Witness arms used either full
+policy imitation or auxiliary-only solve/upper-bound supervision. Every trained
+fork received eight optimizer steps with batch size 32. Treatment batches replaced
+three positions from the matched native batch; shared episodes were sampled
+uniformly before positions so trajectory length did not determine weight.
+
+At 16 evaluation simulations, native RL alone was worse than the untouched
+checkpoint in all three seeds. BASE50 capped-loss deltas were +66, +399, and +203,
+with zero, two, and one lost portfolio solves. NEW70 deltas were +22, +55, and +22,
+with unchanged coverage. Thus the current native update is itself unsafe; sharing
+is not the sole cause of the long-run regression.
+
+One auxiliary-only witness was the best sharing treatment on transfer: relative
+to its seed-matched native-RL control, NEW70 capped loss improved by 11, 11, and 16
+with identical portfolio coverage. It nevertheless failed retention: BASE50
+deltas were +157, -65, and +175, and two seeds lost one solve. Ten auxiliary-only
+witnesses were clearly worse, losing `12n_684` on NEW70 in two seeds and producing
+median BASE50 loss delta +167. Full-policy variants also failed the retention gate.
+No distillation treatment passed the preregistered requirement of no coverage or
+capped-loss regression on both splits in every seed.
+
+**Decision:** stop the current RL and distillation update rule; keep CPU-32 and the
+2,700 run blocked. Do not merely change ten shared witnesses to one and continue.
+The next local gate should test a rollback-guarded candidate with one
+auxiliary-only witness, one of 32 batch slots, success-balanced native rehearsal,
+four optimizer steps, and learning rate 0.00025 instead of 0.001. Evaluate a
+frozen BASE retention canary per scientist and keep the pre-update checkpoint when
+the candidate is inferior. NEW70 must not participate in online selection or
+rollback; it remains the final transfer endpoint.
+
+### Corrected budget, held-out identities, and 128-simulation result
+
+The follow-up found that the budget input had encoded
+`remaining_budget / episode_cap`, so every fresh episode presented `1.0`
+regardless of its absolute cap. Objective-cap exhaustion was also stored as an
+ordinary failed policy/value target. Both are now corrected: budget is scaled by
+the fixed global cap, capped trajectories are censored from policy/value
+training, and collaboration replay samples episodes uniformly with balanced
+native successes and a hard shared fraction.
+
+An explicit-source audit identified `T(3,5)` as BASE item `10_124` and `T(3,4)`
+as NEW70 item `8_19`. The corrected NEW70 replaces `8_19` with same-quartile
+`12n_683`. The bundled table cannot identify `R(5,12)#0`, although its exact
+braid word is absent, so this is disjoint from all *identified* ladder sources,
+not a proof against every possible identity collision.
+
+The old portfolios were reevaluated once per representation at 128 simulations:
+
+| portfolio | BASE200 solved / capped loss | corrected NEW70 solved / capped loss |
+|---|---:|---:|
+| initial | **29 / 46,765** | **8 / 17,063** |
+| static sharing final | 27 / 47,251 | 7 / 17,094 |
+| static no-sharing final | 27 / 47,694 | 7 / 17,116 |
+
+On corrected NEW70 the two final arms solved the exact same seven items; initial
+also solved `11a_14`. On BASE, final sharing and no-sharing intersected on 25
+items. Sharing-only successes were `11n_27`, `11n_46`; no-sharing-only successes
+were `11n_76`, `11n_9`. Relative to initial, sharing lost `11a_24` and `11n_76`;
+no-sharing gained `11n_9` but lost `11a_24`, `11n_27`, and `11n_46`. BASE is not
+a clean endpoint because it contains ladder identity `10_124`. Deeper search
+therefore confirms the old-training regression on the corrected transfer set.
+
+The repaired 50-round static-sharing run was forked at round 48 into `pre`,
+matched `RL0`, and one auxiliary-only witness. The fork used three minibatch
+seeds, four steps, one shared slot of 32, and learning rate 0.00025. At 128
+simulations D1-aux never changed portfolio coverage relative to its RL0 control,
+but its capped-loss deltas were:
+
+| split | seed 0 | seed 1 | seed 2 |
+|---|---:|---:|---:|
+| BASE50 | +2 | +13 | -2 |
+| corrected NEW70 | -11 | +22 | +11 |
+
+It fails the all-seeds non-inferiority gate. RL0 versus untouched `pre` gained
+two BASE50 successes in every seed and improved capped loss by 378--382, but its
+NEW70 deltas were +22, -86 with one added solve, and +33. Native adaptation can
+help the rehearsal distribution, but transfer is seed-unstable.
+
+This also explains why rung-18 solve rates above 90% coexist with low one-shot
+coverage. Each ladder iteration runs eight self-play episodes from one source
+family and 96 optimizer steps; candidates generally stay roughly ten or more
+iterations, then the reported solve rate pools 16 evaluation episodes per ratio.
+The portfolio test gives each frozen scientist one attempt per heterogeneous
+representation with no local update. These are intensive within-task adaptation
+and one-shot transfer, respectively.
+
+**Corrected decision:** keep CPU-32 and the 2,700 run blocked. The next local gate
+is a rapid-adaptation test on a small identified-source-disjoint bank: create a
+fresh disposable fork per task, run `F=5` current-representation iterations plus
+`F_old=1` iteration on one distinct old BASE representation, and compare against
+the `5+0` ablation and frozen deeper MCTS matched by measured network evaluations
+and wall time. Start with ten BASE development tasks after removing identified
+ladder identities and `s-window-128`; expand to 20 tasks and the three-scientist
+portfolio only if `5+1` beats both controls.
+Discard the fork after the task. A rollback rule may consult BASE retention only;
+corrected NEW70 remains a terminal endpoint.
+
+The first attempted 200-item rapid-adaptation expansion is invalid and must not
+be cited. It loaded `s-window-128/stage22-after.pt`, an unpromoted checkpoint
+whose embedded result was 0.0 solve rate after 100 capped iterations, rather
+than the last promoted `stage21-after.pt`. A fresh check of the promoted
+snapshot solved 12/12 held-out rung-21 instances at ratio 10 and 128
+simulations. The runner now rejects unpromoted checkpoints and requires this
+promoted-rung regression gate before starting. Passing that gate does not imply
+high BASE coverage: the rung metric is measured on generated representations
+of the rung source family, whereas BASE contains unrelated table-knot
+identities and presentations. Therefore the corrected experiment returns to
+the ten-task paired gate before any 200-item expansion.
+
+The corrected paired gate used an outcome-blind, identified-source-disjoint
+BASE20 bank: five 3-strand, five 4-strand, and ten 5-strand presentations. Each
+of three seeds compared frozen compute-matched `5+1` search, trained `5+0`, and
+trained `5+1` with aligned target RNG streams. Frozen search solved 7/20 in
+every seed; both trained arms solved 6/20 in every seed. All trained solves were
+already present in the first target iteration, so there were zero
+post-training rescues. Frozen search alone found `11n_9` later in every seed.
+Trained `5+1` worsened capped L10 versus frozen by +215, +206, and +235. Its
+rehearsal retention was 1/20, 2/20, and 0/20 versus frozen 3/20, 2/20, and
+0/20. This fails the learning gate and blocks the adaptive 200 experiment.
+
+The original remaining-objective-budget path is not ready. The channel itself
+is encoded correctly: seven requested caps map to inputs from 0.023 through
+1.0. But the migrated stage-21 head produced exactly the same `p(solve)` at
+every cap for every BASE20 item. The training artifact contains 1,077 eligible
+solve-head positions, all positive and none negative. BASE20 calibration is
+poor: mean `p(solve)` 0.612 versus observed 0.35, Brier 0.330, log loss 1.349.
+Cap-exhausted attempts were censored out of solve loss, while auxiliary gradients
+did not reach the zero-initialized encoder input. Therefore predicted-loss caps
+and early stopping remain disabled for that checkpoint.
+
+The first repaired implementation is deliberately limited to `s-window-128`.
+Cap exhaustion is a negative label for `p(solve within remaining L)` but remains
+masked from policy, scalar-value, `cc`, and move targets. Solve loss now trains
+the shared body and encoder; cost losses stay detached. Four ensemble members
+predict `cc` and moves first, the network constructs `L=A*cc+B*moves` exactly,
+and a residual solve branch receives shared features, remaining budget, `cc`,
+moves, and `L`. Zero-initialized skips carry remaining budget directly to the
+shared body, scalar value, cost heads, and solve branch. Failed restart attempts
+are retained and sampled across cap strata, and paired copies of the same state
+enforce nondecreasing solve probability as budget increases.
+
+Migration is function-preserving for policy, scalar value, solve probability,
+`cc`, and moves. The original rung-21 checkpoint still solved 12/12 on its native
+regression after the code change. In a five-knot easy-curriculum smoke test at
+caps 4, 7, 14, 35, and 704, the first concentrated update exposed BatchNorm drift
+and was rolled back. Freezing running statistics and reducing only budget
+fine-tuning to learning rate 0.00025 made all five training knots monotone and
+budget-sensitive while retaining 6/6 on the promoted rung; conditional cost there
+changed from 5.00 crossings/18.00 moves to 4.67/17.83. This is not a held-out
+admission result. Keep predicted caps disabled until source-disjoint calibration
+and retention pass. If transfer from the promoted model fails that gate, train
+the same `s-window-128` architecture from the earliest easy representations
+before changing architecture or propagating the design to other scientists.
+
+The source-disjoint calibration and retention gate has now passed on a fresh
+decision split. The first ten held-out knots improved substantially (Brier 0.430
+to 0.133, AUC 0.827 to 0.886, coverage 23/200 to 24/200, promoted rung 12/12),
+but formally failed the preregistered `8/10` sensitivity condition: six knots had
+no solve even at the global cap, so their correct curves stayed near zero. That
+split was retained as a failed calibration run and not reused for admission.
+
+Before seeing the next ten knots, the criterion was corrected: every knot with
+both solved and failed attempts must be sensitive, and every never-solved knot
+must have maximum predicted solve probability at most 0.1. On the untouched next
+ten knots and 200 attempts, all 10 curves were monotone, all 7/7 informative knots
+were sensitive, and all 3/3 never-solved knots had low probabilities. Brier
+improved from 0.722 to 0.232, AUC from 0.672 to 0.824, and solves from 33/200 to
+36/200. Attempt-level paired sets were 30 shared, 6 trained-only, and 3
+baseline-only. The promoted rung remained 12/12; conditional cost improved from
+4.75 crossings/19.83 moves to 3.58/16.83. Every corrected check passed.
+
+**Decision:** admit a bounded search-savings ablation with paired full-budget and
+cap-and-restart search. Do not yet enable predicted caps in collaboration, the
+200-representation experiment, or the 2,700-representation experiment.
+
+That ablation is complete. The direct proposal `L_max=2*L_predicted` plus
+geometric restart preserved the exact solved set (20/80) and improved aggregate
+L10 from 992 to 862, but failed the purpose of budgeting: 246 restarts increased
+scheduled evaluations from 133,056 to 604,032 and wall time from 96 to 445
+seconds. It used 4.54 times the full-budget compute and is rejected.
+
+The failure mechanism was concentrated in never-solved tasks: each was replayed
+four or five times before reaching the same global-budget failure. Using that
+split only for development, the next rule was frozen before another untouched
+20-knot slice:
+
+```text
+if p_solve(global budget) < 0.04:
+    run one attempt with L_max = 2 * L_predicted; accept failure without restart
+else:
+    run one global-budget attempt
+```
+
+On 80 fresh paired attempts this solve-gated rule retained the exact 11-attempt
+solved set and the same aggregate L10=573. Scheduled evaluations fell from
+149,985 to 101,178 (32.5% savings), and wall time fell from 108.7 to 72.5
+seconds. Sixty attempts used the bounded probe and twenty went directly to the
+global budget. Every gate passed: identical final solved set, non-inferior
+objective, and at least 20% compute savings.
+
+**Decision:** the solve-gated budget rule may be an optional arm when the
+separate learning and scheduling gates unblock the corrected 200 pilot. It does
+not override the failed rapid-adaptation gate and does not yet authorize the
+collaborative 200 or 2,700 runs.
+
+### K=3 network repair and fast-learning admission, 2026-08-04
+
+The budget-aware repair was propagated from `s-window-128` to the actual K=3
+roster, `s-window-128`, `d-tape4-u1`, and `s-w11-128`. The shared design predicts
+`cc` and moves, constructs `L=A*cc+B*moves` exactly, and conditions `p(solve)` on
+those values, the shared body, and remaining budget. Solve loss reaches the shared
+encoder; capped failures remain excluded from policy, scalar-value, and cost
+targets. A frozen-teacher policy/value trust region and promoted-rung rehearsal
+prevent the narrow critic curriculum from silently erasing an established
+controller. The distilled tape network additionally needs controller LR `5e-5`,
+auxiliary LR `1e-3`, and a stronger preservation penalty; a single LR either
+collapsed its policy or left its old all-positive solve head saturated.
+
+Two roster defaults were invalid: window stage 22 and wide-window stage 19 are
+unpromoted capped snapshots. The corrected defaults are stages 21 and 18, and
+launcher preflight now rejects unpromoted or mismatched checkpoints. Predicted
+objective budgets default off.
+
+All three networks learned across 65 identities with only eight updates per
+identity. Every one of 65 training curves was monotone, all empirically
+informative identities were sensitive, and promoted-rung retention passed. On a
+fresh 75--84 slice (200 paired attempts per scientist), all three sharply improved
+Brier score and AUC while retaining their native rung. Only `d-tape4-u1` passed
+the complete cap gate: its paired solved set stayed exactly 16/16, Brier improved
+from 0.353 to 0.0002, and AUC from 0.826 to 1.000. `s-window-128` improved Brier
+0.506 to 0.043 and AUC 0.826 to 0.995 but lost one paired global-cap solve,
+`10_123@704#1`. `s-w11-128` improved coverage 10 to 11, Brier 0.446 to 0.049,
+and AUC 0.805 to 0.980, but remained overconfident on two never-solved identities.
+
+**Decision:** all three critic architectures are repaired and learn quickly; only
+`d-tape4-u1` may currently use predicted caps or budget-based early failure.
+Window and wide-window start controlled full-budget arms from their promoted
+source checkpoints and keep the critic in shadow mode. This gate does not show
+that all three solver policies learn quickly--paired coverage changed by -1, 0,
+and +1--and does not yet prove persistent 200-task RL, adaptive scheduling, or
+sharing.
+
 ## What would kill the programme
 
 Stop or reduce the claim if any of these occur:
