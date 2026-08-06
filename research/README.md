@@ -26,6 +26,7 @@ order-of-magnitude estimates and marked as such.
 | [14-potential-cost-shaping.md](14-potential-cost-shaping.md) | Whether exposing exact accumulated objective cost fixes the serial policy's ratio inversions; two-seed controlled ablation and verdict |
 | [15-recombination-triad-attempt.md](15-recombination-triad-attempt.md) | A concrete window/scan/tape recombination attempt with pinned checkpoints, fusion design, and failure criteria |
 | [16-scientists-collaboration.md](16-scientists-collaboration.md) | A corrected 2,700-representation collaboration experiment combining adaptive scheduling, a diverse solver population, and verified best-solution sharing with causal controls |
+| [17-text-mediated-sharing.md](17-text-mediated-sharing.md) | If the scientists invented a language and a theory instead of sharing per-knot witnesses: the four capabilities that fail independently, why a reader is the hard part, what makes a theory falsifiable rather than a long hint, and where an invented Jones-like invariant could possibly matter |
 
 Note 11 was merged into [06](06-network-growth.md): it was the same question, and the survey
 reads wrong without the measurement that followed it. Notes 03, 05 and 07 carry a header saying

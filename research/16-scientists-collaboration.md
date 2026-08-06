@@ -177,7 +177,7 @@ measure per-representation successes, costs, and pairwise failure overlap, then
 add the scientist with the largest marginal portfolio coverage. Do not choose five
 arms merely because five names exist.
 
-A reasonable provisional roster is:
+A historical provisional roster was:
 
 * `K=4`: `s-window-128`, `s-paint4`, `d-tape4-u1`, `s-scan-gru`;
 * `K=5`: add `s-w11-128` as the wider-local-view arm.
@@ -191,6 +191,10 @@ Pin the five checkpoint paths, SHA-256 hashes, candidate specifications,
 observation schemas, and search budgets in the experiment manifest. Use the exact
 rung-18 snapshots for all five even though later snapshots exist, so curriculum
 exposure is not silently unequal.
+
+The current independent K=3 roster supersedes that provisional list:
+`s-window-128`, `s-tape4`, and `s-w11-128`. The tape scientist now starts from
+its own rung-ladder checkpoint rather than weights distilled from `u1-puct`.
 
 ### 2026-08-02 challenge diagnostic
 
@@ -1029,6 +1033,644 @@ source checkpoints and keep the critic in shadow mode. This gate does not show
 that all three solver policies learn quickly--paired coverage changed by -1, 0,
 and +1--and does not yet prove persistent 200-task RL, adaptive scheduling, or
 sharing.
+
+### Independent tape migration and internal-budget ablation, 2026-08-04
+
+The primary K=3 roster now replaces distilled `d-tape4-u1` with independent
+`s-tape4`, loaded from its promoted rung-18 checkpoint. Checkpoint migration was
+generalised from exactly one new observation channel to any number of appended
+channels. Every old input weight is copied unchanged and every new input column
+is zero, so new budget features are initially ignored. On the real checkpoint,
+policy, scalar value, solve probability, predicted crossing changes, and predicted
+moves were bit-for-bit identical at objective caps 4, 12, 100, and 704. The
+source checkpoint SHA-256 is
+`0176e975e9c9d5e616c9ca8b074c211a301b03cefb4b95f52ab0c24b2fa180df`.
+
+A five-identity varied-budget admission used caps 4, 7, 14, 35, and 704, two
+self-play attempts per cap, 64 simulations, 32 updates per identity, eight native
+rung rehearsal games, learning rate `2.5e-4`, and a frozen-teacher preservation
+loss. All five learned curves were monotone and budget-sensitive. Both identities
+with mixed solved/failed observations were sensitive. Promoted-rung retention
+remained 8/8; conditional crossing changes/moves improved from 1.375/18.875 to
+1.25/18.75. This passes the easy-curriculum expansion gate, not the source-disjoint
+collaboration gate.
+
+`s-tape4-h5` is a separate candidate. It begins from the same independent
+`s-tape4` weights, adds both the objective-remaining and internal-remaining budget
+planes by the same zero-padding migration, and limits consecutive head/tape
+operations to five. Historical distilled models retain their old fraction-spent
+encoding. The new arm exposes `1 - internal_steps/5`, decreasing from 1.0 to 0.8
+after one internal action. Do not substitute this arm into K=3; compare it as a
+capacity/credit-assignment ablation only after ordinary `s-tape4` passes the
+source-disjoint solver-learning gate.
+
+### Source-disjoint critic admission and fixed-F solver gate, 2026-08-04
+
+A new outcome-blind critic corpus excludes all 270 BASE200/corrected-NEW70
+identities and every identified ladder identity, then fixes 60 training, 20
+validation, and 20 decision identities with 3/4/5-strand quotas 15/15/30,
+5/5/10, and 5/5/10. Split SHA-256 hashes are respectively
+`2ae022596872a3e39796a63feb8aabbf5feaa1d1946f83553aa73078c481f752`,
+`6cda775a1e0c8dd8807c4976b06e9ed80c945d1d70e7b3ce7c94fcc92c76404f`,
+and `89f39a3d31eef8b0008c00389b4b80b080c78d8a912d5843dded667daf5d880a`.
+Each candidate saw five objective caps, two 64-simulation attempts per cap, eight
+updates per identity, native-rung rehearsal, and a frozen-teacher preservation
+loss. Positive-scale Platt calibration used validation outcomes and changed only
+checkpoint metadata, not network weights.
+
+Two critics passed the untouched decision split:
+
+| scientist | paired solves baseline -> trained | AUC | Brier skill | ECE-5 | rung retention |
+|---|---:|---:|---:|---:|---:|
+| `s-window-128` | 17 -> 19 / 400 | 0.987 | 0.543 | 0.012 | 12/12 -> 12/12 |
+| `s-w11-128` | 22 -> 23 / 400 | 0.928 | 0.727 | 0.024 | 12/12 -> 12/12 |
+
+Both were monotone on all 20 identities and sensitive on every empirically
+informative identity. They may drive adaptive ordering only at the calibrated
+64-simulation population budget. `s-tape4` did not pass. Its conservative training
+run was monotone on 60/60 training identities and retained its rung in the training
+seed, but paired validation produced zero trained successes versus one baseline
+success, no positive label for AUC, and rung retention 11/12 versus 12/12. Keep
+its critic in shadow mode; the independent tape can still solve in static,
+full-budget arms.
+
+The next solver-learning bank excludes BASE200, NEW70, the 100 critic identities,
+and ladder identities. The fixed paired treatment was `F=8`, `F_old=1`; controls
+were frozen `8+1` search and trained `8+0`, with 64 simulations, eight self-play
+games per iteration, and 96 optimizer steps. The gate was stopped after two
+complete seeds because failure was already irreversible:
+
+| seed | frozen solved / capped C10 | trained 8+0 | trained 8+1 | post-training rescues from 8+1 |
+|---|---:|---:|---:|---:|
+| 20261360 | 9 / 3,366 | 9 / 3,366 | 9 / 3,366 | 0 |
+| 20261361 | 9 / 3,366 | 8 / 3,578 | 8 / 3,578 | 0 |
+
+All three seed-0 solved sets were identical. In seed 1 both trained arms lost
+`11a_33`, so `8+1` was one solve and 212 capped-loss points worse than frozen
+search. Rehearsal did not create a rescue: it only matched `8+0` on target tasks.
+The third seed could not restore the required all-seeds non-inferiority and was
+terminated to save compute.
+
+**Decision:** the critic-pretraining gate succeeds for both window scientists but
+the native solver-learning gate fails even at `F=8`. Do not run the sharing gate,
+the four-arm BASE200 factorial, CPU-32, or the 2,700 experiment. Sharing cannot be
+interpreted while the receiver's native update is itself non-beneficial. The next
+research problem is the policy-learning update, not scheduling or distillation.
+
+### Policy-update diagnosis, 2026-08-05
+
+The failed rapid learner had two distinct defects. First, its configuration set a
+policy/value preservation weight but never attached the frozen teacher, so the
+reported preservation loss was identically zero. Second, every task iteration
+applied 96 optimizer steps to eight highly correlated games even when all eight
+searches failed. Across `F=8`, `F_old=1`, this is 864 updates including the
+rehearsal iteration. Ordinary position-uniform replay then imitates unsuccessful
+MCTS visit distributions before the task has supplied any positive policy target.
+
+A five-arm paired diagnostic used the same promoted `s-window-128` checkpoint,
+`11a_33`, 64 simulations, eight games per iteration, the same rehearsal rule,
+and three seeds. It compared frozen search, the legacy 96-step update, 96 and 24
+steps with a real frozen teacher, and a 24-step arm that both used the teacher and
+refused all task-local updates until replay contained a genuine uncensored native
+solve. Once admitted, the last arm used episode-uniform, success-balanced replay.
+The historical task-local seed family gave:
+
+| arm | optimizer steps | self-play solves / 192 | solves by current ordinal | post probes / 24 |
+|---|---:|---:|---|---:|
+| frozen | 0 | 20 | `0,4,0,3,6,0,3,4` | 0 |
+| legacy 96 | 2,592 | 0 | `0,0,0,0,0,0,0,0` | 0 |
+| guarded 96 | 2,592 | 71 | `0,0,3,7,9,14,20,18` | 24 |
+| guarded 24 | 648 | 14 | `0,0,2,4,0,2,3,3` | 0 |
+| success-gated 24 | 576 | 132 | `0,4,8,24,24,24,24,24` | 24 |
+
+This reproduces the erased solve deterministically. On the first historical seed,
+both frozen and trained arms began with 0/8. The frozen network then solved 2/8
+on the identical ordinal-1 seeds; after 96 failure-only updates the legacy arm
+solved 0/8 and never recovered. The success-gated arm preserved that 2/8 batch,
+then converted the following sequence to `1,8,8,8,8,8`. The same qualitative
+result held for all three seeds. A second disjoint seed family was consistent:
+legacy made 2,592 updates with zero self-play solves, guarded 96 reached 16/24
+post probes, guarded 24 reached 8/24, and success-gated 24 reached 24/24 using
+only 480 updates.
+
+The artifact is
+`pgx-mcts-bench/artifacts/policy-update-diagnostic-swindow-lost-solve-20260805/report.json`.
+It freezes checkpoint and bank hashes, per-seed rows, exact solve sets, update
+counts, and preservation losses. The diagnostic runner also verifies that all
+arms are bit-for-bit identical before their first update.
+
+**Decision:** the main failure is destructive imitation of failure-only search,
+amplified by the missing teacher; it is not too few optimizer steps. Preserve the
+controller with a real frozen teacher and do not update policy/value from a new
+task until at least one verified solution exists. The 24-step success-gated arm
+is the preferred efficient repair. Before a 20- or 200-representation flight,
+split the optimization masks so failed/censored attempts may still train
+`p(solve)` while policy, scalar value, and conditional cost remain protected;
+then repeat this causal gate on several representations, including tasks with no
+frozen solve. Sharing and adaptive scheduling remain closed until that
+multi-representation gate shows rescues without loss of the frozen solved set.
+
+### Small split-loss gate, 2026-08-05
+
+The split was implemented directly in the AlphaZero update. Failed and censored
+attempts remain eligible for the budget-conditioned `p(solve)` loss and its shared
+encoder gradient. Policy and scalar-value targets are restricted to verified
+successful native trajectories; conditional crossing-change and move targets
+were already success-only. A real frozen teacher constrains policy/value drift.
+After the first success, replay is episode-uniform and success-balanced.
+
+The preregistered small gate selected three retention identities,
+`12a_146`, `11a_26`, and borderline `11a_33`, plus `11n_107`, `10_71`, and
+`10_137`. Each of the latter had zero solves in 128 frozen attempts over the
+previous two-seed gate. Frozen and split-success-24 arms used `F=8`, `F_old=1`,
+64 simulations, eight games per iteration, and matched seeds. Admission required
+no frozen-only solved identity, non-worse capped objective in every seed, and the
+same historical never-solved identity rescued in at least two seeds.
+
+The first two seeds completed as follows:
+
+| seed | frozen solved set | split solved set | frozen -> split self-play solves / 384 | capped C10 |
+|---|---|---|---:|---:|
+| 20261420 | retention 3/3, never 0/3 | retention 3/3, never 0/3 | 92 -> 176 | 948 -> 948 |
+| 20261421 | retention 3/3, never 0/3 | retention 3/3, never 0/3 | 91 -> 177 | 948 -> 948 |
+
+There were no treatment-only or control-only identities. Split learning made 528
+and 648 optimizer steps whose sampled batch had no policy/value target, confirming
+that the failure critic was trained without imitating failed policies. Nevertheless,
+all three zero-positive tasks remained unsolved in both seeds. Because only one of
+three declared seeds remained, a rescue replicated in two seeds was impossible;
+the third seed was stopped to save compute. The frozen solved-set and objective
+non-inferiority gates passed, but the rescue gate failed.
+
+The frozen artifact is
+`pgx-mcts-bench/artifacts/split-loss-gate-swindow-20260805/early-stop-report.json`.
+It includes checkpoint and bank hashes, the fixed strata, exact paired sets,
+per-item self-play counts, critic-only update counts, and the irreversible-stop
+reason.
+
+**Decision:** admit split-success-24 as a safe and strong *consolidation* update,
+not as a discovery mechanism. It nearly doubled success frequency on tasks where
+search supplied positive examples, while preserving established coverage. It did
+not invent a solution on any zero-positive task, which is the expected limitation
+of success-only policy learning. Keep the 20-, 200-, sharing-, and adaptive-order
+gates closed. The next discovery gate must first supply a verified positive seed
+for a frozen-never task--from deeper/diversified search, another scientist, or an
+alternate representation--and only then test whether split-success-24 reliably
+consolidates and transfers that witness without losing the frozen solved set.
+
+### Readiness repair and five-arm protocol, 2026-08-05
+
+“Solved” must not mean “the search respected one arbitrary objective cap.”  An
+admitted solution is an exactly replayed trajectory whose final braid word is
+empty and whose strand count is one.  For the readiness and comparison runs the
+learned objective cap and crossing-change cap are disabled unless the manifest
+explicitly enables the budget experiment.  Search still has a finite native
+action horizon, currently 64.  Therefore a failure is censored beyond 64 native
+actions; it is not evidence that the network cannot unknot the representation at
+a larger horizon.  Completeness-oriented evaluation must repeat failures under a
+declared increasing horizon sequence rather than call the 64-action result
+“unsolvable.”
+
+Three update regimes must remain separate:
+
+1. Fresh curriculum training uses the historical rung-18 AlphaZero update on
+   wins and losses.  Negative trajectories are necessary to train a critic from
+   random initialization.
+2. Task-local adaptation of a promoted scientist uses split-success learning:
+   failures may train the conditional solve head, but policy and scalar value
+   imitate verified successes only, with a frozen starting-network teacher.
+3. Sharing uses bounded-option distillation.  For every certified semantic braid
+   edit, a serial receiver may choose any legal sequence of at most five internal
+   actions--including shifts, tape writes, and controller-state changes--and must
+   then perform that edit.  Shared trajectories supply solve/cost upper bounds,
+   but do not force one hand-written navigation route into the policy.
+
+Applying regime 2 during training from scratch is itself a protocol bug.  A
+strict success-only rung-0 ablation needed ten iterations and still learned a
+worse crossing-change policy where the historical update promoted in two.  This
+does not contradict the task-local diagnostic: it establishes that the safe
+pretrained update is not a replacement for the successful fresh curriculum.
+
+The long comparison is fixed to five arms:
+
+1. four scientists, adaptive schedule, bounded-option sharing;
+2. four scientists, adaptive schedule, no sharing;
+3. four scientists, static schedule, bounded-option sharing;
+4. four scientists, static schedule, no sharing; and
+5. one best scientist, static schedule, compute matched.
+
+For arm 5, qualification simulations, full simulations, and optimizer updates
+are multiplied by `K`; scheduled network evaluations and wall time are reported
+as measured checks, not inferred from the multiplier.  Sharing and no-sharing
+arms receive the same number of optimizer steps: one bounded-option update is
+matched by one additional native-control update.  Each run freezes checkpoint,
+bank, anchor, and protocol hashes, commits every round transactionally, and can
+resume only when the protocol hash matches.
+
+Readiness remains sequential.  First reproduce the first ten rungs with
+`s-window-128`, 128 simulations, eight games and 96 optimizer steps per
+iteration, twelve held-out games per ratio, and the historical 100-iteration
+cap.  Every rung must promote with held-out solve rate at least 0.80.  Then run a
+matched multi-representation bounded-option admission gate, including witnesses
+the receiver did not find itself, and require target realization plus no loss of
+the frozen solved set.  Only after those gates pass run the transactional
+five-arm smoke test, followed by a small multi-seed population pilot.  CPU-32 and
+the 200-representation comparison remain closed until all four scientists pass
+critic calibration and paired retention; at present the fourth adaptive-order
+scientist is not admitted.
+
+### Replay contract for the collaboration arms
+
+The collaboration runner now retains complete attempts for the most recently
+used 100 representation identities.  Each attempt records its representation,
+termination reason, objective cap, action horizon, residual word length, best
+residual length, MCTS root value and visit count, position index, and persistent
+episode/position exposure counts.  These counters are part of the transactional
+checkpoint, so resuming a run does not reset which evidence has already been
+reused heavily.
+
+Each collaboration minibatch allocates episode slots as 25% current
+representation, 25% structurally similar retained representations, and 50%
+global retained history.  The initial similarity key is a deterministic vector
+of braid length, strands, crossings, writhe-like totals, signs, sign changes and
+generator frequencies; cosine similarity chooses neighbours.  This is an
+explicit cheap baseline, not a claim that it is a learned knot embedding.  A
+learned encoder embedding may replace it only as a separately tested protocol.
+
+Within the requested representation group, replay first balances uncensored
+native success and native failure 50:50 when both exist.  It then divides the
+negative half between ordinary and objective-censored failures when both exist,
+and caps shared witnesses at the arm's declared fraction.  Representation
+identities are sampled uniformly; attempts within one identity are sampled
+inversely to their prior episode exposure.  Thus long attempts and frequently
+replayed easy examples do not automatically dominate.
+
+A selected attempt supplies four states rather than throwing away all but one:
+the initial state, the final recorded state, the highest-policy-entropy interior
+state, and an inverse-exposure state.  Very short attempts reuse states as
+needed.  Negative and budget-censored attempts train the conditional `p(solve)`
+head, but task-local policy/value/cost targets remain success-gated.  A failed
+search is therefore useful critic evidence without becoming a policy imitation
+target.  Verified shared solutions still enter through the separate
+bounded-option target.
+
+The 25/25/50 mixture is a training distribution, not an estimate of the natural
+success probability.  Calibration metrics must therefore be computed on an
+unrebalanced held-out stream or corrected for the sampling propensity.  Merely
+lowering the objective budget may create useful conditional failures, but those
+failures never become policy or solved-cost targets.  Increasing the native
+action horizon and learned representation retrieval remain separate experiments;
+retrieving a similar knot does not turn its solution into a valid target until
+exact translation and replay verify it on the current representation.
+
+### Replay-v3 readiness results, 2026-08-05
+
+Replay-v3 passed its real-trajectory integrity gate.  `s-window-128` generated
+36 attempts and 1,461 positions on six fixed identities, including three native
+successes and twelve objective-censored failures.  Save/resume preserved every
+exposure counter.  A 512-position audit batch allocated exactly 128 positions to
+the current-representation quota, 128 to similar history and 256 to global
+history; it contained 256 native-success targets, 128 ordinary failures and 128
+budget-censored failures.  No failure received a policy/value target.  The
+artifact is `pgx-mcts-bench/artifacts/replay-v3-integrity-swindow-20260805/report.json`.
+
+The paired learning gate compared old success-balanced replay with replay-v3 on
+the same six identities, two seeds, 64 simulations, eight self-play games, and
+24 matched optimizer steps.  Starting diagnostics were bit-for-bit identical.
+In both seeds old replay finished with `{11a_26, 11a_33}`, while replay-v3 also
+solved `12a_146` and lost no old-only identity.  Capped loss improved by 1,720
+and 2,232; current-task self-play solves improved from 147 to 164 and from 137
+to 158.  Replay-v3 is therefore admitted.  The artifact is
+`pgx-mcts-bench/artifacts/replay-v3-learning-gate-swindow-20260805/report.json`.
+
+The unrebalanced, identity-disjoint `s-window-128` critic gate also passes:
+AUC 0.947, calibrated Brier score 0.0266, ECE 0.0166, 20/20 budget-monotone
+items, 15/20 budget-sensitive items, no baseline-only held-out solve, and no
+promoted-rung regression.  This admits the critic for adaptive ordering but not
+for predicted early-stop caps.  The current decision artifact is
+`pgx-mcts-bench/artifacts/critic-pretrain-independent-k3-20260804/s-window-128-readiness.json`.
+The historical first-ten-rung reproduction had already passed all promotions
+with held-out solve rates from 0.806 to 1.0, so fresh-curriculum parity remains
+admitted.
+
+Bounded-option sharing is **not admitted**.  Two real `s-window-128` witnesses,
+`11a_26` and `12a_146`, translated exactly into both `s-tape4` and
+`s-w11-128`, but pure option training produced no new solved identity and made
+`s-w11-128` lose `12a_146`.  Architecture-specific preservation weights and a
+smaller eight-update dose did not repair the regression.  A compute-matched
+interleaved gate then compared native-plus-option against native-plus-native
+updates.  Native-only learned `11a_26`; sharing did not.  Training a complete
+receiver-unsolved witness instead of one sampled position also failed.  Finally,
+one complete `11a_26` witness, one option update, and an option learning rate of
+0.1 times the native rate still made sharing lose `12a_146`, while native-only
+retained it; full option loss rose from 2.35 to 6.96.  The decisive artifact is
+`pgx-mcts-bench/artifacts/interleaved-minimal-sharing-w11-20260805/report.json`.
+
+**Decision:** admit replay-v3, the calibrated `s-window-128` ordering critic,
+and historical fresh-rung training.  Keep both sharing arms, roster finalization,
+the five-arm smoke, CPU-32, and the 200-representation experiment closed.  The
+next sharing repair must improve actual option transfer while retaining the
+isolation achieved by the zero-initialized adapter described below, and must
+pass the same native-plus-native paired control before any arm comparison
+resumes.  Increasing preservation weight, reducing dose, sampling one position,
+training one whole witness, and merely lowering the learning rate are now
+rejected repairs.
+
+### Zero-initialized option-policy adapter gate, 2026-08-05
+
+The sharing path now attaches a separate width-32 policy residual with two
+normalized residual blocks and a zero-initialized output projection.  Attaching
+it is bit-for-bit function preserving.  It reads the complete serial observation
+and, for h5 scientists, the decreasing internal-action budget; historical
+rung-18 scientists without that channel receive a constant full-budget input.
+Bounded-option updates optimize only this adapter.  The original policy body,
+all value heads, and BatchNorm running statistics remain fixed during the
+sharing update.  Native reinforcement-learning updates continue to use the
+original optimizer.  Adapter parameters and their optimizer state are included
+in transactional checkpoints and worker/evaluation checkpoint migration.
+
+The exact one-cycle reproduction on `s-w11-128` established the safety half of
+the repair.  Before training, sharing, and native-only control all solved only
+`12a_146`; after one paired cycle both arms still solved exactly `12a_146`, with
+no baseline loss.  Sharing capped loss was 1,392 versus 1,406 for native-only.
+The artifact is
+`pgx-mcts-bench/artifacts/interleaved-option-adapter-minimal-w11-v2-20260805/report.json`.
+
+The transfer half did not pass.  Across eight paired cycles the adapter arm
+retained `12a_146`, but native-only additionally learned `11a_26`; the adapter
+arm did not.  Capped loss was 1,424 versus 1,269.  Aggregate option loss rose
+from 2.355 to 2.727 while the per-cycle loss measured after each native update
+also rose, although an isolated one-step regression test confirms that an
+adapter update descends its fixed-position loss and changes no base parameter or
+value prediction.  This points to interference between changing native policy
+logits, discrete option-beam membership, and the adapter objective rather than
+the old shared-encoder degradation.  The artifact is
+`pgx-mcts-bench/artifacts/interleaved-option-adapter-w11-8cycle-20260805/report.json`.
+
+**Decision:** the adapter implementation is admitted as a safety mechanism, but
+sharing remains closed.  The next gate should measure option loss immediately
+before and after every adapter step on a frozen witness set, stabilize route
+selection independently of the current policy beam, and require both transfer
+of a receiver-unsolved witness and paired solved-set noninferiority.
+
+That next repair is now implemented.  Adapter training no longer chooses a
+policy-dependent beam.  For each certified semantic edit it deterministically
+selects the shortest legal head route, followed by the corresponding local
+external edit, and teacher-forces that complete option.  The legacy beam loss is
+retained only for historical diagnostics.  Every sharing update records loss on
+the exact same frozen positions immediately before and after the optimizer
+step, including route-target identity and position count.
+
+On the eight-cycle `s-w11-128` paired gate every adapter step genuinely reduced
+its fixed-route loss.  At 0.1 times the native learning rate the eight immediate
+deltas ranged from -0.00056 to -0.00079.  At the declared 1.0 times rate they
+grew from -0.0051 to -0.0297.  Thus the old increasing-loss report was not an
+optimizer-sign bug: intervening native updates move the base logits faster than
+the conservative adapter update corrects them.  Nevertheless neither dose
+transferred `11a_26`; native-only learned it, while both adapter doses retained
+the baseline `12a_146`.  At 1.0 times, sharing capped loss was 1,424 versus
+1,269 for native-only.  The decisive artifact is
+`pgx-mcts-bench/artifacts/interleaved-stable-option-adapter-w11-8cycle-lr1-20260805/report.json`.
+
+**Updated decision:** deterministic route stability and per-step measurement
+are admitted, but useful sharing is still not demonstrated.  Do not open the
+long sharing arms.  The next bounded investigation is dose matching: multiple
+adapter steps per native update or a target-loss decrease threshold, with the
+same paired solved-set retention gate and explicit adapter compute accounting.
+
+The dose-matched investigation is now complete.  After every native update the
+adapter trains on one frozen translated witness until its canonical-route loss
+falls by 10%, or until sixteen adapter steps.  The native-only control receives
+at least the same optimizer-step count and at least the same number of training
+state examples.  Because the control updates the full scientist while sharing
+back-propagates only through the adapter, this is conservative in the control's
+favour.  The report also records wall time rather than pretending the two kinds
+of update have identical implementation overhead.
+
+Across seeds 20260854--20260856, sharing learned the targeted receiver-unsolved
+`11a_26` in all three runs and retained the baseline `12a_146` in all three.
+This is the first repeatable evidence that translated-solution learning actually
+transfers an option.  Native-only also learned `11a_26` in two of three seeds.
+The paired final sets were:
+
+| seed | sharing | native-only | capped loss sharing / native |
+|---:|---|---|---:|
+| 20260854 | `11a_26`, `12a_146` | `11a_33`, `12a_146` | 1,193 / 1,216 |
+| 20260855 | `11a_26`, `12a_146` | `11a_26`, `12a_146` | 1,169 / 1,173 |
+| 20260856 | `11a_26`, `12a_146` | `11a_26`, `11a_33`, `12a_146` | 1,177 / 1,009 |
+
+Thus sharing beat capped loss in two seeds but lost badly in one; mean capped
+loss was 1,180 for sharing versus 1,133 for native-only.  One seed had a
+sharing-only identity and one had a control-only identity, so the required
+same-final-solved-set/noninferiority condition does not pass.  Adapter training
+used 33--46 optimizer steps and 363--575 routed state examples; controls used
+the same optimizer-step counts and 528--736 native state examples.  The primary
+artifact is
+`pgx-mcts-bench/artifacts/interleaved-threshold-compute-matched-w11-v2-20260805/report.json`,
+with the two replications under the corresponding `seed20260855` and
+`seed20260856` artifact directories.
+
+**Current decision:** threshold dosing is admitted as evidence that option
+sharing can transfer a specified solution without erasing the baseline solved
+set.  It is not evidence that collaboration beats compute-matched native
+learning.  Keep the long sharing arms closed until this advantage replicates on
+multiple receiver-unsolved witnesses and held-out identities, with paired final
+sets reported exactly as above.
+
+### Multi-witness sharing gate, 2026-08-05
+
+The next gate mined solutions from the committed transactional state of the
+old static-sharing run rather than trusting summary rows.  A witness was admitted
+only when its complete stored action sequence replayed to the empty one-strand
+braid and its crossing-change and move counts matched.  This recovered 25
+distinct certified representations, with author, episode seed, source round,
+source-manifest hash, and bank hash.  The resumable screen stores one atomic row
+per representation and can use several widely separated evaluation seed blocks.
+
+The first `s-w11-128` screen found only four receiver-unsolved witnesses at 128
+simulations and 16 attempts: `11a_231`, `11n_119`, `12a_1215`, and `12a_722`.
+On the gate's different seed block, however, the frozen network solved the latter
+two in all eight attempts.  Sharing and compute-matched native learning then
+finished with exactly the same seven solved identities; capped loss was 403
+versus 460.  This is safe parity, not evidence for sharing, and demonstrates why
+a single seed block is not a robust definition of “receiver-unsolved.”  The
+artifact is
+`pgx-mcts-bench/artifacts/multi-witness-gate-s-w11-seed20260910-20260805/report.json`.
+
+The stronger `s-tape4-h5` screen evaluated every candidate on three separated
+seed blocks, eight games per block, and 128 simulations.  Nine witnesses remained
+unsolved in all 24 attempts.  Eight structurally varied identities formed the
+training panel: `10_126`, `11a_15`, `12a_1215`, `11a_231`, `12a_1222`,
+`11n_119`, `12a_1225`, and `12a_1235`; `12a_850` was held out.  Eight easy
+identities were included as retention canaries in the gate.  The screen artifact
+is
+`pgx-mcts-bench/artifacts/multi-witness-screen-s-tape4-h5-strong-20260805/report.json`.
+
+The three-arm gate compared the frozen checkpoint, native learning plus
+threshold-dosed canonical-route adapter sharing, and a native-only control.  Both
+trained arms used 16 cycles and four fresh native games per cycle.  The control
+consumed at least as many optimizer state examples as the adapter.  A protocol
+audit found that the first implementation gave the two arms different native
+refresh seed streams; those runs are diagnostic only.  Version 4 uses identical
+native refresh seeds, and all final evaluations are paired on the same seeds.
+At 128 simulations and eight final games per identity, the corrected results
+were:
+
+| seed | target solves sharing / control | sharing-only | control-only | frozen identities lost by sharing | capped loss sharing / control |
+|---:|---:|---|---|---|---:|
+| 20260950 | 6/8 / 6/8 | `10_159`, `11n_119`, `12a_1199` | `11a_231` | `11n_46` | 2,241 / 2,092 |
+| 20260951 | 7/8 / 5/8 | `11a_231`, `12a_1222` | none | none | 1,359 / 1,665 |
+| 20260952 | 7/8 / 8/8 | none | `11n_119`, `11n_46`, `12a_1199` | `11n_46`, `12a_1199` | 1,996 / 1,106 |
+
+Here sharing-only and control-only are computed over the complete 17-identity
+evaluation set, not just the eight training targets.  Both arms solved the held-
+out `12a_850` in every seed.  Mean target transfer was 83.3% for sharing and
+79.2% for native-only, but mean capped loss was worse, 1,865.3 versus 1,621.0.
+Only one of three seeds passed exact paired non-inferiority.  Option loss fell in
+every seed (from 6.827 to 3.918, 3.880, and 3.827), so the failure is not an
+adapter-optimization failure: it is unstable downstream policy interaction and
+retention.
+
+**Decision:** the multi-witness machinery, robust screening, paired refresh
+seeds, and the fact that sharing can add identities are admitted.  Collaboration
+itself is not admitted: two seeds lost either a paired identity, a frozen solved
+identity, or objective quality.  Keep the two long sharing arms and CPU-32 run
+closed.  The next repair should reduce adapter influence when it conflicts with
+native policy--for example by a learned or validated option gate--and must repeat
+this exact panel without losing any frozen or control-only identity.  The two
+no-sharing arms can proceed to a small transactional smoke test independently;
+they do not depend on passing the sharing gate.
+
+### Adapter counterfactual, gated repair, and no-sharing schedule gates
+
+The final ungated sharing checkpoints were evaluated again with the learned
+adapter either active or bypassed, using the exact final-evaluation seeds.  This
+does not restore the native-only control, because the base network has already
+learned under adapter-influenced self-play; it isolates the adapter's direct
+contribution at evaluation time.  On failed seeds 20260950 and 20260952,
+bypassing the adapter worsened capped loss from 2,241 to 3,118 and from 1,996 to
+3,323.  The active adapter supplied seven and nine identities absent when it was
+bypassed.  In seed 20260952 bypassing recovered only `12a_1199`.  At the initial
+states, the ungated residual changed the legal-policy argmax on 15/17 and 13/17
+identities; policy KL commonly lay between 3 and 5.7 and residual L2 norms were
+about 40.  Thus the adapter is both useful and globally dominant.  Removing or
+uniformly shrinking it is not the correct repair.
+
+The next implementation therefore added an optional state-dependent gate.  It
+is a separate module, so old adapter checkpoints retain their exact behavior.
+New gated runs start with a 0.1 applicability probability and train three terms:
+canonical-route likelihood, KL from the native policy on off-route states, and
+an off-route gate penalty.  Every retention and held-out initial state is an
+anchor; fresh native states from the current representation are sampled
+deterministically.  The compute-matched control consumes at least the same total
+route-plus-preservation state examples.
+
+The three-seed development gate did not pass:
+
+| seed | target solves sharing / control | sharing-only | control-only | frozen identities lost by sharing | capped loss sharing / control |
+|---:|---:|---|---|---|---:|
+| 20260950 | 6/8 / 7/8 | `11a_15` | `10_126`, `11n_119`, `12a_1199` | `11n_46`, `12a_1199` | 1,978 / 1,544 |
+| 20260951 | 8/8 / 1/8 | ten identities | none | none | 1,513 / 3,084 |
+| 20260952 | 7/8 / 0/8 | eleven identities | none | `12a_1199` | 1,453 / 3,645 |
+
+Only seed 20260951 passed exact non-inferiority.  Sharing had much better mean
+capped loss than the heavily compute-matched control, 1,648 versus 2,757.7, but
+retention failed in two seeds.  Mean squared off-route gate activation remained
+0.41--0.46, so the state gate still activated too broadly.  The large control
+regression also warns that matching every adapter preservation example with a
+full-network native update can over-train the control; this comparison is
+conservative but not a desirable long-run update schedule.  No untouched
+sharing-validation panel was opened.
+
+The independent no-sharing path then ran transactional adaptive, static, and
+compute-matched-solo arms.  A 20-round technical smoke used a fresh outcome-blind
+20-identity bank.  Every initial and final arm solved the exact same six
+identities: `10_152`, `11a_160`, `12a_1203`, `12a_1255`, `12a_722`, and
+`12n_749`.  Capped L10 changed from 4,025 initially to 4,018 adaptive and 4,036
+static; solo changed from 4,049 to 4,016.  Transactional execution, arm filtering,
+evaluation, exact-set reporting, and compute accounting therefore passed.
+
+The 50-round pilot used a new outcome-blind 50-identity bank.  It revealed a
+real learning regression:
+
+| arm/state | solved | identities lost from its initial comparator | capped L10 |
+|---|---:|---|---:|
+| three-scientist initial | 15/50 | -- | 10,111 |
+| adaptive final | 13/50 | `11a_231`, `12a_1215` | 10,565 |
+| static final | 14/50 | `12a_1222` | 10,507 |
+| compute-matched solo initial | 15/50 | -- | 10,053 |
+| compute-matched solo final | 15/50 | none | 10,064 |
+
+Adaptive added no new identity and was two solves and 454 capped-loss points
+worse than its initial portfolio.  Static added none and was one solve and 396
+points worse.  Solo retained the exact set but worsened by 11 points.  The
+training runner generated one new episode per scientist and representation,
+then trained every five rounds.  Final replay contained all 50 identities, but
+only one episode per identity; individual positions were reused as many as
+92--283 times.  This is the one-shot heterogeneous schedule, not the intensive
+within-task rung recipe.  It reproduces the previously diagnosed failure of
+task-local/native policy learning and must not be interpreted as evidence
+against adaptive ordering itself.
+
+**Updated decision:** all 200-representation and CPU-32 arms remain closed.
+Sharing remains unsafe, and the no-sharing learner loses frozen coverage before
+schedule quality can be interpreted.  Do not add another adapter dose or simply
+increase `F`: earlier source-disjoint `F=8`, `F_old=1` gates already showed no
+post-training rescues.  The next valid target is again the native policy-learning
+update: it must demonstrate rescues and exact retention on an independent
+multi-representation gate before scheduling, sharing, or a fourth scientist is
+tested at scale.
+
+### Transactional native-learning gate
+
+The next implementation isolated native solution discovery from scheduling and
+sharing.  It used one `s-window-128` checkpoint and a fixed 12-representation
+development panel: three historical retention identities, six transition
+identities, and the three identities that the preceding split-loss experiment
+never solved in 128 frozen attempts.  Search began with four 64-simulation
+attempts.  Promising failures could receive two 128-simulation attempts and one
+256-simulation attempt.  Attempts varied root seeds, PUCT strength, and cyclic
+conjugates of the braid word.  Only trajectories passing exact witness replay
+were policy targets.  Replay sampled up to four positions per episode, balanced
+success and failure when both existed, and capped each position at 64 uses.
+The final v2 run enforces this cap strictly within a batch; it reproduced the
+same solved sets and objectives as the initial eligibility-capped run.
+
+Every optimizer update was transactional.  The candidate was evaluated on the
+same fixed seeds as its pre-update parent.  It was accepted only if it lost no
+previously solved identity, did not worsen capped L10, and either rescued its
+target or strictly improved capped L10.  Otherwise both network and optimizer
+state were restored.  The preregistered multi-seed gate required two distinct
+representations to become post-training rescues in at least two of three seeds,
+with exact retention and non-worsening capped L10 in every seed.
+
+| seed | initial solved | final solved | gained | lost | capped L10 initial / final | accepted / attempted updates |
+|---:|---:|---:|---|---|---:|---:|
+| 20261520 | 6/12 | 8/12 | `10_149`, `11a_33` | none | 1,913 / 1,520 | 1/6 |
+| 20261521 | 6/12 | 8/12 | `10_149`, `11a_33` | none | 1,913 / 1,542 | 1/6 |
+| 20261522 | 6/12 | 9/12 | `10_149`, `11a_33`, `12a_146` | none | 1,913 / 1,285 | 2/6 |
+
+Rollback was necessary rather than ceremonial: 14 of 18 attempted updates were
+rejected, usually because they erased `12a_981` or another fixed-seed solve.
+`10_149` was a reproducible post-training rescue in all three seeds.  `11a_33`
+also became solved in every seed, but it is a retention identity rather than one
+of the declared discovery identities.  No second declared discovery identity
+was rescued.  The hard frontier `11n_107`, `10_71`, and `10_137` produced no
+certified positive trajectory; even 256 simulations did not solve `11n_107` in
+the two seeds whose residual progress admitted that tier.
+
+**Decision:** transactional admission and exact retention pass, and the result
+is materially better than the destructive one-shot learner.  The native-
+discovery gate nevertheless fails because only one declared identity replicated.
+Do not run the 20/50 schedule progression, sharing validation, 200-
+representation comparison, fourth scientist, or CPU-32 experiment yet.  The
+next repair belongs in positive-trajectory discovery for the hard frontier, not
+in another policy dose: broaden exact representation-preserving search or add a
+separately measured search escalation, then repeat this development gate before
+opening an untouched panel.
+
+Artifact:
+`pgx-mcts-bench/artifacts/native-learning-gate-swindow-v2-20260806/report.json`.
 
 ## What would kill the programme
 
