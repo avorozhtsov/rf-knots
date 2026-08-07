@@ -2097,6 +2097,153 @@ explicit canary-preserving update—not an unregistered relaxation of the search
 threshold. The artifact is
 `pgx-mcts-bench/artifacts/native-learning-gate-swindow-v3-horizon-L1000-20260807/report.json`.
 
+### Continual portfolio-progress criterion, 2026-08-07
+
+Exact identity retention is no longer the primary invariant for continual
+learning. Training on new representations can degrade old tasks, while rehearsal
+can erase a recent gain. That exchange is acceptable when the complete portfolio
+improves. Reports now separate the current network from the permanent solution
+bank: the former measures what the policy reproduces under a fixed evaluation
+dose, while the latter keeps the best verified semantic solution ever found for
+each representation.
+
+The preceding `L1000` diagnostic illustrates the distinction. Its continual arm
+had 20 identities in the permanent native-solution archive but reproduced 18/20
+at final evaluation. It gained `11a_288` and `12a_878`, lost current reproduction
+of `12n_820` and rehearsal identity `9_1`, and finished at 13/20 on the new panel.
+The paired transactional arm also finished at 13/20. Both were below the required
+70%, so that diagnostic remains non-decisive and does not open a longer run.
+
+The corrected smoke uses semantic `L10`. A single empirical failure cap is frozen
+before learning as the maximum verified `L10` on the registered calibration
+panel. Both arms evaluate exactly the same complete old-plus-seen portfolio.
+Every ten rounds, the current network may retain the block when total solved count
+does not fall and capped portfolio `L10` does not rise; at least one block across
+the run must improve strictly. A regressing block receives targeted recovery. If
+recovery fails, the network and optimizer return to the block-start state, but
+the permanent best-solution bank is preserved.
+
+Calibration selected 64 simulations at 8/10 coverage and froze the empirical
+cap at `L10=85`. The paired local smoke uses four evaluation attempts,
+`F_new=5`, `F_old=1`, 24 optimizer steps per iteration, and 10-round blocks. Its
+registered artifact is
+`pgx-mcts-bench/artifacts/portfolio-progress-smoke-swindow-seed20261720-20260807`.
+
+The smoke completed in 70 minutes. Both block-progress decisions passed without
+recovery. Block 1 kept 15/16 current solves and reduced capped `L10` from 807 to
+785. Block 2 moved from 17/26 to 18/26 and reduced capped `L10` from 1,579 to
+1,537. Replay exposure was balanced at 45,713 positive and 46,080 negative
+positions; 2,304/46,080 failures (5.0%) were budget-censored.
+
+This validates the aggregate retention mechanism, but not the learner for a
+longer flight. Final block-progress coverage was 12/20 on NEW, 6/6 on old
+rehearsal, 3/10 on held-out, and 0/4 on hard stress. It retained the exact initial
+NEW solved set and improved NEW capped `L10` by 35, but found no net new current
+solve. The transactional diagnostic reached 13/20 NEW by adding `11a_288`. On the
+identical 26-item current-network portfolio, block-progress/transactional scored
+18/19 solves and capped `L10` 1,537/1,523. Their lifetime banks scored 19/20 and
+1,424/1,412. Block-progress won held-out capped `L10` by 22, but lost the sole
+initial hard-stress solve; both primary NEW solve rates remained below 70%.
+
+**Decision:** the portfolio criterion replaces exact canary retention, but this
+training configuration fails its readiness gate. Keep the 50-representation,
+five-arm, 200-representation, and cloud runs closed. Before a fresh gate, use a
+frontier-matched calibration panel to select evaluation dose and the empirical
+cap, then diagnose whether 128 or 256 simulations exposes latent coverage in the
+saved final checkpoints. Any such dose sweep is exploratory; confirmation must
+use fresh paired seeds and a frozen panel.
+
+### Joint budget-aware pretraining and rewind audit, 2026-08-07
+
+The proposed replacement `s-window-128` keeps the measured two-residual-block,
+width-32 controller rather than changing capacity and curriculum at once. It
+adds remaining semantic `L` as a nineteenth observation channel. The four
+width-64 auxiliary members predict `p(solve)`, crossing changes, and semantic
+moves; the solve loss may train the shared encoder/body, while cost regression
+uses the shared features without pushing its noisy gradients back into the
+controller. MCTS remains on the established scalar value until the factorized
+critic passes a separate calibration gate. The H5 ablation adds a twentieth
+channel for the remaining five-step internal-action budget.
+
+Migration from the independent rung checkpoint was exactly function preserving:
+the maximum absolute change was zero for policy logits, scalar value, solve
+logits, crossing predictions, and move predictions on three representations and
+both `L10` and `L1000`. A first aggressive ablation balanced failures inside the
+ladder and also let cc/moves regression reshape the encoder. It still promoted
+on rungs 0--9, but required 14 iterations at `T(2,5)+8` and ended with two 3/4
+retrospective cells. This is a useful warning: successful rung promotion alone
+does not establish continual retention.
+
+The conservative v2 restored the historical natural replay distribution and
+detached cc/moves loss from the encoder. It cleared all ten rungs at 100% held-out
+solve rate in two iterations each, with every retrospective cell at 100%. A
+two-objective capped block then produced 20/20 monotone training curves and
+20/20 monotone disjoint curves. Its paired easy-prefix panel stayed at 80/80
+solves and improved capped `L10 + L1000` from 57,050 to 57,036. The earlier
+single-`L10` block is rejected: despite monotone curves, it worsened the paired
+objective by teaching unnecessary crossing changes on unknots.
+
+The untouched gate overturned the apparent success. Rewinding the rung-21
+network through rungs 0--9 reduced its original promoted-rung solve rate from
+12/12 to 2/12 before capped calibration; calibration recovered only 3/12. On
+the fixed 400-attempt `L10` validation grid, the original checkpoint solved 16
+attempts and the new network only 3. The latter had monotone curves and AUC
+0.955, but no trained-only solve, Brier skill below zero, and ECE 0.268. Under
+`L1000` it solved 6 attempts against the baseline's 14. Thus an apparently good
+critic can coexist with a badly degraded solver, and an easy-prefix retention
+panel cannot protect a later mastered frontier.
+
+The controls locate the cause. Random initialization learned all first five
+rungs, needing ten iterations only on `unknot+6`; it later forgot that rung in a
+four-attempt retrospective. The warm H5 model cleared all five in two iterations.
+So neither network depth nor the added channels prevents fast learning. The bug
+is the training trajectory: a promoted rung-21 checkpoint must not be restarted
+at rung 0, because the new mixture then excludes rungs 10--21. Code now refuses
+that rewind unless it is explicitly requested as an ablation, and an internally
+passing checkpoint is not called admitted until an untouched source-disjoint
+gate passes.
+
+**Decision:** reject both rewind-trained checkpoints. For the immediate roster,
+retain the existing independent calibrated `s-window-128`; its 60-identity
+critic curriculum used promoted-rung rehearsal and a policy/value preservation
+teacher and already passed the source-disjoint gate with AUC 0.947, Brier 0.0266,
+ECE 0.0166, no held-out solve loss, and no rung regression. A genuinely new
+network should be initialized randomly and climb the whole ladder forward once
+with the new channels, plus explicit old-rung rehearsal. Do not add residual
+blocks or width until that forward curriculum reaches a measured capacity wall.
+
+The second-objective confirmation strengthens the immediate-roster decision.
+On the fixed 400-attempt `L1000` panel, the independent calibrated checkpoint
+solved 18 attempts against 14 for the original rung-18 checkpoint. There were
+four calibrated-only solves and no original-only solve. Both reproduced the
+promoted rung at 12/12 with identical measured cost. The calibrated critic had
+AUC 0.964, Brier 0.0323, Brier skill 0.248, ECE 0.0273, and monotone curves on
+all 20 held-out representations. Thus this checkpoint is admitted for both
+`L10` and `L1000`; this does not admit the rewind-trained replacement.
+
+The valid random-init follow-up used eight frontier games and exactly one fresh,
+pinned rehearsal game from every cleared rung per iteration (`F_old=1`). It
+cleared rungs 0--4, but `unknot+6` required 12 iterations and only 80.6% pooled
+solve rate. It was temporarily 2/4 immediately after rung 2, recovered to 4/4
+after rung 3, and ended at 3/4 after rung 4. The final five-rung two-objective
+panel had 34/40 solved attempts before budget calibration. Capped training kept
+that count at 34/40 but worsened capped `L10 + L1000` from 205,540 to 208,571;
+the budget update was rolled back. This is a negative result for fixed
+`F_old=1`, not evidence of insufficient depth. The next from-scratch curriculum
+must use the already implemented aggregate portfolio guard: retain a block only
+when total solved attempts do not fall and capped objective does not rise;
+target recovery at regressions and restore the block start if recovery fails.
+Exact per-rung retention remains a reported secondary measure.
+
+Artifacts:
+
+* `pgx-mcts-bench/artifacts/joint-pretrain-warm-v2-prefix10-20260807/report.json`;
+* `pgx-mcts-bench/artifacts/joint-pretrain-controls-prefix5-20260807/report.json`;
+* `pgx-mcts-bench/artifacts/joint-pretrain-warm-v2-prefix10-20260807/heldout-L10.json`;
+* `pgx-mcts-bench/artifacts/joint-pretrain-warm-v2-prefix10-20260807/heldout-L1000.json`;
+* `pgx-mcts-bench/artifacts/joint-pretrain-warm-v2-prefix10-20260807/existing-calibrated-heldout-L1000.json`;
+* `pgx-mcts-bench/artifacts/joint-pretrain-scratch-f-old1-prefix5-20260807/report.json`.
+
 ## What would kill the programme
 
 Stop or reduce the claim if any of these occur:

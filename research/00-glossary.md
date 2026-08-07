@@ -647,6 +647,39 @@ used to detect collateral forgetting. Losing a canary is evidence of drift. It i
 reported alongside gains, rather than automatically vetoing a much larger external
 objective improvement in v10.
 
+### Current-network portfolio and lifetime solution bank
+
+The **current-network portfolio** evaluates one checkpoint on a frozen set of
+representations with the registered simulations, attempts, action horizon, seeds,
+and objective cap. It measures what the scientist can solve now. Its solved set
+may exchange individual identities during continual learning.
+
+The **lifetime solution bank** stores the best verified semantic solution ever
+found for each representation, even if the current network later stops reproducing
+that solution. It measures accumulated research output, not current policy recall.
+Every report should keep these two quantities separate.
+
+### Capped portfolio objective and block progress
+
+For a frozen portfolio `P` and empirical cap `C`, the capped objective is
+
+```text
+sum over x in P of min(best verified L10(x), C), using C when x is unsolved.
+```
+
+`C` is fixed before learning from the maximum verified `L10` on the registered
+calibration panel; it must not be retuned after observing treatment outcomes.
+Both arms use exactly the same portfolio and cap.
+
+A **block-progress** update compares the complete old-plus-seen portfolio before
+and after a training block. The block may be retained when total solved count does
+not fall and capped portfolio `L10` does not rise; the complete run must show at
+least one strict improvement. Losing one canary or temporarily losing a newly
+acquired solve is therefore allowed when the complete portfolio still improves.
+If the block regresses, targeted recovery is attempted; if recovery fails, the
+current network and optimizer return to the block-start state. The lifetime
+solution bank remains intact.
+
 ### Common-success objective
 
 The sum of each arm's best objectives only over
