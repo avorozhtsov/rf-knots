@@ -26,11 +26,30 @@ representations, diverse rung-18 scientists, calibrated per-scientist scheduling
 verified best-witness exchange, periodic improvement attempts, and compute-matched
 static, no-sharing, supervised, and single-scientist controls.
 
-The first corrected 200-round, ratio-10 engineering seed gives a narrower result:
-sharing improved held-out coverage under both schedules, but adaptive ordering was
-slightly worse than static ordering on identical solved-task sets. The bank is not
-an all-`u=1` set: independent lower bounds certify `u >= 2` for 87/200 BASE
-identities. See [the exact paired results and execution gate](16-scientists-collaboration.md#corrected-ratio-10-four-arm-pilot-2026-08-03).
+[00-glossary.md](00-glossary.md) defines the experiment vocabulary, objectives,
+denominators, protocol versions, and scientist architectures used below.
+
+The intended 200-representation comparison is still gated. Historical v6--v10
+sharing runs charged receiver-internal controller plies as solution `moves`, so
+their objective comparisons do not answer the intended solver-independent
+semantic-`L10` question. Protocol v11 now verifies a portable semantic witness,
+charges only its braid edits, and reports receiver-native/internal plies only as
+compute. Real rung-18 checkpoints migrate to the new remaining-budget input with
+exactly identical outputs and actions. An `s-tape4` early-rung critic gate made all
+10 curves budget-sensitive and monotone without reducing promoted-rung solve rate.
+
+The first 25-representation v11 preflight used 12 routable superior donations,
+six preservation canaries, and six identities untouched by donation, replay, or
+preservation loss. At 16 evaluation simulations, sharing and control solved the
+same single identity; sharing shortened it by six `L10` points but rescued no
+target. A post-hoc 64-simulation sweep produced one sharing-only canary, but a
+fresh 64-simulation/four-attempt run did not replicate it: both arms again solved
+only `10_124`, and both lost the frozen `10_100` solve. Thus sharing remains
+plausible at longer search horizons, but it has not passed a fresh preflight.
+The three-seed confirmation, 30--50-item pilot, 200-item arms, and CPU-32 run
+remain closed. The bank is not an all-`u=1` set: independent lower bounds certify
+`u >= 2` for 87/200 BASE identities. See
+[the semantic-cost v11 result](16-scientists-collaboration.md#semantic-cost-sharing-gate-v11-2026-08-07).
 
 ---
 

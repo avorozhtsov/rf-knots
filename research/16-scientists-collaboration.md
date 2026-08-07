@@ -7,6 +7,9 @@ proposal is strong enough to become a paper experiment, but the first draft of t
 loop mixes several quantities that have to be separated before its result can mean
 anything.
 
+Definitions and reporting denominators are collected in
+[00-glossary.md](00-glossary.md).
+
 The short verdict is:
 
 * make comparison of approaches on a calibrated benchmark the primary study;
@@ -61,15 +64,24 @@ For `L = A * crossing_changes + B * moves`, every observation may include
 appending a zero-initialised input weight, so enabling the channel initially
 preserves their policy and value outputs.
 
-Fresh tasks start with a learned attempt budget, initially
-`max(L_floor, 2 * L_predicted)`, and geometrically double it after
-`budget_exhausted` until the existing global move-derived cap only on a pinned
-audit sample. Routine attempts stop at the first cap: an initial real 30-pair
-smoke that restarted every failure increased scheduled inference by 81%, because
-unsolved tasks repeatedly replayed doomed prefixes. A deterministic 10% audit
-retains calibration and recovery evidence without paying that cost everywhere.
-The first cap is not called an upper bound: exhaustion censors the unconstrained
-crossing/move targets and must not create an invented equality label.
+Fresh collaboration tasks never use one scientist's predicted cost as an attempt
+cap. Local serial scientists see only the current window at the initial state,
+so `2 * L_predicted` can be arbitrarily wrong about an unseen tail and would give
+different scientists different solving opportunities. For observed braid-word
+length `c`, ratio `A:B` normalized to `A/B`, and common native action horizon
+`H`, every scientist instead starts at the representation-derived tier
+
+```text
+min((A/B + 1) * H, (A/B) * ceil(c / 2) + H).
+```
+
+This first tier is not called an upper bound. Every `budget_exhausted` failure is
+repeated with the same seed at the common global cap `(A/B + 1) * H`; both records
+enter replay with their actual encoded budgets, while only the final attempt
+decides task success. Ordinary action-horizon failures are not repeated because
+the objective cap did not censor them. The old predicted-cap multiplier and 10%
+audit are retained only in historical artifacts, not in collaboration schema
+`collaborative-scientists-v5-common-structural-budget`.
 
 Shared witnesses create two distinct jobs. Translation keeps the author's
 crossing-change count and permits only calibrated receiver-native move slack;
@@ -693,15 +705,17 @@ static sharing (17,248). Its six-task set was not the no-sharing six-task set:
 aux-only gained `12a_819` but lost `12n_684`. At ratio 1000 it regressed to 5/70
 and capped loss 1,331,233. It therefore also fails the CPU-32 gate.
 
-This changes the answer about simultaneous `10:1` and `1000:1` training. It was a
-reasonable multi-task proposal, but the pilot now shows objective interference as
-a live risk: the sharing rule that helps ratio 10 harms ratio 1000. The next
-experiment should be ratio-10-only, because approach comparison rather than new
-unknotting records is the primary goal. Treat ratio 1000 as a separate secondary
-arm, or give it a ratio-specific policy/value adapter and replay stratum; do not
-let it veto or distort the primary curriculum. A fair ratio-10-only gate must
-rerun all three controls, not compare a single-task treatment against the existing
-dual-task controls.
+This makes objective interference a live risk, not a settled conclusion about
+simultaneous `10:1` and `1000:1` training. The final target is now explicitly
+`1000:1`: `10:1` is valuable only insofar as its exploration discovers witnesses
+that re-score better under `L1000`. A short gate can check plumbing or reject a
+catastrophic regression, but it cannot decide this multi-task question. The
+decisive compute-matched ablation must use at least 100 knot-identity-disjoint
+representations and compare `1000:1`-only, equal dual-objective, and target-biased
+dual-objective training. Every witness found by either ratio is re-scored under
+`L1000`, and final evaluation uses only `1000:1`. Report the exact paired solved
+sets, capped `L1000`, crossing changes on common successes, and how often the
+winning `L1000` witness was originally discovered by the `10:1` explorer.
 
 The first causal pilot deliberately disables the stale-solution improvement
 round. Improvement search is another intervention and would obscure whether the
@@ -1671,6 +1685,350 @@ opening an untouched panel.
 
 Artifact:
 `pgx-mcts-bench/artifacts/native-learning-gate-swindow-v2-20260806/report.json`.
+
+### Sharing implementation audit repair, 2026-08-06
+
+A line-by-line audit found defects that prevent the old sharing runs from being
+used as evidence for the intended long protocol.
+
+1. Receiver cost was computed from the compact portable witness.  That witness
+   intentionally removes serial states that only shift the head or modify
+   controller memory.  The solver charged those plies, but sharing admission and
+   reporting did not.  The repaired implementation verifies the same portable
+   proof and uses the complete receiver record length for `moves`.
+2. The native optimizer was constructed before the option adapter was attached.
+   Native policy loss nevertheless flowed through the adapter; its gradients
+   accumulated because native `zero_grad` did not own them, and global gradient
+   clipping included them.  Native updates now bypass a separately optimized
+   adapter, clear every network gradient, and clip only parameters owned by the
+   native optimizer.  Option updates similarly clear stale base gradients.
+3. The long `braid-collaborative-scientists` runner attached the adapter but not
+   the state-dependent gate used by the later sharing gate.  It now attaches the
+   gate at probability 0.1 and trains route-gate, off-route KL, and off-route
+   activation penalties.
+4. The adapter and gate pooled the serial sequence only by mean and maximum,
+   although the policy decision is head-relative.  Both now include the encoded
+   head cell explicitly.  Old adapter checkpoints are migrated with the new
+   columns zeroed, preserving their outputs exactly.
+5. The long runner gave sharing one adapter update per training event.  It now
+   uses `ceil(train_steps / 4)` sharing updates, and no-sharing arms receive the
+   same number of extra native optimizer steps.  The frozen manifest records the
+   dose and uses schema `collaborative-scientists-v3`.
+6. Distillation admission compared a donation only with the receiver's current
+   stochastic attempt.  If that attempt failed, an older, better receiver-native
+   solution was forgotten.  Worse, the long runner computed a filtered option
+   set but the trainer silently sampled from the entire replay, so a donation
+   could still train policy after becoming stale.  Replay now keeps a persistent
+   best native objective by representation and A:B ratio.  Only the best donated
+   trajectory whose fully charged objective is *strictly* below that incumbent
+   is an active policy target; equal and worse solutions are excluded and the
+   check is repeated at every training event.  A stale trajectory remains only
+   as a one-sided upper-bound label for the critic.
+
+The verified historical solution identities are still useful: the proof replay
+was correct.  Historical native move counts, capped objectives, and any strict
+sharing admission that depended on the undercounted objective are not valid for
+the corrected experiment.  Historical learned checkpoints describe the old
+algorithm, whose native/share gradient paths were entangled; retain them only as
+diagnostics.  Do not use their objective comparisons to accept or reject the
+fixed sharing hypothesis.
+
+The repair has regression coverage for a receiver route with an extra charged
+head shift, native/option optimizer separation, positional head conditioning,
+old-checkpoint migration, gated option isolation, and transactional resume.  It
+does not yet implement target-conditioned option programs: the target remains a
+deterministic shortest neutral head route followed by one certified edit, not an
+arbitrary five-step tape/register/memory program.  That is a later architecture
+experiment.
+
+**Decision:** the code is ready for a corrected bounded multi-representation
+gate, not for the 200-representation or CPU-32 experiment.  Recompute paired
+receiver-native objectives and strict admissions, repeat the multi-witness gate
+with exact solved-set intersections, and open the long arms only if the repaired
+sharing treatment is non-inferior to its compute-matched native control.
+
+### Corrected multi-witness gate v6, 2026-08-06
+
+The repaired gate reused the frozen 17-identity `s-tape4-h5` panel, eight donated
+training witnesses, held-out `12a_850`, seeds 20260950--20260952, 128 simulations,
+eight final attempts per identity, sixteen update cycles, and the compute-matched
+native control.  The only protocol changes were the audited implementation
+repairs: every receiver ply is charged, native and option gradients are isolated,
+the option controller has an explicit head-cell feature, and manifests identify
+the run as v6.
+
+| seed | sharing / control solved | sharing-only | control-only | lost from frozen before | charged capped L10 sharing / control | gate |
+|---:|---:|---|---|---|---:|---|
+| 20260950 | 13 / 6 | 8 identities | `12a_1199` | `11n_46`, `12a_1199` | 2,200 / 3,407 | fail |
+| 20260951 | 17 / 6 | 11 identities | none | none | 1,634 / 3,364 | pass |
+| 20260952 | 15 / 4 | 11 identities | none | `11n_46`, `12a_1199` | 1,998 / 3,757 | fail |
+
+Mean target-witness transfer was 91.7% for sharing and 4.2% for native-only.
+Mean final coverage was 15.0/17 versus 5.33/17, and mean charged capped L10 was
+1,944 versus 3,509.3.  The held-out receiver-unsolved identity `12a_850` was
+solved by sharing in all three seeds and by control in none.  Thus corrected
+sharing produces a large, repeated transfer signal and improves the aggregate
+objective; this is no longer a “sharing does nothing” result.
+
+The preregistered gate nevertheless fails because exact retention is mandatory.
+In seeds 20260950 and 20260952 the sharing scientist lost both frozen canaries
+`11n_46` and `12a_1199`.  Seed 20260950 additionally had `12a_1199` as a
+control-only final solve.  The failures are deterministic within the eight final
+attempts: each lost identity was 8/8 before training and 0/8 after sharing.
+
+A paired counterfactual evaluated the two lost canaries from both failed seeds
+with the final option adapter enabled and bypassed.  Both modes solved 0/2 and
+had capped loss 528 in both seeds.  Therefore the final residual is not directly
+masking a retained base solution.  The base scientist itself has lost the
+canaries, plausibly through native updates trained on adapter-influenced search
+data.  Raising only the off-route gate penalty cannot repair this failure.
+
+**Decision:** sharing transfer is demonstrated, but the long sharing arms and
+CPU-32 remain closed because only one of three seeds retained the complete frozen
+solved set.  The next repair should protect native base updates inside the
+sharing learner with explicit canary rehearsal or transactional acceptance and
+rollback, then repeat this exact frozen three-seed gate.  Do not redesign the
+adapter or reduce its dose before isolating base retention.
+
+Artifacts:
+
+* `pgx-mcts-bench/artifacts/multi-witness-gate-v6-s-tape4-h5-20260806-summary/report.json`;
+* per-seed directories `multi-witness-gate-v6-s-tape4-h5-seed20260950-20260806`
+  through `seed20260952-20260806`; and
+* failed-seed counterfactual directories
+  `multi-witness-gate-v6-counterfactual-s-tape4-h5-seed20260950-20260806` and
+  `seed20260952-20260806`.
+
+### Superseding v9 gate rule: quality primary, exact retention secondary
+
+The v6 decision above was intentionally conservative, but exact equality of a
+stochastic neural policy's solved set is too strong as the primary research
+criterion.  A scientist that loses two old fixed-seed solves but gains nine hard
+solutions and substantially improves total capped L10 should not automatically
+fail.  Exact retention is still valuable evidence of stability, so v9 reports
+it, paired control-only identities, and exact final-set equality as secondary
+criteria.
+
+The v9 primary gate is:
+
+1. for every receiver and seed, charged capped L10 across the complete frozen
+   panel is no worse than its compute-matched native control; and
+2. every active-witness distillation event reaches its registered canonical-route
+   loss reduction before the hard optimizer-step cap. Individual steps may rise
+   because the same update also protects off-route native behaviour.
+
+The overall gate also requires at least one representation solved only by the
+sharing treatment.  Thus quality and demonstrated transfer decide admission;
+exact NN retention measures collateral drift and remains in every report.  The
+stale/worse-solution repair is part of this protocol. Training and final
+evaluation simulations are frozen separately. Historical v6--v8 numbers cannot
+be relabelled as v9 because both the policy-target set and admission rule changed.
+
+### Expanded stale-aware preflight and simulation-dose result
+
+The corrected preflight expanded to 17 representations: eight transfer targets,
+held-out `12a_850`, five canaries, and deliberately stale `12a_1199`, `10_124`,
+and `12a_1203`. Native refresh also made `10_126` and `11n_119` stale. All five
+stale donations produced zero adapter updates, confirming that policy training
+uses only a strictly better donated receiver-native objective.
+
+At 128 learning simulations, sharing tied control at 11/17 but lost charged
+capped L10 3,280 to 2,512. At 64 learning simulations it solved 10/17 versus
+4/17 and narrowly won 3,656 to 3,671. A fixed-checkpoint evaluation-dose sweep
+then separated learning search from evaluation search:
+
+| learning simulations | evaluation simulations | sharing / control solved | capped L10 sharing / control |
+|---:|---:|---:|---:|
+| 64 | 32 | 12 / 4 | 3,377 / 3,794 |
+| 64 | 64 | 10 / 4 | 3,656 / 3,671 |
+| 64 | 128 | 14 / 6 | 3,263 / 3,412 |
+| 64 | 256 | 17 / 7 | 2,767 / 3,261 |
+| 128 | 32 | 9 / 10 | 3,762 / 2,771 |
+| 128 | 64 | 10 / 10 | 3,452 / 2,716 |
+| 128 | 128 | 11 / 11 | 3,280 / 2,512 |
+| 128 | 256 | 11 / 13 | 3,178 / 2,164 |
+
+The 64-trained sharing checkpoint therefore has a repeatable coverage advantage
+at all four evaluation doses. It is not simply an under-searched checkpoint.
+However, its summed L10 on the identities both arms solve is worse at every dose;
+sharing wins capped loss by covering more tasks, not by shortening common
+solutions. The 128-trained sharing checkpoint loses at every evaluation dose.
+The full gate consequently froze 64 simulations for learning and 128 for final
+evaluation.
+
+### v9 split-budget seed and stop decision
+
+The clean v9 rerun of seed 20260950 started again from the untouched rung-18
+`s-tape4-h5` checkpoint. It used eight final attempts, sixteen update cycles,
+and four CPU evaluation workers. Sharing solved 14/17 versus control 4/17 and
+won charged capped L10 2,392 to 3,721. The exact intersection was `10_100`,
+`10_124`, `10_152`, and `12a_1203`; sharing-only contained ten identities and
+control-only was empty. On the intersection, however, sharing's summed objective
+was 465 versus control's 289. Sharing also lost frozen solve `12a_1199`.
+
+Stale filtering remained correct. `10_126` was rejected at donated/native
+objectives 68/66, while `11n_119` was rejected at 162/110 and later 162/85.
+Eleven of twelve active distillation events reached their registered 10% route-
+loss reduction. The first `11a_15` event exhausted all sixteen adapter steps,
+moving only from 6.9719 to 6.8420 instead of the target 6.2747. The seed therefore
+fails the preregistered primary gate even though its aggregate coverage is
+promising.
+
+Stop the sequence at this failure: do not average it away with seeds 20260951
+and 20260952. The 30--50-representation pilot, capacity-growth branch, 200-item
+five-arm comparison, and CPU-32 rental remain closed. The next local experiment
+should tune adapter learning rate and maximum steps under an explicit matched-
+compute budget, and must show target attainment for every active event without
+solved-set degradation before this same three-seed gate is reopened.
+
+### Block-balanced sharing gate v10, 2026-08-06
+
+The v9 event-level stopping rule was the wrong scientific test. Canonical-route
+loss only measures probability assigned to one translated controller route; it
+does not measure eventual solve probability or solution cost. A receiver may be
+distracted by an individual foreign method even when a collection of better
+methods helps on average. Requiring every donation to reduce route loss by 10%
+therefore vetoed the hypothesis before measuring it.
+
+Protocol v10 uses schema
+`block-balanced-compute-matched-option-adapter-sharing-v10` and makes these
+changes:
+
+1. wait for at least ten distinct active, strictly superior receiver-native
+   witnesses;
+2. train at a scheduled ten-cycle boundary, not after every donation;
+3. sample four canonical-route positions per witness on every adapter step, so
+   long routes cannot dominate the block;
+4. apply a fixed 16-step adapter dose and give control enough extra native
+   batches to match or exceed the adapter's state-example count; and
+5. use paired complete-panel capped receiver-native-ply objective as primary.
+   Per-witness route loss, exact retention, solved-set differences, and
+   common-success cost are reported diagnostics, not individual vetoes.
+
+A tiny two-witness plumbing smoke and a 13-witness economical preflight verified
+block scheduling, balanced sampling, stale-witness rechecking, and compute
+matching. The full confirmatory run then used 25 representations, 19 registered
+training targets, six non-target retention canaries, 64 training simulations,
+128 evaluation simulations, eight final attempts per representation, four
+native-refresh attempts per cycle, and fresh paired seeds 20261000--20261002.
+Every seed completed one real sharing block. The canary start states participated
+in the off-route preservation loss, so this subset is not an unseen held-out set.
+
+The table reports the historical `delta = capped loss(sharing) - capped
+loss(control)`, where the move term included receiver-native plies. Negative is
+better for sharing, but these values are not semantic `L10`.
+
+| seed | sharing / control solved | sharing-only / control-only | capped-loss delta | mean route-loss reduction |
+|---:|---:|---:|---:|---:|
+| 20261000 | 16 / 21 | 2 / 7 | +708 | 0.90% |
+| 20261001 | 12 / 17 | 0 / 5 | +780 | 1.07% |
+| 20261002 | 16 / 16 | 5 / 5 | -270 | 0.84% |
+
+All active witnesses improved canonical-route loss in all three seeds. That is
+useful evidence that the fixed-dose block optimizes its teacher-forced target.
+It is also the decisive counterexample to using route loss as the gate: external
+quality still lost in two of three paired seeds. Mean complete-panel delta was
++406 and median delta was +708. The result was not confined to training targets:
+their deltas were +277, +762, and -82, while non-target canary deltas were +431,
++18, and -188. Thus both subsets favoured control in two of three seeds. A future
+generalization claim still needs a separate identity-disjoint panel unused by
+donation, replay, preservation loss, and model selection.
+
+Sharing did produce real alternative solutions: the union of sharing-only
+identities was `10_152`, `10_159`, `11a_231`, `12a_1199`, and `12a_1255`.
+However, those gains were outweighed by control-only and lost native solves.
+This is not evidence that all knowledge sharing is impossible; it is evidence
+that the current unconditioned option-route adapter does not improve expected
+external performance under a balanced 16-step dose.
+
+**Decision:** v10 fails its preregistered multi-seed gate. Keep the 30--50-item,
+200-item, and paid CPU-32 sharing runs closed. Do not rescue the result with a
+larger dose merely because training route loss falls. The next bounded research
+question is selective applicability: predict when a donated route helps this
+receiver and representation, or detect conflicting native/share gradients,
+while retaining the same external paired endpoint and compute matching.
+
+Artifacts:
+
+* `pgx-mcts-bench/artifacts/multi-witness-gate-v10-confirm-summary-20260806/report.json`;
+* per-seed directories `multi-witness-gate-v10-confirm-seed20261000-20260806`
+  through `multi-witness-gate-v10-confirm-seed20261002-20260806`; and
+* economical dose preflights
+  `multi-witness-gate-v10-block10-preflight-seed20260981-20260806` and
+  `multi-witness-gate-v10-block10-dose16-seed20260981-20260806`.
+
+### Semantic-cost sharing gate v11, 2026-08-07
+
+The solver-independent objective is now enforced in code. A solution's `moves`
+is the number of verified portable semantic braid edits. Head travel, tape and
+register operations, scanning, and memory-state changes remain real receiver
+compute: they consume native episode/internal limits and are reported as
+`native_plies` and `internal_plies`, but do not enter `L_A:B`. Translation now
+hard-fails unless donor and receiver agree exactly on `(cc, semantic_moves)`.
+The witness bank was rebuilt under schema
+`certified-semantic-collaboration-witness-bank-v2`; it contains 25 certified
+witnesses and has hash
+`e76b6b7911690b2e4b6bab9c3ef4883dcb21d3a7cac2e3754d9c1efcb81117a5`.
+
+The remaining-semantic-`L` input is a function-preserving migration. Across the
+real rung-18 `s-window-128`, `s-tape4`, and `s-w11-128` checkpoints, the maximum
+absolute difference in policy logits, scalar value, solve logits, crossing head,
+and moves head was exactly zero on three representations and three ratios.
+Paired eight-simulation action sequences were also identical. The new `s-tape4`
+critic was then trained on deterministic instances from actual ladder rungs
+0--9 rather than unrelated table knots. Eight of ten identities supplied both
+positive and censored outcomes; all ten final curves were monotone and
+budget-sensitive. Promoted-rung solve rate changed from 7/8 to 8/8, so the
+rollback guard accepted the checkpoint.
+
+Two implementation defects surfaced before interpreting the preflight:
+
+1. one valid witness, `11n_119`, could not be routed within the receiver's
+   five-internal-action option cap, but the cycle scheduler still indexed it as
+   trainable. Scheduling now uses only successfully translated targets and
+   reports all unroutable targets;
+2. the fresh option adapter inherited `s-tape4`'s conservative native rate
+   `5e-5`. Its optimizer is now independent at `1e-3`. Under the same seed and
+   16-step dose, mean canonical-route loss reduction rose from 0.006% to 0.757%;
+   all 12 routable witnesses improved and none regressed.
+
+The corrected economical preflight used 25 representations: 13 registered
+targets, six non-target preservation canaries, and six generalization identities
+excluded from donation, native replay, and preservation loss. It used eight
+training simulations, 16 evaluation simulations, two paired attempts, ten
+cycles, two native-refresh games per cycle, and one balanced 16-step sharing
+block. Sharing and control both solved only `10_124`; sharing found cost 51 and
+control 57, so complete-panel capped semantic `L10` was 6,387 versus 6,393.
+Neither arm solved a target or untouched generalization identity. Exact retention
+and final solved sets matched, but the overall gate failed because there was no
+sharing-only identity.
+
+A fixed-checkpoint 16/32/64 simulation sweep tested whether the adapter needed
+more search. At 64 simulations and a new evaluation seed, sharing solved
+`10_100` and `10_124`, control only `10_124`, and capped loss was 6,173 versus
+6,387. `10_100` was a preservation canary, not a donation target or untouched
+generalization item. Because 64 simulations were selected after this observation,
+that row is exploratory. A fresh 64-simulation/four-attempt preflight did not
+replicate it: both arms solved only `10_124`, tied capped loss at 6,387, and both
+lost the frozen `10_100` solve. Route loss still improved for all 12 routable
+witnesses by a mean 0.849%, but no target transfer appeared.
+
+**Decision:** do not run the three confirmatory seeds, 30--50-item pilot, 200-item
+arms, or paid CPU-32 sharing experiment. The result does not prove that sharing
+cannot work over a longer horizon: it shows one post-hoc high-search rescue that
+failed a fresh-seed replication. The next sharing experiment must change a
+registered learning variable—longer interleaving, repeated blocks, or a
+target-conditioned option policy—rather than merely increasing final MCTS after
+seeing the outcome. Static/adaptive no-sharing engineering can proceed
+independently.
+
+Artifacts:
+
+* `pgx-mcts-bench/artifacts/semantic-budget-migration-v11-k3-seed20261130-20260807/report.json`;
+* `pgx-mcts-bench/artifacts/semantic-critic-v11-s-tape4-early10-seed20261120-20260807/report.json`;
+* `pgx-mcts-bench/artifacts/semantic-sharing-v11-preflight-s-tape4-seed20261150-lr-fixed-20260807/report.json`;
+* `pgx-mcts-bench/artifacts/semantic-sharing-v11-dose-s16-32-64-seed20261160-20260807/report.json`; and
+* `pgx-mcts-bench/artifacts/semantic-sharing-v11-fresh64-preflight-s-tape4-seed20261170-20260807/report.json`.
 
 ## What would kill the programme
 
