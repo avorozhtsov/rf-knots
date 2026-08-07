@@ -786,6 +786,19 @@ is the receiver used by the historical v6--v10 sharing gates. The first v11
 semantic-cost preflight instead used budget-calibrated `s-tape4`. `h5` is the
 controller horizon, not MCTS depth.
 
+### `s-tape4` and `d-tape4-u1`
+
+`s-tape4` is the independent serial four-symbol-tape scientist used by the
+current K=3 collaboration roster. Its promoted stage-18 checkpoint was trained
+through native rung reinforcement learning and has no distillation provenance.
+It already uses the U1 exploration rule, so there is no separate
+`s-tape4-u1` candidate name.
+
+`d-tape4-u1` is a different historical student initialized by behavioural
+distillation from the `u1-puct` teacher. The `d` prefix and `-u1` suffix identify
+that provenance. Results or checkpoints for these two candidates must not be
+silently interchanged even though both expose a four-symbol tape.
+
 ### `s-cyclic-tape8-192`
 
 An experimental 306,214-parameter capacity scientist combining:

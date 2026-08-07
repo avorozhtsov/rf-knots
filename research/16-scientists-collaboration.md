@@ -2030,6 +2030,73 @@ Artifacts:
 * `pgx-mcts-bench/artifacts/semantic-sharing-v11-dose-s16-32-64-seed20261160-20260807/report.json`; and
 * `pgx-mcts-bench/artifacts/semantic-sharing-v11-fresh64-preflight-s-tape4-seed20261170-20260807/report.json`.
 
+### Common structural-budget equivalence audit, 2026-08-07
+
+The prediction-independent v5 budget protocol was audited separately from
+learning. The panel contained 100 distinct braid representations generated from
+the mastered scrambled prefix of the ladder, with a disjoint 20-representation
+calibration split. The three scientists were the promoted independent K=3
+roster: `s-window-128`, independent `s-tape4`, and `s-w11-128`. Every
+representation received two paired attempts under `L1000`. Calibration selected
+the lowest registered dose, 32 simulations, after portfolio coverage reached
+20/20.
+
+Direct-global search and structural-first/global-restart search both solved
+exactly 92/100 representations. Their solved sets were identical and their
+capped `L1000` was exactly 639,569 in both arms. All 600 paired final outcomes
+and every solved cost matched. Native action sequences matched for 598/600
+pairs; the two differences were unsuccessful paths with the same final failure
+classification, so action equality remains a diagnostic rather than a scientific
+endpoint.
+
+The structural probe was not economical. Thirty-six capped failures restarted,
+raising scheduled network evaluations from 578,424 to 617,133, a 6.69% increase.
+Thus the removal of `2 * L_predicted` succeeds as a fairness/equivalence repair,
+but the replacement cap is not admitted as a compute optimization. Keep
+objective budgeting opt-in and disabled in the first five-arm comparison. The
+artifact is
+`pgx-mcts-bench/artifacts/structural-budget-equivalence-k3-100-seed20261600-20260807/report.json`.
+
+### Transactional positive-acquisition gate v3, 2026-08-07
+
+The approved next gate tested whether hard-frontier failure was caused by search
+breadth or by the 64-action episode clock. It used `L1000`, the same fixed
+12-representation development panel and three new seeds. The promoted
+`s-window-128` checkpoint first reproduced its rung at 12/12. Discovery then used
+registered `(simulations, native action horizon)` tiers `(64,64)`, `(128,96)`,
+`(256,128)`, and `(512,128)`. Residual progress was required after the first
+tier; the final two tiers additionally required the best residual to cross a
+75%-of-initial near-solve threshold. Training remained certified-success-only,
+exposure-capped, and transactional.
+
+| seed | initial solved | final solved | gained | lost | capped `L1000` initial / final | accepted updates |
+|---:|---:|---:|---|---|---:|---:|
+| 20261620 | 4/12 | 6/12 | `11a_33`, `12a_981` | none | 179,560 / 149,459 | 1 |
+| 20261621 | 4/12 | 5/12 | `11a_33` | none | 179,560 / 162,509 | 1 |
+| 20261622 | 4/12 | 6/12 | `11a_33`, `12a_981` | none | 179,560 / 147,457 | 2 |
+
+Exact retention and non-inferior capped objective passed in every seed, but only
+`12a_981` replicated as a declared discovery rescue; two were required. Final
+panel solve rates were 50.0%, 41.7%, and 50.0%, below the preregistered 70%
+minimum.
+
+The detailed transactions locate the remaining failure. `10_149` already
+supplied four certified positive trajectories in every seed at `(64,64)`, but
+each attempted 24-step consolidation was rejected because it lost `11a_26` or
+worsened capped `L1000`. More search cannot fix that case. On the hard frontier,
+`11n_107` stayed at residual length 11 under both `(64,64)` and `(128,96)`, just
+outside its registered near-solve threshold 10; `10_71` and `10_137` made no
+residual progress. Consequently no representation qualified for the 128-action
+tiers.
+
+**Decision:** positive acquisition v3 fails. Keep the K=4 no-sharing smoke,
+sharing gate, objective-mixture ablation, 200-representation comparison, and
+cloud run closed. The next valid repair is inside success consolidation—for
+example transactional selection across 1/2/4/8/... optimizer steps or an
+explicit canary-preserving update—not an unregistered relaxation of the search
+threshold. The artifact is
+`pgx-mcts-bench/artifacts/native-learning-gate-swindow-v3-horizon-L1000-20260807/report.json`.
+
 ## What would kill the programme
 
 Stop or reduce the claim if any of these occur:
