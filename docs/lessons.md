@@ -46,6 +46,20 @@ may since have moved; the lesson is the durable part.
 - **`(-1) ** e` is a float when `e` is negative.** Jones exponents are routinely
   negative, so every determinant computed that way was `17.0` rather than `17`
   and no dictionary key ever matched. Nothing raised.
+- **A classical construction can be wrong in a way that looks right.** A
+  hand-derived Seifert matrix for a braid closure reproduced the trefoil, the
+  figure-eight and every torus knot tried, and still disagreed with the
+  Burau-derived Alexander polynomial on 7% of random knots. All sixteen sign
+  conventions in the obvious family were tried; none reached agreement, so the
+  error was structural. Differential-test against an independent implementation
+  over thousands of inputs before trusting a construction, and delete it rather
+  than ship it at 93%.
+- **An invariant with a parity is a free correctness test.** A knot's signature
+  is always even. That one assertion caught an elimination that wrote symmetric
+  entries mid-pivot, corrupting the pivot row before it had been read — a bug that
+  produced plausible numbers on every small example. The same assertion first
+  fired on a *link*, where odd signatures are legitimate; the fix was to filter to
+  knots, not to weaken the assertion.
 - **Identification by one invariant is ambiguous and must say so.** 384
   fingerprints in a 2870-knot table are shared by more than one knot; `5_1` and
   `10_132` agree on both the Jones and the Alexander polynomial and have

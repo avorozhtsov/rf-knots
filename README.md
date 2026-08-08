@@ -131,6 +131,9 @@ date and snapshot hash, together with the corresponding Spherogram identifier
 | `src/rf_knots/reference.py` | slow pure-Python oracle: Artin representation, BFS solver |
 | `src/rf_knots/render.py` | ASCII and SVG pictures of a braid and its closure |
 | `src/rf_knots/torus.py` | the diagram as a `position × strand` raster: strand-count-agnostic input |
+| `src/rf_knots/seifert.py` | certified lower bounds: signature, tau, and the Montesinos `u ≥ 2` obstruction |
+| `src/rf_knots/unknot_search.py` | branch-and-bound over crossing changes, pruned by those bounds |
+| `src/rf_knots/verified_bounds.py` | a bounds ratchet that stores the move sequence and replays it on read |
 | `src/rf_knots/rollout.py` | random play, scramble generation, batched benchmarking |
 | `docs/representation.md` | how a knot is encoded and what may be done to it |
 | `docs/rungs.md` | every ladder rung, its rationale, and the knot it really is |
@@ -165,7 +168,18 @@ What is established, on generated torus-knot instances scored against proved unk
   distinct rung knots now have an exact unknotting number, against 6 before. See
   [docs/rungs.md](docs/rungs.md).
 
-Open, in rough order of value: the remaining certified lower bounds — `|σ|/2` is now computed
-per knot in `rf_knots.invariants`, but Rasmussen `|s|/2` and `|τ|` are not, and none of them is
-wired into a branch-and-bound, which is what turns a search result into a theorem; a learned
-head register; hard unknot diagrams; knot equivalence as a two-tape machine.
+* **The certified lower bounds are computed, and wired into a search.** `|σ|/2` was
+  claimed but silently returned nothing without `spherogram`, which was not installed;
+  it is now exact (validated on 2870 tabulated determinants), `|τ|` is computed from knot
+  Floer homology, and a non-cyclic `H₁(Σ₂(K))` certifies `u ≥ 2` where both of those are
+  zero. `rf_knots.unknot_search` uses them as an admissible heuristic, so a sequence that
+  meets the bound **determines** `u` rather than bounding it.
+* **The ladder's worst calibration gap is closed.** `R(3,18)#0` — `7_5`, `u = 2` — stood in
+  the ratchet at 6 crossing changes. The branch-and-bound finds 2 in five seconds, meets the
+  certified bound, and stores a witness that replays through the reference implementation.
+
+Open, in rough order of value: Rasmussen `|s|/2`, which needs Khovanov homology and has no
+offline backend here; a per-cell action space, so the policy head stops depending on the strand
+count at all (`research/experiments/strand_shared_head.py` removes the dependence from the
+*parameters*, which is the half that blocks checkpoint transfer); a learned head register; hard
+unknot diagrams; knot equivalence as a two-tape machine.

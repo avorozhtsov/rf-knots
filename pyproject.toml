@@ -18,6 +18,15 @@ dev = [
   "pytest>=8.2",
   "ruff>=0.6",
 ]
+# Certified unknotting-number lower bounds: the Seifert matrix comes from
+# spherogram and tau from knot Floer homology. Optional because the environment
+# and the generator do not need them -- but without them `lower_bounds` has
+# nothing computed to say about a knot the bundled table cannot name, which is
+# every knot the generator invents.
+bounds = [
+  "spherogram>=2.2",
+  "knot-floer-homology>=1.2",
+]
 
 [project.scripts]
 rf-knots = "rf_knots.cli:app"
