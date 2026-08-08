@@ -338,6 +338,15 @@ handful of extra JIT compilations:
 shape, and the repository already enables a persistent compilation cache, so even
 that is paid once across all runs.)*
 
+**The shape count is distribution-dependent, and the promise has to be the
+ceiling.** 17 is what the ladder's *current* instance mix produces; a uniform
+spread over the same capacity gives 33. What can be guaranteed is one shape per
+(row bucket, column bucket) pair — at `48 x 5` capacity and a `4 x 2` tile that is
+`12 x 3 = 36`, so under fifteen seconds of compilation in the worst case. The
+trade-off therefore survives a broader instance distribution, which a
+thousand-knot run would certainly be. `tests/test_bucketing.py` asserts the
+ceiling rather than the 17, because the 17 is data and the ceiling is a property.
+
 Wall clock on the trunk itself confirms the cell counts, at batch 64, width 36,
 four blocks, one thread:
 
@@ -347,9 +356,21 @@ four blocks, one thread:
 | bucketed `7 x 5` | 105 | 100.1 | 2.04x |
 | exact `2 x 17` | 34 | 42.4 | **4.81x** |
 
-**The recommendation is bucket at `4 x 2`.** Seventeen shapes and under seven
-seconds of one-off compilation buys about **4x the throughput**, against a dense
-ceiling of 4.8x. And throughput is the right thing to buy here: this project's own
+**The recommendation is bucket at `4 x 2`, and it is implemented** —
+`rf_knots.torus.bucket_shape` / `bucketed_raster` / `bucket_batches`, with the
+network side in `research/experiments/bucketing.py`. End to end on 600 generator
+instances, including the penalty for smaller shape-homogeneous batches, it is
+**3.5x** (mean 55 cells against 240). At most 36 shapes and under fifteen seconds
+of one-off compilation, against a dense ceiling of 4.8x.
+
+One correctness requirement comes with it, and it is the same trap as the strand
+axis in §5.3. Bucketing leaves up to three unused rows, so `F.pad(mode="circular")`
+wraps position 0 onto a *padding* cell rather than onto the last real letter —
+silently discarding the conjugation invariance the cyclic padding exists to
+provide. `wrap_positions_at` closes the necklace at the live length with a
+per-sample gather instead; the regression test measures **0.00 error for the live
+wrap against 1.51 for the canvas wrap**. The general rule, now paid for twice: **a
+cyclic axis must wrap at the live extent, never at the canvas.** And throughput is the right thing to buy here: this project's own
 measurements say search dominates — 2x the simulations beat 7.7x the parameters,
 and 128 simulations reach stage 8 where 16 reach stage 0. A 4x trunk speedup is
 worth more than any architecture change measured in this note.

@@ -149,3 +149,74 @@ def test_packing_a_random_word_is_always_a_braid_identity():
         assert equal_in_braid_group(packed_word(word, strands), word, strands)
         planes = raster(word, strands, max_strands=8, rows=24, pack=True)
         assert word_from_raster(planes, strands) == packed_word(word, strands)
+
+
+# --------------------------------------------------------------------------- #
+# shape bucketing
+# --------------------------------------------------------------------------- #
+
+def test_a_bucket_shape_is_a_tile_multiple_that_still_fits():
+    from rf_knots.torus import TILE, bucket_shape
+
+    assert TILE == (4, 2)
+    assert bucket_shape(1, 1) == (4, 2)
+    assert bucket_shape(4, 2) == (4, 2)
+    assert bucket_shape(5, 3) == (8, 4)
+    assert bucket_shape(18, 3) == (20, 4)
+    for length in range(0, 40):
+        for strands in range(1, 9):
+            rows, columns = bucket_shape(length, strands)
+            assert rows % 4 == 0 and columns % 2 == 0
+            assert rows >= length and columns >= strands
+
+
+def test_a_bucketed_raster_is_the_full_one_cropped():
+    """Same picture, smaller sheet -- not a different encoding."""
+    from rf_knots.torus import bucket_shape, bucketed_raster
+
+    for word, strands in WORDS:
+        if not word:
+            continue
+        small = bucketed_raster(word, strands, max_len=32, max_strands=8)
+        rows, columns = bucket_shape(len(word), strands, max_len=32, max_strands=8)
+        assert small.shape == (rows, columns, RASTER_CHANNELS)
+        big = raster(word, strands, max_strands=8, rows=32, pad_mode="identity")
+        assert np.array_equal(small, big[:rows, :columns])
+        assert word_from_raster(small, strands) == word
+
+
+def test_the_capacity_clamp_is_respected():
+    from rf_knots.torus import bucket_shape
+
+    # Capacity 5 strands rounds to 6 columns, never to 8.
+    assert bucket_shape(3, 5, max_len=48, max_strands=5)[1] == 6
+    with pytest.raises(ValueError, match="does not fit"):
+        bucket_shape(40, 3, max_len=8, max_strands=5)
+
+
+def test_batches_are_grouped_by_shape_and_cover_every_instance():
+    from rf_knots.torus import bucket_batches, bucket_shape
+
+    instances = [(word, strands) for word, strands in WORDS if word]
+    groups = bucket_batches(instances, max_len=32, max_strands=8)
+    assert sorted(i for group in groups.values() for i in group) == list(
+        range(len(instances))
+    )
+    for shape, indexes in groups.items():
+        for index in indexes:
+            word, strands = instances[index]
+            assert bucket_shape(
+                len(word), strands, max_len=32, max_strands=8
+            ) == shape
+
+
+def test_bucketing_a_packed_word_uses_the_packed_length():
+    """Packing shortens the word, so it must shorten the bucket too."""
+    from rf_knots.torus import bucket_shape, bucketed_raster, pack_layers
+
+    word, strands = (1, 3, 2, 1, 3), 4
+    packed_rows = len(pack_layers(word, strands))
+    assert packed_rows < len(word)
+    planes = bucketed_raster(word, strands, pack=True, max_len=32, max_strands=8)
+    assert planes.shape[0] == bucket_shape(packed_rows, strands,
+                                           max_len=32, max_strands=8)[0]

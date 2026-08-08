@@ -273,3 +273,114 @@ def word_from_raster(planes: np.ndarray, strands: int) -> Word:
 def channels(*, edges: bool = False) -> int:
     """Input width of the raster, which does **not** depend on the strand count."""
     return RASTER_CHANNELS + (EDGE_CHANNELS if edges else 0)
+
+
+# --------------------------------------------------------------------------- #
+# shape bucketing
+# --------------------------------------------------------------------------- #
+
+#: Rows x columns. Measured in `research/experiments/padding_overhead.py`: on the
+#: ladder's own instance distribution the full `48 x 5` canvas is **82% padding**
+#: (17.8% mean occupancy). Rounding up to this tile instead leaves 21.5% waste and
+#: 4.4x fewer cells, at a cost of 17 distinct shapes against 33 if every length
+#: got its own -- about 0.4 s of JIT per shape, paid once.
+TILE = (4, 2)
+
+
+def bucket_shape(
+    length: int,
+    strands: int,
+    *,
+    tile: tuple[int, int] = TILE,
+    max_len: int | None = None,
+    max_strands: int | None = None,
+) -> tuple[int, int]:
+    """`(rows, columns)` rounded up to a tile multiple, clamped to capacity.
+
+    A word of `length` letters on `strands` strands needs `length` rows and
+    `strands` columns; everything beyond that is padding. Rounding up to a tile
+    multiple keeps the number of distinct shapes small enough to jit each one
+    once, which is the entire trade: a handful of compilations against roughly
+    four times the throughput.
+    """
+    rows_tile, columns_tile = tile
+    if rows_tile < 1 or columns_tile < 1:
+        raise ValueError(f"tile {tile} must be positive in both axes")
+
+    def up(value: int, multiple: int) -> int:
+        return ((max(value, 1) + multiple - 1) // multiple) * multiple
+
+    rows = up(length, rows_tile)
+    columns = up(strands, columns_tile)
+    if max_len is not None:
+        rows = min(rows, up(max_len, rows_tile))
+    if max_strands is not None:
+        columns = min(columns, up(max_strands, columns_tile))
+    if rows < length or columns < strands:
+        raise ValueError(
+            f"a {length}-letter word on {strands} strands does not fit in "
+            f"{rows}x{columns} at capacity {max_len}x{max_strands}"
+        )
+    return rows, columns
+
+
+def bucketed_raster(
+    word: Word,
+    strands: int,
+    *,
+    tile: tuple[int, int] = TILE,
+    max_len: int | None = None,
+    max_strands: int | None = None,
+    pack: bool = False,
+    edges: bool = False,
+    pad_mode: str = "identity",
+) -> np.ndarray:
+    """`raster` on the smallest tile-multiple canvas that fits.
+
+    Identical content to the full-capacity raster, cropped: this is the same
+    picture on a smaller sheet of paper, not a different encoding.
+
+    **Use `pad_mode="identity"` here**, which is why it is the default. Bucketing
+    still leaves up to `tile[0] - 1` unused rows, and under circular padding the
+    convolution wraps *through* them. Identity rows are no-ops so the wrap crosses
+    a picture of the same knot; blank rows would be a symbol that cannot occur in
+    play. Exact conjugation equivariance additionally needs the wrap to close at
+    the live length rather than at the canvas edge -- see
+    `research/experiments/bucketing.py`, which does that with a per-sample gather.
+    """
+    layers = pack_layers(word, strands) if pack else [x for x in word if int(x) != 0]
+    rows, columns = bucket_shape(
+        len(layers), strands, tile=tile, max_len=max_len, max_strands=max_strands
+    )
+    return raster(
+        word,
+        strands,
+        max_strands=columns,
+        rows=rows,
+        pack=pack,
+        edges=edges,
+        pad_mode=pad_mode,
+    )
+
+
+def bucket_batches(
+    instances,
+    *,
+    tile: tuple[int, int] = TILE,
+    max_len: int | None = None,
+    max_strands: int | None = None,
+) -> dict[tuple[int, int], list[int]]:
+    """Group `(word, strands)` pairs by bucket shape, so a batch is homogeneous.
+
+    Returns shape -> indices into `instances`. Batching is what makes bucketing
+    pay: a batch has to be one tensor, so mixed shapes would either pad back up to
+    the largest member -- undoing the saving -- or run one instance at a time.
+    """
+    groups: dict[tuple[int, int], list[int]] = {}
+    for index, (word, strands) in enumerate(instances):
+        length = len([x for x in word if int(x) != 0])
+        shape = bucket_shape(
+            length, strands, tile=tile, max_len=max_len, max_strands=max_strands
+        )
+        groups.setdefault(shape, []).append(index)
+    return groups
