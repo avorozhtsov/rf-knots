@@ -298,11 +298,36 @@ Against the bundled unknotting numbers, on every rung whose `u` is tabulated: no
 certified bound exceeds the truth, no sequence found is shorter than the truth, and
 every sequence found *equals* it. Zero violations in 22.
 
-The four rungs with no result are honest: the search is a beam capped at the
-standing record, so an absent improvement is not a proof that none exists. One of
-them, a 20-letter three-strand word, has a certified bound of 9 against a record of
-11 — a gap of 2 that neither the agents nor this search has closed, and the most
-interesting single rung left.
+### The 20-letter rung, and why branch-and-bound was the wrong tool for it
+
+The hardest of the four blanks was a 20-letter three-strand **positive braid**:
+genus 9, certified bound 9, ratchet record 11. It is now **9, determined** —
+`u = 9`, with a 27-move witness that replays.
+
+Branch-and-bound could not do it, and the reason is worth recording. Nine levels
+deep it pruned *nothing*: every candidate's bound was inside the budget, so the
+search paid for a Seifert matrix and a knot Floer homology at every distinct knot
+on every frontier and never finished. The bound is what makes the answer a
+theorem; it is not always what should be in the loop.
+
+For a positive braid it need not be. `u = g = (L - n + 1)/2`, and every useful
+crossing change turns an adjacent `sigma_i sigma_i` into `sigma_i sigma_i^-1`,
+which free-reduces and drops the length by exactly two. **Length is the signal**,
+and the certified bound is needed exactly twice: once at the start to know what
+optimal is, once at the end to say whether the sequence met it.
+
+Greedy descent on length is not enough — it reached two letters after nine changes
+and still needed a tenth, having landed on the wrong two-letter word. Keeping sixty
+candidates per level (`research/experiments/beam_rung.py`) finds the one that ends
+on a two-letter word that destabilises away: **9 changes in 32 seconds**.
+
+Note which bound did the work. The signature gives only `|sigma|/2 = 7` here;
+**`tau = 9` is what makes 9 certified**, so this rung is precisely the case that
+would have stayed open without the knot Floer bound added in §5b.
+
+That leaves three rungs with no improvement found, all three-strand words where the
+record already equals the certified bound — so there is nothing to improve unless
+the bound itself is loose.
 
 ## 6. Ordered next steps
 

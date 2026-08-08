@@ -99,4 +99,11 @@ may since have moved; the lesson is the durable part.
   was measuring how much 144 self-play games damage a prior that search was already
   carrying. A promotion bar only just above the untrained score cannot discriminate
   anything.
+- **A certified bound belongs at the ends of a search, not always inside it.**
+  Branch-and-bound stalled nine levels deep on a 20-letter positive braid, pruning
+  nothing while paying for a Seifert matrix and a knot Floer homology at every
+  frontier knot. The same rung fell in 32 seconds to a beam ordered on word length
+  with the bound computed twice: once to know what optimal was, once to certify the
+  answer met it. The bound makes the result a theorem; it does not have to be the
+  thing that guides the search.
 - Negative results belong in commit messages and notes, not in dead code.
