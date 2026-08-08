@@ -221,13 +221,41 @@ strands `i-1 mod n`, `i`, `i+1 mod n`" rather than eyeballed.
 If `sigma_n` is added as a real action, three things need designing, and none is
 merely an implementation detail:
 
-1. **The win condition loses its anchor.** `DESTABILIZE` fires on `+-sigma_{n-1}`
-   — the *last* strand — and it is 54% of the moves in optimal solutions (the note
-   in `env.py`). The affine group has no last strand; that is the point of it. The
-   natural repair is a **cut** move: when `sigma_n` occurs exactly once, cut the
-   annulus there and read off an ordinary braid word, conjugated. That is the
-   inverse of wrapping, and it is what lets an affine state return to a state the
-   existing machinery can finish.
+1. ~~**The win condition loses its anchor.**~~ **Withdrawn — this was wrong.** An
+   earlier version of this note argued that `DESTABILIZE` fires on `+-sigma_{n-1}`,
+   the *last* strand, that a circle has no last strand, and that a periodic network
+   therefore cannot see the predicate deciding 54% of optimal moves.
+
+   Destabilization never needed a distinguished last strand. It needs a **gap**: an
+   adjacent pair on the circle that never crosses. If positions `0` and `k-1` are
+   unentangled the seam is unused, the cyclic word *is* an ordinary linear word,
+   and destabilization applies unchanged. More generally a gap at any `j` cuts the
+   circle there, making `j` the first column and `j-1` the last. **That predicate
+   is local and translation-invariant** — precisely the kind a periodic convolution
+   reads well. The anchor is not lost; it is *discovered*.
+
+   One refinement rather than a disagreement: the gap makes the circle
+   **cuttable**. The move itself additionally needs that boundary strand to carry
+   **exactly one** crossing — Markov's condition, which is the same "occurs exactly
+   once" predicate used throughout this note, now stated without reference to a
+   boundary. Gap alone gives the linearisation; gap plus single crossing gives the
+   move.
+
+   And the wrap gives *more* freedom here, not less. There can be several gaps,
+   hence several valid linearisations, and a removable strand no longer has to be
+   shuffled to position `n-1` before it can go — the same `O(n)`-to-`1` saving as
+   §3.2, applied to the win condition instead of to a crossing.
+
+   **This invalidates part of §5.3.** The `destab` probe labels
+   "`+-sigma_{n-1}` occurs exactly once", which is a *linear* notion defined
+   against a boundary the torus arm does not have. So `raster-torus-n` at 0.568 was
+   scored on the wrong predicate, and `raster-torus-n-edge` at 0.977 partly just
+   recovered the hardcoded boundary the label presupposes. **Those two numbers are
+   not evidence against the wrap** and should not be quoted as such. The corrected
+   probe labels "there is a gap, and the strand beside it has exactly one
+   crossing", generated over the `B*` alphabet in `reference.py` — a different
+   experiment, not a relabelling, because the generator has to emit cyclic words.
+   Unresolved rather than measured, as of this writing.
 2. **Soundness has to be re-proved for the new closure.** Every existing move must
    still preserve the knot type under the annular closure and its chosen embedding
    into `S^3`. Completeness is inherited (§3.1); soundness is not automatic.
@@ -486,20 +514,23 @@ Correcting it changes the answer — in both directions.
 
 Three things, and the first two point opposite ways.
 
-**The wrap really does erase the anchor, and now it is measured rather than
-argued.** `raster-torus-n` — a true circle of circumference `n`, with nothing
-marked — falls to 0.568 on `destab` transfer, below every other raster arm
-including the buggy one. `DESTABILIZE` is a predicate about *the last strand*, and
-on a circle with no origin there is no last strand. §3.4's first design problem is
-real and it costs about 0.35 of accuracy.
+**⚠ The first reading below is withdrawn — see §3.4.1.** `raster-torus-n` falls to
+0.568 on `destab` transfer, and this note originally read that as the wrap erasing
+the anchor `DESTABILIZE` needs. That conclusion does not follow, because **the
+probe's label is the linear predicate** ("`+-sigma_{n-1}` occurs exactly once"),
+defined against a boundary the torus arm does not have. The correct
+translation-invariant predicate is "there is a gap, and the strand beside it has
+exactly one crossing". So this arm was scored on a target biased toward the
+cylinder, and 0.568 measures that bias, not the representation. The row is kept
+rather than deleted because the run happened; it is not evidence.
 
-**But wrap plus explicit boundary channels is the best arm in the entire
-experiment.** `raster-torus-n-edge` reaches **0.977 ± 0.034** on `destab`
-transfer, ahead of the cylinder's 0.917. So the wrap is not harmful in itself; it
-is harmful precisely when it removes the anchor, and two channels put the anchor
-back. Full translation equivariance around the circle *and* a marked origin beats
-either alone. That is a genuine point in the proposal's favour, and I would not
-have found it without the correction.
+**Wrap plus explicit boundary channels is still the best arm measured** —
+`raster-torus-n-edge` at **0.977 ± 0.034** on `destab` transfer, ahead of the
+cylinder's 0.917 — but read it narrowly. Given the label is the linear predicate,
+what those two channels supply is the boundary the *label* presupposes, so this
+mostly says "a marked origin lets a periodic trunk answer a boundary-relative
+question". It does not say the wrap needs a marked origin in general; §3.4.1 argues
+it does not, because the gap is discoverable.
 
 **Both torus arms are dead at the floor on `isknot` transfer** — 0.500 ± 0.000
 and 0.500 ± 0.001, a reliable failure rather than a noisy one. The most plausible
@@ -516,11 +547,14 @@ circumference-specific rules. That is exactly what
 built for, and it is the natural next experiment rather than a reason to drop the
 torus.
 
-**Verdict on the torus.** Valid as a representation (§3.1), worth something real
-(§3.2), and measurably good on the boundary-anchored probe *once the boundary is
-marked back in*. Not adoptable until the strand-transfer failure on `isknot` is
-understood, and not adoptable as an *environment* until §3.4's three design
-questions are answered.
+**Verdict on the torus.** Valid as a representation (§3.1) and worth something
+real (§3.2). The `destab` numbers do not settle it either way — the probe asked a
+linear question (§3.4.1). What is left standing against it is the `isknot`
+transfer floor, which is label-independent and therefore still a genuine finding.
+As an *environment* the two remaining design questions are soundness and branching
+factor; the win-condition objection is withdrawn, and `research/17`'s
+Birman--Ko--Lee seam generator answers the group-theoretic half by keeping the
+wrap inside `B_n`.
 
 ### 5.4 The selection
 
