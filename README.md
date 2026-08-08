@@ -130,11 +130,14 @@ date and snapshot hash, together with the corresponding Spherogram identifier
 | `src/rf_knots/knot_table.py` | naming a knot, against the bundled table in `data/` |
 | `src/rf_knots/reference.py` | slow pure-Python oracle: Artin representation, BFS solver |
 | `src/rf_knots/render.py` | ASCII and SVG pictures of a braid and its closure |
+| `src/rf_knots/torus.py` | the diagram as a `position × strand` raster: strand-count-agnostic input |
 | `src/rf_knots/rollout.py` | random play, scramble generation, batched benchmarking |
 | `docs/representation.md` | how a knot is encoded and what may be done to it |
 | `docs/rungs.md` | every ladder rung, its rationale, and the knot it really is |
 | `docs/lessons.md` | process notes: the mistakes that cost time, and what to do instead |
 | `research/13-directions.md` | the big next moves, unscheduled |
+| `research/18-raster-representation.md` | why the strand count is the remaining size dependence, and what a picture fixes |
+| `research/experiments/` | the parameter-matched representation probes behind note 18 |
 | `scripts/` | one-off builders for the committed data files |
 | `research/` | design study behind all of this |
 

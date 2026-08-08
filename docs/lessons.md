@@ -62,4 +62,21 @@ may since have moved; the lesson is the durable part.
   several rounds chasing three processes that were my own `ps` invocations.
 - **List a shared host's running services before putting load on it.** `nproc`,
   `free` and `uptime` said "idle"; it was running production.
+- **A background launch whose redirect target does not exist fails silently, and
+  the shell still reports success.** `nohup ... > artifacts/run.out &` with no
+  `artifacts/` never started anything; the `&&` chain reported exit 0 from the
+  `echo` after it. Forty minutes later there was no log to read, because there was
+  no process. `mkdir -p` the output directory in the same command, and confirm the
+  process exists with `pgrep` before walking away.
+- **`torch.set_num_threads(1)` inside a pool worker is not enough.** Torch still
+  sizes its pools from the environment, so seven workers ran 37 threads each and
+  the load average hit 77 on eight cores. Export `OMP_NUM_THREADS`,
+  `MKL_NUM_THREADS`, `VECLIB_MAXIMUM_THREADS` and `OPENBLAS_NUM_THREADS` *before*
+  Python starts. Everything still finishes, so the symptom is not a crash — it is
+  wall-clock numbers that mean nothing.
+- **Cache the labels, not the runs.** Exact labels (a breadth-first search, a
+  Burau determinant) cost minutes and do not depend on which network is being
+  trained. Building them once per `(probe, split, seed)` made a restart free and
+  also made the experiment stronger: every arm is then scored on literally the
+  same instances rather than on independently drawn ones.
 - Negative results belong in commit messages and notes, not in dead code.

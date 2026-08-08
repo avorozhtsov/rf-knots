@@ -66,6 +66,15 @@ why component count is checked on every single step
 
 ## 3. The array encoding
 
+> **A second view of the same state.** `rf_knots.torus` renders a word as the
+> picture it denotes: a `position × strand` grid of three route bits per cell.
+> It is lossless and exactly invertible, and its input width does not depend on
+> the strand count, which the one-hot letter planes of §7 do. The argument for it,
+> the reason the closed braid is a cylinder rather than a torus, and a
+> parameter-matched comparison are in
+> [research/18](../research/18-raster-representation.md). The word encoding below
+> remains what the environment stores and what every move is defined on.
+
 ```
 word : int32[L]      left-compacted, 0 is padding
 n    : int32         active strand count, 1 ≤ n ≤ N
