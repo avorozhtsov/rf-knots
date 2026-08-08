@@ -2244,6 +2244,78 @@ Artifacts:
 * `pgx-mcts-bench/artifacts/joint-pretrain-warm-v2-prefix10-20260807/existing-calibrated-heldout-L1000.json`;
 * `pgx-mcts-bench/artifacts/joint-pretrain-scratch-f-old1-prefix5-20260807/report.json`.
 
+### Paired roster-readiness gate, 2026-08-07
+
+The approved sequence stopped before the adaptive/static/sharing arms, at the
+roster gate. The implementation now separates the remaining-`L` observation
+feature from hard objective censoring: the feature is present, no predicted
+objective cap is used, and the only termination limit is the common 128-action
+horizon. Evaluation uses four stochastic MCTS attempts per representation with
+Dirichlet root noise and temperature zero. A representation-attempt uses exactly
+the same seed for every scientist and simulation dose. Final evaluation also
+restores the frozen action horizon and solve calibration from the run manifest.
+
+Two defects were found before the final gate. First, the original "frontier"
+selector sampled the complete 3--12-crossing table and produced a stress panel on
+which all four scientists were at or below 1/12 at 64 simulations. The selector
+now takes a frozen structurally easiest eligible band before forming four strata.
+Second, the first four-attempt implementation was deterministic, so every knot
+was either 0/4 or 4/4; those labels were pseudoreplicates. Preliminary roster
+screens remain useful only for candidate selection, not as critic evidence.
+Nested remaining-budget migration for the cyclic and triad architectures was
+also repaired and checked as a zero-column, function-preserving migration.
+
+The final source-disjoint K=3 roster was `s-window-128`,
+`s-cyclic-tape8-192`, and independent rung-18 `s-head-128`. The 12-item
+calibration panel was drawn from the easiest 96 eligible table representations
+after excluding the historical BASE/NEW70, critic/solver banks, and all
+outcome-observed screening panels. It included nine 3-strand and three 4-strand
+representations. The decisive check used `L1000`, 256 simulations, four paired
+stochastic attempts, no objective cap, and a 128-action horizon.
+
+| scientist | representations solved | attempts solved | raw AUC | raw Brier | raw ECE |
+|---|---:|---:|---:|---:|---:|
+| `s-window-128` | 8/12 (66.7%) | 29/48 (60.4%) | 0.881 | 0.434 | 0.485 |
+| `s-cyclic-tape8-192` | 7/12 (58.3%) | 28/48 (58.3%) | 0.886 | 0.229 | 0.283 |
+| `s-head-128` | 3/12 (25.0%) | 7/48 (14.6%) | 0.981 | 0.600 | 0.672 |
+
+These are pre-recalibration critic metrics. Calibration and the disjoint
+24-representation confirmation were correctly skipped because no scientist met
+the required 70% representation coverage. The portfolio union was only 8/12 and
+the intersection was 3/12. `s-window-128` alone supplied the sole marginal
+identity, `9_45`; both other solved sets were subsets of its solved set. Thus this
+is not merely a one-item miss by the portfolio: the proposed population has no
+measured marginal coverage at the maximum dose.
+
+The run scheduled 2,973,490 network evaluations (4,737,024 allocated upper-bound
+evaluations). Screening also rejected the original independent `s-tape4` and
+`s-w11-128` at 3/12 each at 128 simulations, `s-paint4` at 4/12,
+`s-scan-gru` at 0/12, and the migrated triad at 4/12 on the development panel.
+Those screen rates are engineering diagnostics because candidate selection saw
+their outcomes.
+
+**Decision:** the 30--50-representation no-sharing arms, sharing admission,
+200-representation comparison, and cloud run remain closed. No training arm was
+started. More MCTS is not the next repair: window and cyclic were flat from 128
+to 256 on the preceding stochastic sweep, while the exactly paired maximum-dose
+confirmation still failed.
+
+There are now two honest forks. For the method-comparison paper, preregister a
+source-disjoint 3-strand-only benchmark of at least 100 representations and keep
+4/5-strand knots as a separately reported stress endpoint; do not call it a
+general knot frontier. This still needs a third scientist with measured marginal
+coverage. For the broader programme, forward-train a new independent third
+controller through the full ladder with the soft remaining-budget feature,
+portfolio guard, and explicit 4-strand curriculum, then repeat this exact gate.
+Do not spend the CPU-32 budget or widen/deepen networks until that forward
+curriculum distinguishes a capacity wall from missing training coverage.
+
+Primary artifacts:
+
+* `pgx-mcts-bench/artifacts/frontier-roster-k3-paired-max256-source-disjoint-L1000-seed20261880-20260807/report.json`;
+* `pgx-mcts-bench/artifacts/frontier-roster-k3-stochastic-source-disjoint-L1000-seed20261880-20260807/report.json`; and
+* `pgx-mcts-bench/artifacts/frontier-roster-triad-stochastic-band96-L1000-seed20261840-20260807/report.json`.
+
 ## What would kill the programme
 
 Stop or reduce the claim if any of these occur:

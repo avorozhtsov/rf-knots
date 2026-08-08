@@ -51,6 +51,16 @@ remain closed. The bank is not an all-`u=1` set: independent lower bounds certif
 `u >= 2` for 87/200 BASE identities. See
 [the semantic-cost v11 result](16-scientists-collaboration.md#semantic-cost-sharing-gate-v11-2026-08-07).
 
+The corrected roster gate is also complete. On a source-disjoint mixed 3/4-strand
+frontier at 256 simulations and four exactly paired stochastic attempts,
+`s-window-128`, `s-cyclic-tape8-192`, and `s-head-128` solved 8/12, 7/12,
+and 3/12 representations. Their union was only 8/12; cyclic and head added no
+identity beyond window. Consequently no adaptive/static/sharing arm was started.
+The next valid fork is either an explicitly 3-strand-only 100+ representation
+methods benchmark, with harder strands reported separately, or forward training
+of a genuinely complementary third scientist. See
+[the paired roster-readiness result](16-scientists-collaboration.md#paired-roster-readiness-gate-2026-08-07).
+
 ---
 
 ## 1. An adaptive schedule, ordered by what the networks already believe
