@@ -29,6 +29,31 @@ static, no-sharing, supervised, and single-scientist controls.
 [00-glossary.md](00-glossary.md) defines the experiment vocabulary, objectives,
 denominators, protocol versions, and scientist architectures used below.
 
+[17-scalable-braid-raster.md](17-scalable-braid-raster.md) specifies a new
+number-of-strands-agnostic direction: compile braid words into a lossless
+strand-by-word raster, use a mathematically faithful cylinder rather than a
+naive torus, share local and hierarchical blocks across all sizes, and select
+the family through exact representation, extrapolation, curriculum, and paired
+mixed-strand gates.  Its first controlled arm, `conv-window-128`, changes only
+the input/trunk of `s-window-128` so the representation can be tested before the
+action space is redesigned.
+
+The seed-71 first-stage smoke rejected the initial joint-3x3 trunk (50% SR) but
+not the representation: separate axial interactions and a four-repeat shared
+axial block both matched `s-window-128` at 100% SR after two iterations, with
+fewer parameters.  A paired five-rung gate is running; no mature-quality claim
+is made from the elementary smoke.
+
+The main raster experiment now has a verified toroidal action alphabet, `B*`.
+Its seam letter is the Birman--Ko--Lee band `a_(1,k)`, compiled back to ordinary
+Artin `B_k`; it is not an unchecked affine braid.  From-scratch
+`s-window-128-bstar` retained 100% elementary solve rate after two iterations.
+The axial and recurrent `B*` arms were at 50% after three iterations, but delayed
+takeoff was real: axial promoted at 83.3% after iteration 4 and recurrent at 100%
+after iteration 6.  All three fresh `B*` arms are now running the paired five-rung
+comparison.  See
+[the verified torus protocol](17-scalable-braid-raster.md#verified-toroidal-action-alphabet-b).
+
 The intended 200-representation comparison is still gated. Historical v6--v10
 sharing runs charged receiver-internal controller plies as solution `moves`, so
 their objective comparisons do not answer the intended solver-independent
@@ -60,6 +85,57 @@ The next valid fork is either an explicitly 3-strand-only 100+ representation
 methods benchmark, with harder strands reported separately, or forward training
 of a genuinely complementary third scientist. See
 [the paired roster-readiness result](16-scientists-collaboration.md#paired-roster-readiness-gate-2026-08-07).
+
+The broader fork now has an executable replacement for `s-head-128`:
+`s-strand-graph-128` compiles a compulsory full-representation scan into exact
+crossing neighbours along both physical strands, applies five cyclic/strand graph
+blocks, and scores head shifts from the edit sites they reach. The 794,676-parameter
+prototype is locally trainable and costs 1.412 ms per batch-1 forward, but it has
+not passed a forward curriculum or held-out complementarity gate. `s-head-128`
+therefore becomes a historical control; the new model enters the long roster only
+after those gates. See
+[the replacement design](16-scientists-collaboration.md#replacement-third-scientist-s-strand-graph-128-2026-08-08).
+
+The architecture screen now includes compact (64 x 3), balanced (96 x 5), wide
+(160 x 8), and exact local-plus-global two-tower variants, with their real learning
+rate, batch size, weight decay, and update count carried into the runner. A
+calibrated 128-simulation check confirms that early learning can be delayed:
+`s-head-128` rose from 75% at cycle 4 to 94.4% and promotion at cycle 6 on seed
+71. This does not rescue its mature held-out 3/12 result or its 0/5 four-strand
+coverage. The compact graph reached 88.9% after one cycle on the same seed; fresh
+seed 73 confirmed at 100% after three cycles, while seed 72 remained unstable. The
+balanced graph reached 80.6% after two cycles. Clean mixed-strand continuations
+now enforce exact known-`u` promotion. A corrected single-seed five-rung test
+shows that fixed `F_old=1` is too weak: per-rung adaptive rehearsal, using a
+24-attempt retention certificate and doses `1 -> 2 -> 4 -> 8`, improved the
+paired final result from 112/120 solves (fixed) and 115/120 (original baseline)
+to 118/120, with exact `u` on every solved attempt. Wide and local-plus-global
+admission gates remain open. See
+[the capacity and optimizer screen](16-scientists-collaboration.md#capacity-and-optimizer-screen).
+
+The fully scalable raster controller now has a full identity-column canvas, a
+shared recurrent spatial action pointer, and a dynamic `B*` seam that wraps at
+the state's active strand count rather than at tensor capacity. A six-run
+negative control showed why the first factorized versions appeared broken:
+using a random `p(solve)`/cost critic to steer MCTS immediately produced only
+0--66.7% elementary SR. Protected stage-0 warmup keeps factorized heads in
+shadow, detaches solve loss from the encoder, and samples four positions per
+selected replay episode. With those corrections, the cylinder returned to 12/12
+solves with zero crossing changes after two cycles on all three seeds. The torus
+passed two seeds but failed crossing-change quality on seed 73, so the cylinder
+alone advances to the adaptive six-stage mixed-strand gate. See
+[the scalable full-canvas gate](17-scalable-braid-raster.md#full-canvas-scalable-controller-and-critic-warmup-2026-08-08).
+
+The collaboration implementation has also advanced to protocol v7. It provides
+bounded adaptive old-task rehearsal, permanent best-solution replay, paired
+population retention with transactional rollback, and strict direct donation
+only when receiver-native replay proves a lower semantic objective. The corrected
+two-round sharing/no-sharing/solo smoke exactly matched qualification, full-search,
+rehearsal, and retention simulations; sharing and no-sharing selected the same
+two tasks and retained their portfolios. This validates plumbing only. The
+100--200 representation pilot still waits for the third scientist's three-seed,
+mixed-strand, and source-disjoint readiness gates. See
+[the v7 runner smoke](16-scientists-collaboration.md#transactional-collaboration-runner-v7-2026-08-08).
 
 ---
 

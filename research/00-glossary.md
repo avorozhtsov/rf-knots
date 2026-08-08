@@ -857,6 +857,24 @@ sensitivity scientist—not as a replacement for the preregistered K=3 roster.
 See [the capacity result](16-scientists-collaboration.md#experimental-cyclic-memory-scientist)
 and [06-network-growth.md](06-network-growth.md).
 
+### `s-strand-graph-128`
+
+The proposed independent replacement for `s-head-128` in the collaboration
+roster. Before every decision, a deterministic scan of the closed braid records
+four neighbours for each crossing: previous and next crossings along each of its
+two physical strands. A width-96, five-block residual graph encoder passes messages
+both around the cyclic word and through these strand links. Its edit head acts at
+the current head position; its routing head scores every fixed left/right shift
+using the encoded position that shift would reach. `128` is the default MCTS
+simulations per move, not the hidden width.
+
+The scan is a compiled perception option with `K(x)=len(x)`, rebuilt after every
+semantic edit. It consumes compute but is not a charged semantic action and is not
+expanded as `K` branches inside MCTS. The candidate is implemented and passes
+local wiring/trainability checks, but is not an admitted scientist until a forward
+mixed-strand curriculum and a fresh held-out complementarity gate pass. See
+[the replacement design](16-scientists-collaboration.md#replacement-third-scientist-s-strand-graph-128-2026-08-08).
+
 ### Remaining-`L` budget channel
 
 An input feature giving the network the objective still available:

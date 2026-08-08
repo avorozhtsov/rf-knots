@@ -127,19 +127,28 @@ def seam_move_via_rotation(
 # -- closure combinatorics -----------------------------------------------------
 
 
-def permutation(word: Word, n: int) -> list[int]:
+def permutation(
+    word: Word, n: int, cyclic_band_generators: bool = False
+) -> list[int]:
     perm = list(range(n))
     for letter in word:
         if letter == 0:
             continue
-        i = abs(letter) - 1
-        perm[i], perm[i + 1] = perm[i + 1], perm[i]
+        generator = abs(letter)
+        i, j = (
+            (0, n - 1)
+            if cyclic_band_generators and generator == n
+            else (generator - 1, generator)
+        )
+        perm[i], perm[j] = perm[j], perm[i]
     return perm
 
 
-def num_components(word: Word, n: int) -> int:
+def num_components(
+    word: Word, n: int, cyclic_band_generators: bool = False
+) -> int:
     """Components of the closure. Invariant under every move in this project."""
-    perm = permutation(word, n)
+    perm = permutation(word, n, cyclic_band_generators)
     seen = [False] * n
     cycles = 0
     for start in range(n):
@@ -169,23 +178,47 @@ def is_legal(spec: ActionSpec, word: Word, n: int, action: int, allow_crossing: 
     if kind == REDUCE:
         return length >= 2 and p < length and word[p] == -word[(p + 1) % length]
     if kind == COMMUTE:
+        if length < 2 or p >= length:
+            return False
+        distance = abs(abs(word[p]) - abs(word[(p + 1) % length]))
+        if spec.cyclic_band_generators:
+            return (
+                abs(word[p]) != abs(word[(p + 1) % length])
+                and distance not in (1, n - 1)
+            )
         return (
-            length >= 2
-            and p < length
-            and abs(abs(word[p]) - abs(word[(p + 1) % length])) >= 2
+            abs(abs(word[p]) - abs(word[(p + 1) % length])) >= 2
         )
     if kind == BRAID:
         if length < 3 or p >= length:
             return False
         a, b, c = word[p], word[(p + 1) % length], word[(p + 2) % length]
-        return c == a and (a > 0) == (b > 0) and abs(abs(a) - abs(b)) == 1
+        distance = abs(abs(a) - abs(b))
+        adjacent = distance == 1 or (
+            spec.cyclic_band_generators and distance == n - 1
+        )
+        return c == a and (a > 0) == (b > 0) and adjacent
     if kind == INSERT:
-        return generator <= n - 1 and p < max(length, 1) and length + 2 <= spec.max_len
+        largest = n if spec.cyclic_band_generators else n - 1
+        return (
+            n >= 2
+            and generator <= largest
+            and (generator != n or n >= 3)
+            and p < max(length, 1)
+            and length + 2 <= spec.max_len
+        )
     if kind == DESTABILIZE:
         top = n - 1
-        return n >= 2 and length >= 1 and sum(abs(x) == top for x in word) == 1
+        seam_absent = not spec.cyclic_band_generators or all(abs(x) != n for x in word)
+        return (
+            n >= 2
+            and length >= 1
+            and sum(abs(x) == top for x in word) == 1
+            and seam_absent
+        )
     if kind in (STABILIZE_POS, STABILIZE_NEG):
-        return n < spec.max_strands and length + 1 <= spec.max_len
+        seam_absent = not spec.cyclic_band_generators or all(abs(x) != n for x in word)
+        return n < spec.max_strands and length + 1 <= spec.max_len and seam_absent
     if kind == CROSSING_CHANGE:
         return allow_crossing and p < length
     raise AssertionError(f"unknown kind {kind}")
@@ -258,7 +291,13 @@ def successors(
                 for index in drop:
                     del letters[index]
                 out.append((spec.encode(REDUCE, p), tuple(letters), n))
-            if abs(abs(left) - abs(right)) >= 2:
+            distance = abs(abs(left) - abs(right))
+            commute = (
+                abs(left) != abs(right) and distance not in (1, n - 1)
+                if spec.cyclic_band_generators
+                else distance >= 2
+            )
+            if commute:
                 letters = list(word)
                 letters[p], letters[q] = letters[q], letters[p]
                 out.append((spec.encode(COMMUTE, p), tuple(letters), n))
@@ -267,20 +306,26 @@ def successors(
         for p in range(length):
             first, second, third = p, (p + 1) % length, (p + 2) % length
             a, b, c = word[first], word[second], word[third]
-            if c == a and (a > 0) == (b > 0) and abs(abs(a) - abs(b)) == 1:
+            distance = abs(abs(a) - abs(b))
+            adjacent = distance == 1 or (
+                spec.cyclic_band_generators and distance == n - 1
+            )
+            if c == a and (a > 0) == (b > 0) and adjacent:
                 letters = list(word)
                 letters[first], letters[second], letters[third] = b, a, b
                 out.append((spec.encode(BRAID, p), tuple(letters), n))
 
     if length + 2 <= spec.max_len:
-        for generator in range(1, n):
+        generator_stop = n + 1 if spec.cyclic_band_generators and n >= 3 else n
+        for generator in range(1, generator_stop):
             for sign in (1, -1):
                 value = sign * generator
                 for p in range(max(length, 1)):
                     action = spec.encode(INSERT, p, generator, sign)
                     out.append((action, word[:p] + (value, -value) + word[p:], n))
 
-    if n >= 2 and length >= 1:
+    seam_absent = not spec.cyclic_band_generators or all(abs(x) != n for x in word)
+    if n >= 2 and length >= 1 and seam_absent:
         top = n - 1
         positions = [index for index, x in enumerate(word) if abs(x) == top]
         if len(positions) == 1:
@@ -288,7 +333,7 @@ def successors(
             del letters[positions[0]]
             out.append((spec.encode(DESTABILIZE), tuple(letters), n - 1))
 
-    if n < spec.max_strands and length + 1 <= spec.max_len:
+    if n < spec.max_strands and length + 1 <= spec.max_len and seam_absent:
         out.append((spec.encode(STABILIZE_POS), word + (n,), n + 1))
         out.append((spec.encode(STABILIZE_NEG), word + (-n,), n + 1))
 
@@ -299,6 +344,33 @@ def successors(
             )
 
     return out
+
+
+def compile_cyclic_bands(word: Word, n: int) -> Word:
+    """Compile seam generator ``+/-n`` to the BKL band ``a_{1,n}`` in Artin form.
+
+    With ``w = sigma_{n-1} ... sigma_2``, the positive band is
+    ``w sigma_1 w^-1`` and the negative band is ``w sigma_1^-1 w^-1``.
+    Ordinary letters pass through unchanged.  The result is accepted by the
+    historical verifier and makes every B-star witness proof-carrying.
+    """
+    if n < 2:
+        if word:
+            raise ValueError("a one-strand braid cannot contain generators")
+        return ()
+    prefix = tuple(range(n - 1, 1, -1))
+    suffix = tuple(-value for value in reversed(prefix))
+    out: list[int] = []
+    for letter in word:
+        if abs(letter) > n:
+            raise ValueError(f"generator {letter} is invalid for B*_{n}")
+        if abs(letter) == n:
+            out.extend(prefix)
+            out.append(1 if letter > 0 else -1)
+            out.extend(suffix)
+        else:
+            out.append(letter)
+    return tuple(out)
 
 
 # -- exact search --------------------------------------------------------------

@@ -61,7 +61,11 @@ class BraidUnknot(core.Env):
     def __init__(self, config: BraidConfig = TIER1):
         super().__init__()
         self.config = config
-        self.spec = ActionSpec(max_len=config.max_len, max_strands=config.max_strands)
+        self.spec = ActionSpec(
+            max_len=config.max_len,
+            max_strands=config.max_strands,
+            cyclic_band_generators=config.cyclic_band_generators,
+        )
 
     @property
     def id(self) -> core.EnvId:  # type: ignore[override]
@@ -115,8 +119,9 @@ class BraidUnknot(core.Env):
             raise ValueError(f"word of length {len(word)} exceeds max_len={self.config.max_len}")
         if not 1 <= n <= self.config.max_strands:
             raise ValueError(f"n={n} outside 1..{self.config.max_strands}")
-        if any(letter == 0 or abs(letter) > n - 1 for letter in word):
-            raise ValueError(f"word {word} has letters outside sigma_1..sigma_{n - 1}")
+        largest = n if self.config.cyclic_band_generators else n - 1
+        if any(letter == 0 or abs(letter) > largest for letter in word):
+            raise ValueError(f"word {word} has letters outside 1..{largest}")
         padded = jnp.asarray(
             list(word) + [0] * (self.config.max_len - len(word)), dtype=jnp.int32
         )
@@ -211,7 +216,8 @@ class BraidUnknot(core.Env):
         max_strands = self.config.max_strands
         word = state._word
 
-        generators = jnp.arange(1, max_strands, dtype=word.dtype)[:, None]
+        generator_capacity = max_strands - 1 + int(self.config.cyclic_band_generators)
+        generators = jnp.arange(1, generator_capacity + 1, dtype=word.dtype)[:, None]
         positive = word[None, :] == generators
         negative = word[None, :] == -generators
         empty = (word == 0)[None, :]
@@ -266,7 +272,10 @@ class BraidUnknot(core.Env):
     def num_channels(self) -> int:
         # letter one-hot (+/- each generator), padding, the top-generator
         # marker, and six broadcast scalars
-        return 2 * (self.config.max_strands - 1) + 1 + 1 + 8
+        generators = self.config.max_strands - 1 + int(
+            self.config.cyclic_band_generators
+        )
+        return 2 * generators + 1 + 1 + 8
 
 
 def braid_word_str(state: State) -> str:

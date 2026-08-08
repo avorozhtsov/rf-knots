@@ -2269,7 +2269,7 @@ The final source-disjoint K=3 roster was `s-window-128`,
 `s-cyclic-tape8-192`, and independent rung-18 `s-head-128`. The 12-item
 calibration panel was drawn from the easiest 96 eligible table representations
 after excluding the historical BASE/NEW70, critic/solver banks, and all
-outcome-observed screening panels. It included nine 3-strand and three 4-strand
+outcome-observed screening panels. It included seven 3-strand and five 4-strand
 representations. The decisive check used `L1000`, 256 simulations, four paired
 stochastic attempts, no objective cap, and a 128-action horizon.
 
@@ -2310,11 +2310,238 @@ portfolio guard, and explicit 4-strand curriculum, then repeat this exact gate.
 Do not spend the CPU-32 budget or widen/deepen networks until that forward
 curriculum distinguishes a capacity wall from missing training coverage.
 
+### Replacement third scientist: `s-strand-graph-128`, 2026-08-08
+
+`s-head-128` is retired from the intended collaboration roster. It remains a
+historical control, but its 3/12 result and zero marginal identities do not justify
+paying for it in a long arm. The replacement candidate is
+`s-strand-graph-128`. It is implemented in `pgx-mcts-bench`, but it is not yet an
+admitted scientist: the architecture and training plumbing are verified; forward
+curriculum and held-out coverage are still unmeasured.
+
+Simply forcing a scan is not the new idea. `s-scan-gru` already performs a virtual
+full-necklace scan of centred local windows before every decision and scored 0/12
+on the development panel. Its whole word is compressed into one final GRU vector;
+it discards the feature at every potential edit site, and its shift logits are a
+generic readout rather than scores of the positions those shifts reach.
+
+The replacement compiles one deterministic scan of the current closed braid into
+a crossing graph. Every occupied word position gets four pointers: previous and
+next crossing along each of the two physical strands passing through it. Closure
+arcs are followed exactly, so a strand ending at bottom height `h` continues at
+top height `h`. The learned controller then has:
+
+1. width 96 token features over the head-relative complete word;
+2. five residual graph blocks, at cyclic word dilations 1, 2, 4, 8, and 16, that
+   also exchange messages through both pairs of physical-strand neighbours;
+3. a local edit head at the current serial head position;
+4. a routing head whose logit for each left/right power-of-two shift reads the
+   encoded position that shift would actually reach; and
+5. shared-body `p(solve)`, conditional crossing-change, and conditional semantic
+   move heads with the soft remaining-`L` input, solve-loss backpropagation, and
+   budget-monotonic regularisation.
+
+This is aimed specifically at four or more strands. Width is not the important
+change: the network is told which distant crossings lie on the same physical
+thread, while generator order and sign remain learned inputs rather than a supplied
+knot invariant. Message passing preserves a distinct feature per crossing, so the
+policy can coordinate several generator families without compressing the entire
+braid into one vector before choosing where to work.
+
+The proposed `K` forced shifts are implemented as a compiled perception option,
+not as `K` MCTS actions. Here `K(x)=len(x)`: the adapter scans every crossing once
+to build the four graph pointers, then the NN/search makes its first choice. The
+scan is rebuilt after every semantic edit. Literal shifts only at episode start
+would leave stale memory after the first rewrite; literal shifts inside the tree
+would consume native horizon and repeat the same deterministic path in every
+simulation. The compiled scan is still compute and must be reported in forward
+latency/network evaluations, but it is neither a semantic move nor a search
+branch. A literal embodied-scan version can remain a later ablation.
+
+Local implementation measurements on the same four-strand word were:
+
+| candidate | parameters | batch-1 forward |
+|---|---:|---:|
+| `s-head-128` | 140,308 | 0.331 ms |
+| `s-scan-gru` | 215,700 | 0.816 ms |
+| `s-cyclic-tape8-192` | 344,083 | 0.958 ms |
+| `s-strand-graph-128` | 794,676 | 1.412 ms |
+
+The first per-strand recurrent-slot prototype was rejected before retention: it
+needed 1,200,276 parameters and 10.086 ms per batch-1 forward. Compiling the scan
+therefore retains the structural bias at 14% of that latency. On a fixed batch of
+four four-strand examples the retained network reduced policy cross-entropy from
+3.236 to 0.000038 in 30 Adam steps, and an end-to-end one-game/eight-simulation
+ladder smoke completed one optimizer iteration and promoted rung 0. These checks
+establish wiring and fast trainability, not knot generalisation.
+
+The forward-training decision gate is:
+
+1. start independently rather than importing `s-head-128` policy weights;
+2. interleave 2-, 3-, and 4-strand examples from the first training block, with
+   simple torus/positive cases retained as rehearsal;
+3. require the historical early-ladder behaviour to reappear: at least 80% solve
+   rate on each promoted block, escalating simulations/iterations rather than
+   accepting a negative-only stream;
+4. evaluate on a new, frozen, source-disjoint mixed-strand panel, because the
+   12-item panel above influenced this design and is now development data; and
+5. replace `s-head-128` in the long roster only if the new scientist reaches at
+   least 70% representation coverage and adds held-out identities beyond both
+   `s-window-128` and `s-cyclic-tape8-192` at paired compute.
+
+The word “capable” remains a hypothesis until steps 2--5 pass. The implementation
+is now suitable for that test; it is not evidence that hard four-strand knots are
+already solved.
+
+#### Capacity and optimizer screen
+
+The replacement is being screened as a family rather than as one arbitrarily
+large network. Optimizer settings are now part of the persisted candidate
+specification and are used by the ladder runner; previously the runner silently
+constructed every AdamW optimizer at learning rate `1e-3`, weight decay `1e-4`,
+and trained with batch size 32, so a nominal hyperparameter experiment would not
+have changed the actual update.
+
+| candidate | graph width x blocks | towers | parameters | LR / batch / steps |
+|---|---:|---|---:|---:|
+| `s-head-128` | -- | local | 140,308 | `1e-3 / 32 / 96` |
+| `s-strand-graph-compact-128` | 64 x 3 | strand graph | 293,652 | `2e-3 / 32 / 96` |
+| `s-strand-graph-128` | 96 x 5 | strand graph | 794,676 | `1e-3 / 32 / 96` |
+| `s-strand-graph-local-128` | 128 x 6 | local + strand graph | 1,709,219 | `7.5e-4 / 64 / 128` |
+| `s-strand-graph-wide-128` | 160 x 8 | strand graph | 2,971,348 | `5e-4 / 64 / 160` |
+
+Every graph block is pre-normalised with `LayerNorm`, residual, and alternates
+cyclic dilations `1,2,4,8,16` while also following the exact physical-strand
+edges. The local-plus-graph arm is the learnability safeguard for a large model:
+its local policy/value tower is an ordinary two-block serial controller, and its
+graph contributions to policy and value have zero-initialised scalar gates.
+Consequently its initial policy and value are exactly the local tower's outputs;
+the auxiliary losses can train global features before the graph is allowed to
+change behaviour. This tests progressive capacity without assuming that a
+three-million-parameter controller can discover the elementary curriculum as
+quickly as a small one.
+
+All four graph sizes can fit a fixed batch of four-strand policy targets: under
+their configured optimizers they reduced policy cross-entropy below `0.05` in
+12--17 updates. That is only an optimizer/wiring test. The first 32-simulation
+reinforcement-learning pilot was rejected because even `s-head-128` was below the
+pre-registered 70% solve-rate floor; no architecture conclusion is drawn from it.
+
+The calibrated admission test uses 128 simulations, eight self-play games per
+cycle, 96--160 optimizer updates according to the table, and 12 independent
+evaluation attempts for each of the three historical objective ratios. On seed
+71, `s-head-128` had 75% aggregate solve rate after the initial four-cycle cap,
+but an extended run promoted at cycle 6 with 94.4% aggregate solve rate. Thus
+delayed takeoff on an elementary stage is real. It does not explain the mature
+rung-18 checkpoint's 3/12 source-disjoint coverage: that network had already
+trained through 18 rungs, and its three held-out successes were all three-strand
+while it solved none of five four-strand representations.
+
+The compact graph arm promoted seed 71 after one cycle at 88.9%; seed 73 confirmed
+at 100% after three cycles. Seed 72 is a useful instability check rather than a
+hidden success: it recovered from 36.1% at cycle 2 to 77.8% at the four-cycle cap,
+but failed the collapse/objective checks (`1:10` was 41.7% and mean `1000:1`
+crossing changes were 0.333 against the allowed 0.25). The balanced
+96 x 5 graph promoted seed 71 after two cycles at 80.6%, including 100% on the
+`1000:1` slice and mean 0.25 crossing changes. Wide and local-plus-graph arms are
+still running. None is admitted to the collaboration experiment until a clean
+mixed six-stage artifact closes. Large arms are also charged for wall time and
+network evaluations: capacity that requires several times the compute to clear
+the elementary stage is a later growth target, not a fair replacement at the same
+experiment budget.
+
+The continuation also closes a historical promotion loophole. The general ladder
+may leave a known-`u` rung when crossing-change quality has plateaued, because
+moving forward can teach it more efficiently than grinding one rung. That is not
+a valid architecture certificate: a controller that always solves a trefoil with
+two crossing changes has not passed a one-crossing objective. The architecture
+gate therefore disables plateau promotion whenever exact `u` is known; it still
+permits plateau promotion for unknown-`u` sources. Evaluation is performed every
+two training cycles, with 12 attempts per objective at each evaluation.
+
+The first mixed continuation exposed a second protocol mismatch and is retained
+only as a diagnostic. It had old successful episodes in replay but generated zero
+fresh old-stage attempts, although the approved schedule sets `F_old=1`. By cycle
+8 it still solved the `1000:1` trefoil slice, but used two crossing changes and 50
+moves, while the `1:10` slice fell to 0%. Clean compact and balanced continuations
+therefore restart from their promoted stage-0 checkpoints and generate one fresh
+MCTS attempt for every cleared stage in every cycle. Adding rehearsal only after
+degradation would not be a valid repair experiment.
+
+The clean `F_old=1` compact continuation also shows that rehearsal alone is not
+the complete answer. Its first `T(2,3)` evaluation at cycle 2 solved 12/12 for
+`10:1` but 0/12 for both endpoint objectives. Training continues to cycle 12, but
+if the `1000:1` optimum does not recover, the next controlled arm must change the
+objective sampling distribution: use discrete `10:1` and `1000:1` self-play
+rather than drawing continuously over `0.1` through `1000`. That is an optimizer
+curriculum hypothesis, not evidence against the graph representation.
+
 Primary artifacts:
 
+* `pgx-mcts-bench/artifacts/strand-architecture-first-stage128-seed71-20260808/`;
+* `pgx-mcts-bench/artifacts/strand-architecture-first-stage128-compact-confirm-20260808/`;
+* `pgx-mcts-bench/artifacts/strand-architecture-first-stage128-shead-long-seed71-20260808/`;
+* `pgx-mcts-bench/artifacts/strand-architecture-mixed128-compact-rehearsal-seed73-20260808/`;
+* `pgx-mcts-bench/artifacts/strand-architecture-mixed128-balanced-rehearsal-seed71-20260808/`;
 * `pgx-mcts-bench/artifacts/frontier-roster-k3-paired-max256-source-disjoint-L1000-seed20261880-20260807/report.json`;
 * `pgx-mcts-bench/artifacts/frontier-roster-k3-stochastic-source-disjoint-L1000-seed20261880-20260807/report.json`; and
 * `pgx-mcts-bench/artifacts/frontier-roster-triad-stochastic-band96-L1000-seed20261840-20260807/report.json`.
+
+### Transactional collaboration runner v7, 2026-08-08
+
+The next three-arm runner is implemented and has passed an engineering smoke;
+this is not yet evidence that sharing improves knot solving.
+
+Every ten-round training block now has a bounded adaptive `F_old` dose over the
+entire block. Half of the dose prioritizes representations degraded by the last
+certificate, one quarter is recent, and one quarter is inverse-exposure sampled.
+For each scheduled old task, replay receives its permanent best native solution
+when one exists plus one fresh MCTS attempt. A deterministic rotating portfolio
+is evaluated with identical seeds immediately before and after training. The
+update is accepted only when portfolio solves do not decrease and complete
+capped `L1000` does not increase; otherwise network and optimizer state roll back,
+while replay and the best-solution bank remain available for the next attempt.
+
+The direct-sharing arm has no separate policy adapter. A translated donation
+enters native successful replay only when exact receiver replay proves that it is
+strictly better than the receiver's best archived native objective for that
+representation and ratio. Stale, equal, or inferior donations cannot train the
+policy. Because a batch of 32 with four positions per episode has only eight
+episode slots, a positive sharing fraction now receives at least one shared
+episode when eligible; the scientific run should use batch 64, where one slot is
+6.25%, close to the intended 5% dose.
+
+The retention probe now repeats paired attempts per scientist/task/ratio until
+the declared minimum attempt count is actually met. This matters during the
+first blocks, when the solo arm has seen fewer distinct tasks than its nominal
+panel size. The corrected two-round `v7b` smoke exactly matched all three arms:
+
+| compute category | sharing | no sharing | solo |
+|---|---:|---:|---:|
+| qualification simulations | 12 | 12 | 12 |
+| full-search simulations | 24 | 24 | 24 |
+| rehearsal simulations | 24 | 24 | 24 |
+| retention simulations | 24 | 24 | 24 |
+
+Sharing and no-sharing selected the same final two representations
+(`12a_16`, `11a_330`) and both portfolio guards accepted. The compute-matched
+solo arm used three times the search simulations and three times the optimizer
+steps in its single network. An earlier two-round wiring smoke also exercised a
+real superior donation: `s-window-128` donated a receiver-valid witness that
+improved `s-tape4` from `L1000=3009` to `2008`; an equal-cost donation to the
+cyclic scientist was correctly rejected.
+
+Primary artifacts:
+
+* `pgx-mcts-bench/artifacts/collaboration-v7b-engineering-smoke-sharing-direct-seed20262011/`;
+* `pgx-mcts-bench/artifacts/collaboration-v7b-engineering-smoke-no-sharing-seed20262011/`;
+* `pgx-mcts-bench/artifacts/collaboration-v7b-engineering-smoke-solo-matched-seed20262011/`; and
+* `pgx-mcts-bench/artifacts/collaboration-v7-engineering-smoke-sharing-direct-seed20262010/`.
+
+The 100--200 representation pilot remains gated on a third scientist passing
+the three-seed early curriculum, mixed-strand retention, and source-disjoint
+critic/coverage checks. Passing this engineering smoke opens the runner, not the
+scientific claim.
 
 ## What would kill the programme
 

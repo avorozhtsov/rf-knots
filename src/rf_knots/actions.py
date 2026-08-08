@@ -66,10 +66,11 @@ class ActionSpec:
 
     max_len: int
     max_strands: int
+    cyclic_band_generators: bool = False
 
     @property
     def num_generators(self) -> int:
-        return self.max_strands - 1
+        return self.max_strands - 1 + int(self.cyclic_band_generators)
 
     @functools.cached_property
     def starts(self) -> np.ndarray:

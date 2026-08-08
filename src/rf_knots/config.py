@@ -43,6 +43,11 @@ class BraidConfig:
     # covering the whole Pareto front instead of one point on it.
     multi_objective: bool = False
     log_ratio_range: tuple[float, float] = (0.0, 0.0)
+    # Add one cyclic seam generator b_n crossing strand positions n and 1.  It
+    # is interpreted as the Birman--Ko--Lee band generator a_{1,n} and therefore
+    # compiles back into the ordinary Artin group B_n; this is not the unchecked
+    # affine braid group.
+    cyclic_band_generators: bool = False
 
     def __post_init__(self) -> None:
         if self.max_len < 6:

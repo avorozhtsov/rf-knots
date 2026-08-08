@@ -286,21 +286,32 @@ def legal_action_mask(
 
     # A cyclic pair needs two distinct positions, a cyclic triple needs three.
     reduce_mask = inside & (length >= 2) & (nxt == -word)
-    commute_mask = (
-        inside & (length >= 2) & (nxt != 0) & (jnp.abs(abs_w - abs_next) >= 2)
-    )
+    generator_distance = jnp.abs(abs_w - abs_next)
+    if spec.cyclic_band_generators:
+        adjacent_generators = (generator_distance == 1) | (
+            generator_distance == n - 1
+        )
+        commute_generators = (abs_w != abs_next) & ~adjacent_generators
+    else:
+        adjacent_generators = generator_distance == 1
+        commute_generators = generator_distance >= 2
+    commute_mask = inside & (length >= 2) & (nxt != 0) & commute_generators
     braid_mask = (
         inside
         & (length >= 3)
         & (nxt2 == word)
         & (jnp.sign(word) == jnp.sign(nxt))
-        & (jnp.abs(abs_w - abs_next) == 1)
+        & adjacent_generators
     )
 
     # INSERT: the seam is arbitrary, so positions 0..length-1 cover every distinct
     # necklace; position `length` would only repeat position 0.
     generators = jnp.arange(1, spec.num_generators + 1)
-    gen_ok = (generators <= n - 1)[:, None, None]
+    largest_generator = n if spec.cyclic_band_generators else n - 1
+    nonduplicate_seam = (generators != n) | (n >= 3)
+    gen_ok = (
+        (n >= 2) & (generators <= largest_generator) & nonduplicate_seam
+    )[:, None, None]
     pos_ok = (idx < jnp.maximum(length, 1))[None, None, :]
     room_ok = length + 2 <= max_len
     insert_mask = jnp.broadcast_to(
@@ -312,9 +323,12 @@ def legal_action_mask(
     # built into the representation.
     top = n - 1
     top_count = jnp.sum(abs_w == top)
-    destab_ok = (n >= 2) & (length >= 1) & (top_count == 1)
+    seam_present = spec.cyclic_band_generators & jnp.any(abs_w == n)
+    destab_ok = (n >= 2) & (length >= 1) & (top_count == 1) & ~seam_present
 
-    stab_ok = (n < spec.max_strands) & (length + 1 <= max_len)
+    stab_ok = (
+        (n < spec.max_strands) & (length + 1 <= max_len) & ~seam_present
+    )
 
     crossing_mask = (word != 0) & jnp.asarray(allow_crossing_change)
 
@@ -345,7 +359,12 @@ def legal_action_mask(
 # -- diagnostics ---------------------------------------------------------------
 
 
-def permutation(word: jax.Array, n: jax.Array, max_strands: int) -> jax.Array:
+def permutation(
+    word: jax.Array,
+    n: jax.Array,
+    max_strands: int,
+    cyclic_band_generators: bool = False,
+) -> jax.Array:
     """Underlying permutation of the braid, as an array of length `max_strands`.
 
     Strands beyond `n` are fixed points. The number of cycles of this permutation
@@ -356,24 +375,38 @@ def permutation(word: jax.Array, n: jax.Array, max_strands: int) -> jax.Array:
 
     def body(carry, letter):
         i = jnp.abs(letter) - 1  # 0-based: swaps strands i and i+1
-        swapped = jnp.where(letter == 0, carry, _swap_entries(carry, i))
+        ordinary = _swap_entries(carry, i)
+        seam = _swap_pair(carry, jnp.int32(0), n - 1)
+        crossed = jnp.where(
+            cyclic_band_generators & (jnp.abs(letter) == n), seam, ordinary
+        )
+        swapped = jnp.where(letter == 0, carry, crossed)
         return swapped, None
 
     perm, _ = jax.lax.scan(body, perm, word)
     return perm
 
 
-def _swap_entries(perm: jax.Array, i: jax.Array) -> jax.Array:
+def _swap_pair(perm: jax.Array, i: jax.Array, j: jax.Array) -> jax.Array:
     idx = jnp.arange(perm.shape[0])
     a = perm[i]
-    b = perm[jnp.minimum(i + 1, perm.shape[0] - 1)]
+    b = perm[j]
     out = jnp.where(idx == i, b, perm)
-    return jnp.where(idx == i + 1, a, out)
+    return jnp.where(idx == j, a, out)
 
 
-def num_components(word: jax.Array, n: jax.Array, max_strands: int) -> jax.Array:
+def _swap_entries(perm: jax.Array, i: jax.Array) -> jax.Array:
+    return _swap_pair(perm, i, jnp.minimum(i + 1, perm.shape[0] - 1))
+
+
+def num_components(
+    word: jax.Array,
+    n: jax.Array,
+    max_strands: int,
+    cyclic_band_generators: bool = False,
+) -> jax.Array:
     """Number of components of the closure (1 means it is a knot)."""
-    perm = permutation(word, n, max_strands)
+    perm = permutation(word, n, max_strands, cyclic_band_generators)
     active = jnp.arange(max_strands) < n
 
     # Count cycles by counting, for each element, whether it is the minimum of its
