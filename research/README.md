@@ -28,6 +28,7 @@ order-of-magnitude estimates and marked as such.
 | [16-scientists-collaboration.md](16-scientists-collaboration.md) | A corrected 2,700-representation collaboration experiment combining adaptive scheduling, a diverse solver population, and verified best-solution sharing with causal controls |
 | [17-text-mediated-sharing.md](17-text-mediated-sharing.md) | If the scientists invented a language and a theory instead of sharing per-knot witnesses: the four capabilities that fail independently, why a reader is the hard part, what makes a theory falsifiable rather than a long hint, and where an invented Jones-like invariant could possibly matter |
 | [18-raster-representation.md](18-raster-representation.md) | Drawing the braid instead of naming its letters: why a strand-count-agnostic picture is the missing half of "make the net size-invariant", why the closed braid is a cylinder and not a torus, and a parameter-matched probe of the whole family |
+| [19-superseding-the-rl-unknotter.md](19-superseding-the-rl-unknotter.md) | Reading Dranowski–Kabkov–Tubbenhauer: their agent sees six numbers and searches to depth one, so where the openings are; what an upper-bound claim honestly requires; which part of the Jones polynomial is usable as a network input; and how to make a network *be* an invariant rather than predict one |
 
 Note 11 was merged into [06](06-network-growth.md): it was the same question, and the survey
 reads wrong without the measurement that followed it. Notes 03, 05 and 07 carry a header saying
