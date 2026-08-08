@@ -259,16 +259,60 @@ the mechanism is not novel. What appears unoccupied is using it **for unknotting
 bounds**, with the Markov conditions enforced rather than only the braid relations,
 and with the self-play ratchet supplying the training signal.
 
+## 5b. What the bounds did to this project's own ladder
+
+Items 1-3 below are built (`rf_knots.seifert`, `rf_knots.unknot_search`,
+`rf_knots.verified_bounds`), and running the branch-and-bound over all 22
+non-trivial rungs that had a standing record settles most of the ladder:
+
+| | rungs |
+|---|---:|
+| `u` **determined exactly** — the sequence found meets a certified lower bound | **17 / 22** |
+| standing record **improved** | 4 / 22 |
+| no sequence found within the beam and the record's budget | 4 / 22 |
+
+Full table in `artifacts/rung-sweep-20260808/report.md`. The improvements:
+
+| knot | ratchet record | found here | |
+|---|---:|---:|---|
+| `7_5` (`R(3,18)#0`) | 6 | **2** | `u` determined |
+| `7_3` | 3 | **2** | `u` determined |
+| `3_1` on five strands | 2 | **1** | `u` determined |
+| `6_3` | 2 | **1** | optimal, but no certified bound reaches 1 |
+
+Three things worth taking from this.
+
+**The reference the whole ladder is scored against was loose, and nobody could
+have seen it.** `R(3,18)#0` stood at 6 against a true `u` of 2 — a factor of
+three — and the record carried no witness, so there was nothing to check. Every
+"gap to reference" number computed against that rung was measuring the reference's
+error, not the agent's.
+
+**On the labelled rungs the agents were already optimal.** Every `T(2,q)` torus
+rung comes back at exactly its record, and now with a certificate rather than a
+comparison against the Milnor conjecture. The trained agents are good; the ratchet
+was not.
+
+**Validation, since a search that reports its own optimality needs checking.**
+Against the bundled unknotting numbers, on every rung whose `u` is tabulated: no
+certified bound exceeds the truth, no sequence found is shorter than the truth, and
+every sequence found *equals* it. Zero violations in 22.
+
+The four rungs with no result are honest: the search is a beam capped at the
+standing record, so an absent improvement is not a proof that none exists. One of
+them, a 20-letter three-strand word, has a certified bound of 9 against a record of
+11 — a gap of 2 that neither the agents nor this search has closed, and the most
+interesting single rung left.
+
 ## 6. Ordered next steps
 
-1. **Store the unknotting sequence as the witness.** Prerequisite for any claim
-   against their table. Already open in `HANDOFF.md`.
-2. **Certified lower bounds beyond `|sigma|/2`** — Rasmussen `s`, `tau`, and the
-   Lickorish/Montesinos `u = 1` obstruction — wired into branch-and-bound. This is
-   what turns a search result into a theorem and what removes the dependence on
-   KnotInfo identification.
-3. **Close the calibration gap** on knots with known `u` (`R(3,18)#0` at 6 against
-   2) before targeting anyone's open intervals.
+1. ~~**Store the unknotting sequence as the witness.**~~ **Done** —
+   `rf_knots.verified_bounds` replays every claim on read.
+2. ~~**Certified lower bounds beyond `|sigma|/2`.**~~ **Done for `tau` and the
+   Montesinos obstruction**, and `|sigma|/2` now actually runs. Rasmussen `s`
+   remains: it needs Khovanov homology, and there is no offline backend here.
+3. ~~**Close the calibration gap.**~~ **Done** — §5b. `R(3,18)#0` went 6 -> 2,
+   and 17 of 22 rungs now have `u` determined exactly.
 4. **A per-crossing flip policy** over the raster head of
    [18](18-raster-representation.md), replacing their exhaustive flip loop.
 5. **Depth-`k` crossing-change search**, with the ratchet as the value of an
