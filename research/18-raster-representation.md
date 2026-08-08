@@ -315,6 +315,51 @@ not estimated: 484 ms/step against 119 ms/step at 100k parameters on one CPU
 thread. Any comparison that omits this is measuring a bigger network. §5 carries
 a `word-onehot-cyclic-8x` arm for exactly this reason.
 
+**4.6 Most of that cost is padding, and shape bucketing removes it almost for
+free.** `research/experiments/padding_overhead.py`, over 600 instances from the
+ladder's own graded generator at `max_len = 48, max_strands = 5`:
+
+> **82% of the raster canvas is padding.** Mean occupancy is **17.8%** — 42.8
+> active cells out of 240. The word axis is 35% full and the strand axis 50%.
+
+So the raster is not eight times more expensive because it is two-dimensional; it
+is expensive because it is mostly empty. Rounding the shape up to a multiple of a
+tile instead of to the global capacity recovers most of that, and the bill is a
+handful of extra JIT compilations:
+
+| tile | distinct shapes | waste left | cells vs full canvas | one-off compile |
+|---|---:|---:|---:|---:|
+| `16 x 4` | 3 | 57.3% | 2.4x fewer | 1.2 s |
+| `8 x 4` | 5 | 49.2% | 2.8x fewer | 2.0 s |
+| `7 x 5` | 5 | 58.7% | 2.3x fewer | 2.0 s |
+| **`4 x 2`** | **17** | **21.5%** | **4.4x fewer** | **6.8 s** |
+
+*(33 distinct shapes if every length got its own; ~0.40 s to jit one environment
+shape, and the repository already enables a persistent compilation cache, so even
+that is paid once across all runs.)*
+
+Wall clock on the trunk itself confirms the cell counts, at batch 64, width 36,
+four blocks, one thread:
+
+| shape | cells | ms/step | speedup |
+|---|---:|---:|---:|
+| full canvas `5 x 48` | 240 | 204.1 | 1.00x |
+| bucketed `7 x 5` | 105 | 100.1 | 2.04x |
+| exact `2 x 17` | 34 | 42.4 | **4.81x** |
+
+**The recommendation is bucket at `4 x 2`.** Seventeen shapes and under seven
+seconds of one-off compilation buys about **4x the throughput**, against a dense
+ceiling of 4.8x. And throughput is the right thing to buy here: this project's own
+measurements say search dominates — 2x the simulations beat 7.7x the parameters,
+and 128 simulations reach stage 8 where 16 reach stage 0. A 4x trunk speedup is
+worth more than any architecture change measured in this note.
+
+Two caveats. The trunk numbers are the *network*, and MCTS is batch-1 latency
+bound with 77% of a simulation in the forward pass, so the end-to-end win is
+somewhat less than 4x. And this measures compute, not accuracy: whether dense
+input *also* helps the network needs the probe suite rerun with cropped rather
+than masked inputs, which is a separate experiment.
+
 ## 5. The experiment
 
 Ten arms, four probes, three seeds — 120 runs — parameter-matched to
