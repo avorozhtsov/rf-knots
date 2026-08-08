@@ -765,6 +765,59 @@ untrained checkpoints and is ready for a run that gets far enough.
 **So the standing evidence for the raster is §§5–6 and the §2.1 tensor count, and
 none of it is an RL result.** That distinction is the honest summary of this note.
 
+### Rerun with a real evaluation budget, and what it showed instead
+
+The obvious objection to the above is the evaluation: eight games per ratio against
+a 0.80 bar means one episode is worth 0.125, so promotion turns on a single game.
+The rerun raised evaluation games 8 -> **32** and self-play 6 -> **12**, same
+architectures, same two seeds, 3.0 core-hours:
+
+| candidate | seed | highest stage | stage-0 solve |
+|---|---:|---:|---:|
+| `conv-window-128` | 71 | −1 | 0.46 |
+| `conv-window-128` | 72 | −1 | 0.41 |
+| `s-window-128` | 71 | −1 | 0.54 |
+| `s-window-128` | 72 | −1 | 0.11 |
+
+**The extra evaluation removed the signal rather than sharpening it.** The single
+promotion in the first gate — `conv-window-128` at 0.83 — does not reappear;
+nothing promotes at all. That is exactly what a noise-driven result does when it is
+measured properly, and it retrospectively confirms that the 0/−1 against −1/−1
+tally was worth nothing.
+
+**And then the floor explains the whole thing.** Evaluating *untrained* networks on
+the same stage, with the same 128-simulation search:
+
+| | untrained | after 12 iterations |
+|---|---:|---:|
+| `s-window-128` | **0.750** | 0.54, 0.11 |
+| `conv-window-128` | **0.333** | 0.46, 0.41 |
+
+Stage 0 is the unknot scrambled by two moves, and **128-simulation MCTS solves much
+of it with random weights**. The trained range (0.11–0.54) sits *inside* the
+untrained range (0.33–0.75); on `s-window-128` twelve iterations of self-play left
+it below where it started. The 0.80 promotion bar is barely above what search alone
+delivers.
+
+So the gate at this budget does not discriminate architectures because it barely
+discriminates *trained from untrained*. The binding constraint is neither
+evaluation noise nor representation: it is that 12 iterations of 12 self-play games
+is 144 games, which is not enough to improve on the prior that search already
+provides — and can be enough to damage it. This is the same lesson the repository
+already recorded from the other direction ("search dominates capacity"), arriving
+here as "search dominates *training*, at this budget".
+
+*(Caveat on the floor numbers: one seed, 12 games per ratio, so the 0.750 and 0.333
+are individually noisy. The claim that survives is the overlap of the ranges, not
+the ordering within them.)*
+
+**What a gate would have to look like to answer the original question.** Stage 0
+has to be somewhere an untrained network fails, which means either many more
+self-play games per iteration or a harder first rung — and then the strand-transfer
+question still needs the cell-indexed head of §4.1 before any checkpoint can be
+tested past five strands. Both are scheduling decisions, not experiments to slip in
+behind a representation note.
+
 ## 8. What this does not settle
 
 * **§§5–6 are supervised probes, not a ladder.** They answer "can the encoder see

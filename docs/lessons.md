@@ -93,4 +93,10 @@ may since have moved; the lesson is the durable part.
   trained. Building them once per `(probe, split, seed)` made a restart free and
   also made the experiment stronger: every arm is then scored on literally the
   same instances rather than on independently drawn ones.
+- **Measure the untrained floor before reading a training curve.** An untrained
+  network with 128-simulation MCTS solved 0.75 of the curriculum's first rung; the
+  networks trained on it for twelve iterations scored 0.11 to 0.54. The whole gate
+  was measuring how much 144 self-play games damage a prior that search was already
+  carrying. A promotion bar only just above the untrained score cannot discriminate
+  anything.
 - Negative results belong in commit messages and notes, not in dead code.
