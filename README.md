@@ -133,6 +133,7 @@ date and snapshot hash, together with the corresponding Spherogram identifier
 | `src/rf_knots/torus.py` | the diagram as a `position × strand` raster: strand-count-agnostic input |
 | `src/rf_knots/seifert.py` | certified lower bounds: signature, tau, and the Montesinos `u ≥ 2` obstruction |
 | `src/rf_knots/unknot_search.py` | branch-and-bound over crossing changes, pruned by those bounds |
+| `src/rf_knots/certified_value.py` | the certified bound as a floor on the objective, for clamping a value head |
 | `src/rf_knots/verified_bounds.py` | a bounds ratchet that stores the move sequence and replays it on read |
 | `src/rf_knots/rollout.py` | random play, scramble generation, batched benchmarking |
 | `docs/representation.md` | how a knot is encoded and what may be done to it |
