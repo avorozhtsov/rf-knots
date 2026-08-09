@@ -363,6 +363,32 @@ instances, including the penalty for smaller shape-homogeneous batches, it is
 **3.5x** (mean 55 cells against 240). At most 36 shapes and under fifteen seconds
 of one-off compilation, against a dense ceiling of 4.8x.
 
+**It does not transfer to `conv-window-128`, and that is measured too.** That arm
+rasters its *seven-cell window*, not the whole word, so its canvas is `7 x 5 = 35`
+cells at **50.2%** occupancy rather than 17.8%. Tile bucketing there is worth
+1.69x in cells, and two attempts to collect it both failed:
+
+* **It is not exact.** `CylinderResidualBlock` normalises with
+  `nn.GroupNorm`, whose statistics run over `(channels, strands, positions)`.
+  Cropping the strand axis changes the number of cells the mean and variance are
+  taken over, so the output changes: measured max difference **2.09** on live
+  cells, against the full canvas. Cropping is only exact for a shape-independent
+  normalisation.
+* **It is not faster.** Grouping a batch by live strand count and running each
+  group measured **0.96x** -- a slowdown. At `7 x 5` the tensors are small enough
+  that the trunk is launch-overhead bound rather than FLOP bound, so splitting one
+  kernel into four costs more than the cells saved.
+
+So bucketing pays on the **whole-word** raster, where the canvas is seven times
+larger and the work is FLOP bound, and not on the windowed one. The 3.5x is a
+property of the canvas size, not of the idea.
+
+There is a real finding underneath the first failure, independent of bucketing:
+**`GroupNorm` is computing its statistics over the padding.** On a canvas that is
+82% inactive that is the same complaint as pooling without a mask, which §5
+already had to fix. A mask-aware normalisation would be more correct *and* would
+make cropping exact, which is the precondition for bucketing ever helping here.
+
 One correctness requirement comes with it, and it is the same trap as the strand
 axis in §5.3. Bucketing leaves up to three unused rows, so `F.pad(mode="circular")`
 wraps position 0 onto a *padding* cell rather than onto the last real letter —
