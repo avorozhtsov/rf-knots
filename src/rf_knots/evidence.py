@@ -56,21 +56,38 @@ def braid_knot_key(word: Iterable[int], strands: int) -> str:
 class BraidState:
     word: Word
     strands: int
+    cyclic_band_generators: bool = False
 
     def __post_init__(self) -> None:
         if self.strands < 1:
             raise ValueError("a braid state needs at least one strand")
-        if any(abs(x) >= self.strands for x in self.word):
-            raise ValueError(f"word {self.word} does not belong to B_{self.strands}")
-        if reference.num_components(self.word, self.strands) != 1:
+        largest = self.strands if self.cyclic_band_generators else self.strands - 1
+        if any(abs(x) > largest for x in self.word):
+            alphabet = "B*" if self.cyclic_band_generators else "B"
+            raise ValueError(
+                f"word {self.word} does not belong to {alphabet}_{self.strands}"
+            )
+        if reference.num_components(
+            self.word,
+            self.strands,
+            self.cyclic_band_generators,
+        ) != 1:
             raise ValueError("the braid closure is a link, not a knot")
 
     def to_dict(self) -> dict[str, Any]:
-        return {"word": list(self.word), "strands": self.strands}
+        return {
+            "word": list(self.word),
+            "strands": self.strands,
+            "cyclic_band_generators": self.cyclic_band_generators,
+        }
 
     @classmethod
     def from_dict(cls, row: dict[str, Any]) -> BraidState:
-        return cls(tuple(int(x) for x in row["word"]), int(row["strands"]))
+        return cls(
+            tuple(int(x) for x in row["word"]),
+            int(row["strands"]),
+            bool(row.get("cyclic_band_generators", False)),
+        )
 
 
 @dataclass(frozen=True)
@@ -123,6 +140,7 @@ class UnknotWitness:
     max_len: int
     max_strands: int
     steps: tuple[WitnessStep, ...]
+    cyclic_band_generators: bool = False
 
     @property
     def crossing_changes(self) -> int:
@@ -138,20 +156,24 @@ class UnknotWitness:
 
     def verify(self) -> BraidState:
         """Replay all steps and return the terminal state, or raise on any mismatch."""
-        spec = ActionSpec(self.max_len, self.max_strands)
+        spec = ActionSpec(
+            self.max_len,
+            self.max_strands,
+            cyclic_band_generators=self.cyclic_band_generators,
+        )
         current = self.start
         for index, step in enumerate(self.steps):
             flat = step.action.to_flat(spec)
             if not reference.is_legal(spec, current.word, current.strands, flat, True):
                 raise ValueError(f"step {index} is illegal: {step.action}")
             word, strands = reference.apply(spec, current.word, current.strands, flat)
-            actual = BraidState(word, strands)
+            actual = BraidState(word, strands, self.cyclic_band_generators)
             if actual != step.after:
                 raise ValueError(
                     f"step {index} replay mismatch: stored {step.after}, actual {actual}"
                 )
             current = actual
-        if current != BraidState((), 1):
+        if current != BraidState((), 1, self.cyclic_band_generators):
             raise ValueError(f"witness does not reach the unknot: stopped at {current}")
         return current
 
@@ -163,19 +185,28 @@ class UnknotWitness:
         spec: ActionSpec,
         actions: Iterable[int],
     ) -> UnknotWitness:
-        current = BraidState(tuple(int(x) for x in start_word if int(x)), start_strands)
+        current = BraidState(
+            tuple(int(x) for x in start_word if int(x)),
+            start_strands,
+            spec.cyclic_band_generators,
+        )
         steps: list[WitnessStep] = []
         for index, flat in enumerate(actions):
             if not reference.is_legal(spec, current.word, current.strands, int(flat), True):
                 raise ValueError(f"action {index} is illegal: {spec.describe(int(flat))}")
             word, strands = reference.apply(spec, current.word, current.strands, int(flat))
-            current = BraidState(word, strands)
+            current = BraidState(word, strands, spec.cyclic_band_generators)
             steps.append(WitnessStep(SemanticAction.from_flat(spec, int(flat)), current))
         witness = cls(
-            BraidState(tuple(int(x) for x in start_word if int(x)), start_strands),
+            BraidState(
+                tuple(int(x) for x in start_word if int(x)),
+                start_strands,
+                spec.cyclic_band_generators,
+            ),
             spec.max_len,
             spec.max_strands,
             tuple(steps),
+            spec.cyclic_band_generators,
         )
         witness.verify()
         return witness
@@ -211,14 +242,24 @@ class UnknotWitness:
                 raise ValueError(f"state transition {index} is not one shared braid action")
             action = min(matches)
             steps.append(WitnessStep(SemanticAction.from_flat(spec, action), after))
-        witness = cls(sequence[0], spec.max_len, spec.max_strands, tuple(steps))
+        witness = cls(
+            sequence[0],
+            spec.max_len,
+            spec.max_strands,
+            tuple(steps),
+            spec.cyclic_band_generators,
+        )
         witness.verify()
         return witness
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "start": self.start.to_dict(),
-            "action_spec": {"max_len": self.max_len, "max_strands": self.max_strands},
+            "action_spec": {
+                "max_len": self.max_len,
+                "max_strands": self.max_strands,
+                "cyclic_band_generators": self.cyclic_band_generators,
+            },
             "steps": [step.to_dict() for step in self.steps],
             "crossing_changes": self.crossing_changes,
             "moves": self.moves,
@@ -232,6 +273,7 @@ class UnknotWitness:
             int(spec["max_len"]),
             int(spec["max_strands"]),
             tuple(WitnessStep.from_dict(step) for step in row["steps"]),
+            bool(spec.get("cyclic_band_generators", False)),
         )
 
 

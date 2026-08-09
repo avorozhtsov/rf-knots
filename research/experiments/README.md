@@ -1,5 +1,11 @@
 # Representation experiments
 
+These are reusable supervised/profiling tools, not active RL leaderboard results.
+Their historical outputs were moved to the pre-semantic-moves archive. Model names
+inside the scripts describe older comparison fixtures; current scientist names and
+admission criteria are defined in
+[`../16-scientists-collaboration.md`](../16-scientists-collaboration.md).
+
 Supporting code for [18 — the braid diagram as a picture](../18-raster-representation.md).
 These are **probes, not training runs**: they ask whether an encoder can compute
 the things the agent needs, which takes minutes, rather than whether an agent wins

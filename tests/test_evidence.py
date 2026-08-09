@@ -48,6 +48,21 @@ def test_state_trajectory_translation_omits_controller_only_steps():
     assert translated.to_dict() == witness.to_dict()
 
 
+def test_cyclic_band_witness_round_trips_and_verifies() -> None:
+    spec = ActionSpec(max_len=16, max_strands=4, cyclic_band_generators=True)
+    actions = [
+        spec.encode(REDUCE, position=0),
+        spec.encode(DESTABILIZE),
+        spec.encode(DESTABILIZE),
+    ]
+
+    witness = UnknotWitness.from_actions((3, -3, 1, 2), 3, spec, actions)
+    restored = UnknotWitness.from_dict(witness.to_dict())
+
+    assert restored.cyclic_band_generators is True
+    assert restored.verify() == BraidState((), 1, True)
+
+
 def test_witness_rejects_a_tampered_intermediate_state():
     witness = trefoil_witness()
     bad_step = dataclasses.replace(witness.steps[0], after=BraidState((1, 1, 1), 2))
