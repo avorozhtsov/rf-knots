@@ -383,11 +383,37 @@ So bucketing pays on the **whole-word** raster, where the canvas is seven times
 larger and the work is FLOP bound, and not on the windowed one. The 3.5x is a
 property of the canvas size, not of the idea.
 
-There is a real finding underneath the first failure, independent of bucketing:
-**`GroupNorm` is computing its statistics over the padding.** On a canvas that is
-82% inactive that is the same complaint as pooling without a mask, which §5
-already had to fix. A mask-aware normalisation would be more correct *and* would
-make cropping exact, which is the precondition for bucketing ever helping here.
+### 4.6.1 The normalisation was reading the padding, and that broke §2.1
+
+The finding underneath the first failure is worth more than the bucketing was.
+`nn.GroupNorm` averages over every cell of `(channels, strands, positions)`, and
+on a canvas that is 50-82% inactive most of what it averages is zeros. So the
+layer's output depends on how much **empty capacity** surrounds the diagram.
+`MaskedGroupNorm` computes the same statistics over live cells only. Measured on
+the real block:
+
+| | crop vs full canvas | same braid, 5-row vs 9-row canvas |
+|---|---:|---:|
+| `nn.GroupNorm` | 2.57 | **1.29** |
+| `MaskedGroupNorm` | 4.8e-07 | **5.4e-07** |
+
+The second column is the one that matters. **The raster trunk's parameters are
+strand-agnostic; its function was not.** §2.1 measured that a `conv-window-128`
+checkpoint has only two tensors blocking a move from `max_strands = 5` to `8`, and
+concluded the trunk transfers. That conclusion was too strong: even with the
+shapes fixed, the same braid on a wider canvas computed *different features*,
+because the normalisation saw the extra emptiness. Strand-agnosticism needs
+mask-aware normalisation as well as shared weights, and only the second half was
+in place.
+
+It also restores the precondition bucketing needed: with masked statistics,
+cropping to the live strand count is exact to `5e-07`, so shape grouping becomes
+a pure optimisation rather than a different function. Whether it then *pays* on
+the windowed arm is still doubtful — the 0.96x above was launch-overhead bound,
+which masking does not change.
+
+`conv-window-masked-128` is the arm, identical in parameter count to
+`conv-window-128` (137,620), differing only in the normalisation.
 
 One correctness requirement comes with it, and it is the same trap as the strand
 axis in §5.3. Bucketing leaves up to three unused rows, so `F.pad(mode="circular")`
