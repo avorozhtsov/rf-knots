@@ -21,9 +21,10 @@ differences, and capped objective—not only route loss or aggregate solve count
 ## 3. Scalable representations
 
 Develop strand-count-agnostic raster and cyclic-memory scientists whose local
-blocks share weights. The promising short-term raster scientist is
-`raster-axial`; scalable global routing remains an explicit gate rather than an
-assumption. See [17](17-scalable-braid-raster.md) and
+blocks share weights. The main roster retains `raster-axial`. The full-raster
+`raster-routed` candidate learned feasibility but failed early objective-quality
+and efficiency gates, so scalable global routing remains a separate development
+direction rather than an assumption. See [17](17-scalable-braid-raster.md) and
 [18](18-raster-representation.md).
 
 ## 4. Better unknotting-number upper bounds

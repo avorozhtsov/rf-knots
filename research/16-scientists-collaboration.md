@@ -14,17 +14,25 @@ The scientific objective is always
 Head shifts, tape writes, finite-state changes, and other controller-local actions
 consume an internal-step budget but are never charged as semantic moves.
 
-## Stable four-scientist roster
+## Selected three-scientist roster
 
 | Name | Information path | Main hypothesis |
 |---|---|---|
-| `window-local` | local word window plus a scanning controller | Fast learner and continuity baseline |
-| `raster-axial` | local braid raster with shared horizontal/vertical axial blocks | Better strand geometry without fixed-strand alphabets |
+| `raster-axial` | local braid raster with shared masked axial blocks | Better strand geometry without fixed-strand alphabets |
 | `cyclic-memory` | cyclic scan, persistent tape, and global objective conditioning | Can accumulate information outside a local window |
 | `strand-graph` | compact shared strand/message blocks with a routed action head | Test strand transfer cheaply, then grow only after a capacity gate |
 
 Names describe architecture only. Objective ratio, simulations per move, seed,
 training dose, and checkpoint are explicit run fields.
+
+`raster-routed` was tested as a possible replacement but was not admitted. It
+solved 10/10 first-rung evaluations after six iterations while averaging 0.3
+unnecessary crossing changes. An exact-state `F=8` continuation retained 10/10
+feasibility but worsened mean crossing changes to 0.6. In the same matched gate,
+`raster-axial` cleared the four-strand stage at 10/10 and optimal cost. Therefore
+the first big experiment keeps `raster-axial`; `raster-routed` remains a separately
+named capacity research candidate. “Raster-certified” means verifier-checkable
+encoding, transitions, and witnesses—not a correctness claim about the network.
 
 Every scientist receives the requested `log(A/B)`, remaining semantic objective
 budget, remaining internal-step budget, and its architecture-specific observation.
@@ -35,10 +43,11 @@ skip/conditioning paths so `p(solve)` can genuinely depend on budget.
 
 ## From-scratch pretraining
 
-All four scientists begin from independent seeded initializations. The curriculum
+All candidate scientists began from independent seeded initializations. The curriculum
 starts with unknots, small torus knots, and simple controlled scrambles, then adds
 source-disjoint mixed-sign braids and more strands. It samples exactly L10 and
-L1000 at a 1:3 ratio because L1000 is the final target.
+L1000 at a 1:1 ratio. Foundation pretraining is deliberately neutral; target-
+biased objective sampling is a later declared experimental variable.
 
 Admission requires, on held-out representations:
 
@@ -96,13 +105,13 @@ schedule. Exact logit retention is reported, but is not a hard blocker.
 
 ## Experiments
 
-After all scientists pass admission, run a source-disjoint 100+ representation
+After all selected scientists pass admission, run a source-disjoint 100+ representation
 gate before 1,000+ representations. The long comparison contains five arms:
 
-1. four scientists, adaptive order, sharing;
-2. four scientists, static order, sharing;
-3. four scientists, adaptive order, no sharing;
-4. four scientists, static order, no sharing; and
+1. three scientists, adaptive order, sharing;
+2. three scientists, static order, sharing;
+3. three scientists, adaptive order, no sharing;
+4. three scientists, static order, no sharing; and
 5. the strongest single scientist, with matched total search/training compute.
 
 Pair initial weights, representation order where applicable, evaluation seeds,
@@ -113,6 +122,52 @@ secondary outcomes include solve rate, L10, acquisition curves, and wall-clock.
 Only after the 100+ gate shows a stable advantage do we open a 1,000+
 representation run and a separate hard-knot upper-bound campaign.
 
+## Recommended nine-step plan
+
+1. **Freeze the semantic contract and data splits.** Pin charged semantic moves,
+   verifier version, objective ratios, failure caps, curriculum identities,
+   source-disjoint assessor/pilot/test sets, seeds, and code provenance.
+2. **Select the three architectures.** Use `strand-graph` seed 71,
+   `raster-axial` seed 71, and `cyclic-memory` seed 73. `window-local` remains an
+   engineering baseline because only one of three seeds reached the last stage
+   and its aggregate promotion/retention result was weaker. Test replacements
+   under separate names and admit one only after it beats the corresponding gate.
+3. **Run neutral foundation pretraining.** Start every scientist and seed from
+   random weights; use the 1:1 L10/L1000 mixture, native self-play, balanced
+   replay, and adaptive `F_native`, `F_old`, and simulations. No donations and no
+   adaptive task ordering are allowed in this stage.
+4. **Certify each resulting checkpoint.** Require at least 70% paired held-out
+   solve rate at the declared allocation, calibrated `p(solve)`, useful
+   conditional crossing/move heads, aggregate budget monotonicity, exact
+   save/resume, and a non-regressing rehearsal block.
+5. **Pass the adaptive-assessor gate.** Train and calibrate checkpoint-bound task
+   assessors on a separate set of at least 100 representations. Only certified
+   assessors may populate the scientist-specific indexed heaps used by adaptive
+   scheduling.
+6. **Pass the sharing gate independently.** Distil multiple verifier-confirmed,
+   strictly better receiver-native donations into the ordinary policy. Compare
+   paired sharing/control checkpoints and require no solved-set or capped-cost
+   regression; inferior donations perform zero policy updates.
+7. **Run the corrected 100–200 representation five-arm pilot.** Compare adaptive
+   sharing, static sharing, adaptive no-sharing, static no-sharing, and a
+   compute-matched strongest solo scientist. Verify resumability, final solved-set
+   differences, and complete compute accounting.
+8. **Freeze and run the 1,000+ comparison.** Change no protocol selected from the
+   pilot. Use independent paired seeds and make capped L1000 the primary outcome,
+   with solve rate, L10, acquisition curves, and wall-clock secondary.
+9. **Launch the separate hard-knot campaign.** Specialize the best admitted
+   solver/portfolio toward L1000, compare against cited upper bounds, and publish
+   every claimed improvement with a replayable witness, provenance, and
+   independent verification.
+
+Steps 1–3 are complete. Foundation pretraining was deliberately stopped after 11
+of 12 planned scientist/seed jobs: completing `cyclic-memory` seed 72 could not
+change the deterministic K=3 selection rule. The selected checkpoint paths,
+seeds, roles, and SHA-256 hashes are frozen in
+`pgx-mcts-bench/research/semantic-v1-k3-selection.json`. The remaining steps are
+checkpoint qualification, assessor certification, direct-sharing preflight, and
+the paired pilot.
+
 ## What survived the archive
 
 Three general findings remain useful:
@@ -122,6 +177,6 @@ Three general findings remain useful:
 - sharing must be compared on final solved sets and verified objective, not on
   whether canonical-route loss decreased.
 
-There are currently no admitted semantic-v1 Pareto plots or pretrained vNext
-checkpoints. They will be generated by the from-scratch admission runs rather than
-renaming historical artifacts.
+The three selected semantic-v1 foundation checkpoints exist, but none becomes a
+paper-arm starting checkpoint until the source-disjoint critic, budget,
+assessor, retention, and sharing preflights pass.

@@ -130,18 +130,30 @@ def clamp_cost_to_go(predicted: float, floor: Floor) -> float:
     return max(float(predicted), floor.cost)
 
 
-def clamp_value(predicted: float, floor: Floor, cap: float) -> float:
-    """Clamp a value expressed as *negated normalised cost*, as the env uses.
+def clamp_value(
+    predicted: float,
+    floor: Floor,
+    cap: float,
+    *,
+    spent_cost: float = 0.0,
+    solver_to_move: bool = True,
+) -> float:
+    """Clamp the environment payoff using a certified total-cost lower bound.
 
-    The environment's value is a reward in `[-1, 1]` where better is higher, so a
-    floor on cost is a **ceiling** on value. Getting that inversion wrong would
-    silently push the network the wrong way, which is why this is a named
-    function rather than an inline `max`.
+    A successful serial episode pays ``1 - 2 * total_cost / cap``; failure pays
+    ``-1``.  Therefore ``spent_cost + floor.cost`` gives an upper bound on the
+    solver's eventual value.  The opponent sees the negated payoff and receives
+    the symmetric lower bound.  This function intentionally does not assume the
+    older ``-cost/cap`` convention: that is not the payoff used by the current
+    semantic-move environment.
     """
     if cap <= 0:
         return float(predicted)
-    ceiling = -min(floor.cost / cap, 1.0)
-    return min(float(predicted), ceiling)
+    normalized = min(max((float(spent_cost) + floor.cost) / cap, 0.0), 1.0)
+    solver_ceiling = 1.0 - 2.0 * normalized
+    if solver_to_move:
+        return min(float(predicted), solver_ceiling)
+    return max(float(predicted), -solver_ceiling)
 
 
 def certified_floor_report(instances, ratio: float = 1.0) -> dict:

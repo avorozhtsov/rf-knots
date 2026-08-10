@@ -71,12 +71,16 @@ def test_clamping_cost_raises_and_never_lowers():
 
 
 def test_clamping_value_is_a_ceiling_not_a_floor():
-    """Value is negated cost, so a cost floor must *lower* an optimistic value."""
+    """The current payoff is 1 - 2 cost/cap, not the old -cost/cap."""
     floor = certified_floor((1, 1, 1, 1, 1), 2, ratio=1.0)  # 2 crossing changes
     # An optimistic network says "nearly solved"; the theorem says it cannot be.
-    assert clamp_value(0.9, floor, cap=4.0) == pytest.approx(-0.5)
+    assert clamp_value(0.9, floor, cap=4.0) == pytest.approx(0.0)
     # A pessimistic prediction is left alone.
     assert clamp_value(-0.95, floor, cap=4.0) == pytest.approx(-0.95)
+    # Cost already paid is part of the total terminal objective.
+    assert clamp_value(0.9, floor, cap=8.0, spent_cost=2.0) == pytest.approx(0.0)
+    # From the opponent's perspective the same certificate is a lower bound.
+    assert clamp_value(-0.9, floor, cap=4.0, solver_to_move=False) == pytest.approx(0.0)
     # A zero cap disables clamping rather than dividing by zero.
     assert clamp_value(0.9, floor, cap=0.0) == pytest.approx(0.9)
 
