@@ -164,9 +164,23 @@ Steps 1–3 are complete. Foundation pretraining was deliberately stopped after 
 of 12 planned scientist/seed jobs: completing `cyclic-memory` seed 72 could not
 change the deterministic K=3 selection rule. The selected checkpoint paths,
 seeds, roles, and SHA-256 hashes are frozen in
-`pgx-mcts-bench/research/semantic-v1-k3-selection.json`. The remaining steps are
-checkpoint qualification, assessor certification, direct-sharing preflight, and
-the paired pilot.
+`pgx-mcts-bench/research/semantic-v1-k3-selection.json`.
+
+Step 4 was then executed on 24 source-disjoint table representations and failed
+decisively. At 64, 128, and 256 simulations, coverage was respectively
+1/24, 1/24, 1/24 for `strand-graph`; 7/24, 6/24, 6/24 for `raster-axial`; and
+1/24, 2/24, 3/24 for `cyclic-memory`. No scientist roster came close to the 70%
+floor. A transactional ten-round static smoke confirmed that direct ordinary-
+policy sharing and interruption/resume work mechanically, but its 7.5--10%
+held-out coverage and worse capped objectives correctly failed the sharing
+gate. Exact results and artifact paths are in
+[`../paper_partials/2026-08-10-semantic-v1-k3-big-experiment-preflight.md`](../paper_partials/2026-08-10-semantic-v1-k3-big-experiment-preflight.md).
+
+Therefore steps 5–9 remain closed. The immediate replacement for step 3 is a
+neutral source-disjoint bridge curriculum with static outcome-blind ordering,
+no sharing, no adaptive scheduling, balanced replay, adaptive acquisition, and
+adaptive rehearsal. The bridge checkpoints must re-pass step 4 before assessor
+certification or any paid arm is run.
 
 ## What survived the archive
 
