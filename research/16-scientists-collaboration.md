@@ -80,6 +80,50 @@ the current verified solution bank, with a generous fallback cap. Local networks
 may use predictions to order tasks, but not to censor the search that evaluates
 them.
 
+## Semantic-v2 sequential curriculum
+
+The previous 24-representation readiness run was a frozen zero-shot transfer
+test. It was useful diagnostically but was too early to be an admission gate:
+even archived rung-18 `s-window-128` and `s-tape4` solve only 8/24 and 7/24
+representations under its two-attempt, 64-simulation protocol. SV2 therefore
+makes **one fixed representation one rung** and permits declared task-local
+learning before evaluation.
+
+The first prefix contains `6 + 6 + 3 + 3 + 3 + 3 = 24` representations:
+
+1. six simple source representations;
+2. the same six sources after two deterministic scramble moves;
+3. three different simple sources after one scramble move;
+4. three different simple sources after two moves;
+5. three different simple sources after three moves; and
+6. three different simple sources after four moves.
+
+The `6+6+3+3+3+3` construction is provenance, not an ordering barrier. Static
+order globally sorts all 24 representations by the auditable, outcome-blind score
+
+`ACS = 10 * strands + 5 * exact_u + presentation_crossings`.
+
+For a braid word, `presentation_crossings = len(word)`: every generator letter
+is one crossing in that diagram. This is not necessarily the knot type's minimal
+crossing number. All R24 sources have exact `u`; later groups retain exact or
+certified-bound provenance explicitly.
+
+All four arms use identical R24 native compute: 64 simulations per move,
+`F_native=10`, eight self-play games and 96 optimizer steps per iteration, and
+four evaluation attempts per objective. Only `F_old` is adaptive on R24. It
+starts at one total rehearsal iteration per ten-rung block and moves through
+`1, 2, 4, 8` when paired retention solve rate is below 0.80 or rehearsal worsens
+complete capped cost. Failed and expensive retained tasks are rehearsed before
+exposure-balanced tasks. The 200-representation group is the first group where
+native iterations and simulations may adapt.
+
+The frozen groups are `24`, then `200`, then `400`, followed by further groups
+of `400`. Group identity is outcome-blind and common to every arm. Static order
+is recomputed separately inside each group. Adaptive arms reorder only inside
+the current group; they never pull a task from a later group. Any learned
+replacement for ACS must be trained on a separate scheduler-development stream
+and frozen for every arm, not fitted from one treatment arm's outcomes.
+
 ## Replay and sharing
 
 Maintain permanent positive and negative episode banks with per-example usage
@@ -103,21 +147,71 @@ block only if solved-set size does not decrease and capped objective does not
 worsen. Otherwise roll back and raise rehearsal/search according to the adaptive
 schedule. Exact logit retention is reported, but is not a hard blocker.
 
+Donation dose is an exact count rather than a replay fraction. `D=1,2,3` means
+that every still-eligible donated witness receives one, two, or three controlled
+optimizer exposures. Eligibility is rechecked before every exposure: the
+translated witness must verify and must still have strictly lower semantic cost
+than the receiver's best native solution for the same representation and
+objective. Native/rehearsal updates are checkpointed before a separate donation
+phase, so a donation-only regression can be rolled back without erasing native
+learning.
+
+Start `D=1`. Hold it until a block contains at least ten distinct eligible
+donations. Raise it by one only after two consecutive donation blocks preserve
+portfolio solved-set size and do not worsen either capped L10 or capped L1000.
+Any paired regression lowers `D` immediately and resets the healthy-block count.
+Canonical-route loss is diagnostic and never changes the dose by itself.
+
 ## Experiments
 
-After all selected scientists pass admission, run a source-disjoint 100+ representation
-gate before 1,000+ representations. The long comparison contains five arms:
+The sequential-learning comparison contains four arms:
 
-1. three scientists, adaptive order, sharing;
-2. three scientists, static order, sharing;
-3. three scientists, adaptive order, no sharing;
-4. three scientists, static order, no sharing; and
-5. the strongest single scientist, with matched total search/training compute.
+1. three independent scientists, static ACS order, no sharing;
+2. three independent scientists, adaptive evidence-backed order, no sharing;
+3. arm 2 plus strictly-better verified donations; and
+4. arm 1 plus strictly-better verified donations.
 
-Pair initial weights, representation order where applicable, evaluation seeds,
-budgets, and total compute. Report solved-set intersections and treatment-only /
-control-only identifiers. Primary quality is the fixed-set capped L1000 sum;
-secondary outcomes include solve rate, L10, acquisition curves, and wall-clock.
+The adaptive scheduler ranks the remaining representations in the current group
+by the minimum predicted L10 among the scientists. The proposing scientist must
+supply a declared qualification attempt; a failed qualification is evidence too
+and receives the failure cap. Scheduling coordination is not solution sharing:
+in arms 1 and 2, no trajectory crosses a scientist boundary.
+
+The synchronized implementation is `pgx-mcts-bench braid-sv2-coordinated`.
+Adaptive qualification solutions remain native evidence owned by the proposer;
+they are not discarded after task selection. Sharing updates are deferred to the
+block boundary, where every active strictly better donation receives exactly
+`D` ordinary-policy optimizer exposures. A paired donation-only transaction is
+accepted only when portfolio coverage and capped cost are separately
+noninferior for both L10 and L1000. Rejection restores network and optimizer
+state while retaining native learning and replay provenance.
+
+The production runner uses one persistent process per scientist. A paired
+three-rung counterfactual established exact equivalence with the sequential
+reference: selected order, event/controller state, and every final model tensor
+matched. At rungs 10, 20, and 24, the runner emits a compact block certificate
+covering native/evaluation work, rehearsal retention and dose, translation and
+admission counts, and the full donation-only transaction. The CPU-32 launch
+script assigns the three remaining arms disjoint CPU sets and records source,
+bank, and checkpoint hashes before any learning starts.
+
+The three remaining arm modes passed sequential real low-compute smokes on
+2026-08-11 from the exact Arm-1 checkpoint hashes. Adaptive/no-sharing exercised
+different scientist proposals and evidence-backed selection. Static/sharing
+admitted three strictly better donations and completed three exact exposures.
+Adaptive/sharing admitted four and completed four exact exposures. Every paired
+donation transaction was noninferior under both objectives, and a completed-run
+resume restored the synchronized roster successfully. These are mechanism
+checks, not R24 treatment results.
+
+Pair initial weights, representation-specific self-play/evaluation seeds,
+budgets, and group membership. Seeds are keyed by representation and scientist,
+not round index, so reordering does not change task randomness. Adaptive
+controllers may consume different compute; report both quality-versus-compute
+curves and compute-matched truncation. Primary quality is complete capped L10
+and L1000 on every completed group. Also report solve rate, solved-set
+intersections and arm-only identities, acquisition curves, rehearsal/donation
+dose, network evaluations, and wall-clock.
 
 Only after the 100+ gate shows a stable advantage do we open a 1,000+
 representation run and a separate hard-knot upper-bound campaign.
@@ -148,10 +242,9 @@ representation run and a separate hard-knot upper-bound campaign.
    strictly better receiver-native donations into the ordinary policy. Compare
    paired sharing/control checkpoints and require no solved-set or capped-cost
    regression; inferior donations perform zero policy updates.
-7. **Run the corrected 100–200 representation five-arm pilot.** Compare adaptive
-   sharing, static sharing, adaptive no-sharing, static no-sharing, and a
-   compute-matched strongest solo scientist. Verify resumability, final solved-set
-   differences, and complete compute accounting.
+7. **Run the sequential 24+200 four-arm pilot.** Compare static no-sharing,
+   adaptive no-sharing, adaptive sharing, and static sharing. Verify resumability,
+   paired task seeds, final solved-set differences, and complete compute accounting.
 8. **Freeze and run the 1,000+ comparison.** Change no protocol selected from the
    pilot. Use independent paired seeds and make capped L1000 the primary outcome,
    with solve rate, L10, acquisition curves, and wall-clock secondary.
@@ -166,8 +259,8 @@ change the deterministic K=3 selection rule. The selected checkpoint paths,
 seeds, roles, and SHA-256 hashes are frozen in
 `pgx-mcts-bench/research/semantic-v1-k3-selection.json`.
 
-Step 4 was then executed on 24 source-disjoint table representations and failed
-decisively. At 64, 128, and 256 simulations, coverage was respectively
+The former step 4 was executed on 24 source-disjoint table representations and
+failed as a zero-shot transfer test. At 64, 128, and 256 simulations, coverage was respectively
 1/24, 1/24, 1/24 for `strand-graph`; 7/24, 6/24, 6/24 for `raster-axial`; and
 1/24, 2/24, 3/24 for `cyclic-memory`. No scientist roster came close to the 70%
 floor. A transactional ten-round static smoke confirmed that direct ordinary-
@@ -176,11 +269,10 @@ held-out coverage and worse capped objectives correctly failed the sharing
 gate. Exact results and artifact paths are in
 [`../paper_partials/2026-08-10-semantic-v1-k3-big-experiment-preflight.md`](../paper_partials/2026-08-10-semantic-v1-k3-big-experiment-preflight.md).
 
-Therefore steps 5–9 remain closed. The immediate replacement for step 3 is a
-neutral source-disjoint bridge curriculum with static outcome-blind ordering,
-no sharing, no adaptive scheduling, balanced replay, adaptive acquisition, and
-adaptive rehearsal. The bridge checkpoints must re-pass step 4 before assessor
-certification or any paid arm is run.
+That result no longer blocks a sequential bridge curriculum; it shows why the
+bridge is needed. The first active arm is
+`SV2-3S-R24-SIM64-F10-AR-EV4-NO-SHARING`. Sharing arms remain closed until the
+separate donation phase and paired donation-only rollback gate are complete.
 
 ## What survived the archive
 
