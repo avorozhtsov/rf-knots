@@ -117,12 +117,34 @@ complete capped cost. Failed and expensive retained tasks are rehearsed before
 exposure-balanced tasks. The 200-representation group is the first group where
 native iterations and simulations may adapt.
 
+Evaluation-protocol correction (2026-08-12): the deployed R24 and initial R200
+runner used temperature zero without root noise. Because resetting a fixed word
+does not use the attempt seed, its four nominal attempts were identical
+deterministic trajectories. Those runs therefore contain one effective attempt
+per scientist, representation, and objective repeated four times; their
+fractional aggregate coverage remains descriptive, but per-cell `EV4` solve
+rates and adaptive thresholds must not be interpreted as four-sample estimates.
+Protocol v3 uses four paired seeds with independent Dirichlet root noise and
+batches those four searches. The manifest freezes
+`evaluation_attempt_protocol`; the legacy deterministic mode remains available
+only for exact reproduction.
+
 The frozen groups are `24`, then `200`, then `400`, followed by further groups
 of `400`. Group identity is outcome-blind and common to every arm. Static order
 is recomputed separately inside each group. Adaptive arms reorder only inside
 the current group; they never pull a task from a later group. Any learned
 replacement for ACS must be trained on a separate scheduler-development stream
 and frozen for every arm, not fitted from one treatment arm's outcomes.
+
+The frozen R200 group retains the original ACS coefficients. Because its table
+knots do not all have known exact unknotting number, its declared `u` feature is
+the current certified unknotting-number upper bound:
+
+`ACS_R200 = 10 * strands + 5 * certified_u_upper_bound + len(braid_word)`.
+
+Here again `len(braid_word)` is the number of intersections in the selected
+presentation. The source table's minimal crossing number is retained separately
+and is not substituted for presentation length.
 
 ## Replay and sharing
 

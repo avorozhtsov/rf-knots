@@ -46,6 +46,25 @@ of the scalable representation family.
 crossings and the policy routes back to a crossing/strand pair. It tests whether
 explicit connectivity transfers better than image-like locality.
 
+## Axial capacity family
+
+Three from-scratch local-raster variants are being evaluated before the next
+large run. `raster-axial-v2` increases the admitted baseline from 64 channels and
+four blocks to 96 channels and six blocks. `raster-axial-v3` uses eight blocks
+and learnable LayerScale residual gates, initialized near the identity, to test
+whether additional depth can be optimized reliably. `raster-axial-v4` adds an
+aligned writable eight-symbol tape to the v3 controller; this is the only member
+that can preserve information acquired while scanning beyond its seven-column
+visual window.
+
+The baseline already uses mask-aware GroupNorm inside every block. The experiment
+therefore does not add an unmotivated extra normalization layer. It separates
+capacity, deep-stack stability, and persistent memory. All three receive the same
+three-seed, six-stage foundation curriculum. The selected checkpoints then form
+one static/no-sharing R24 arm. R24 is an acquisition and retention gate; admission
+to R200 additionally requires acceptable objective quality and compute per solved
+representation.
+
 ## Required gates
 
 1. Beat or complement `raster-axial` and remain competitive with `window-local`
