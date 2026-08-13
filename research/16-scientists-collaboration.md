@@ -146,6 +146,20 @@ Here again `len(braid_word)` is the number of intersections in the selected
 presentation. The source table's minimal crossing number is retained separately
 and is not substituted for presentation length.
 
+The post-R200 stream is now frozen at 2,700 total BASE representations: 1,639
+compatible canonical table braids and 1,061 deterministic type-preserving
+Markov variants. After removing the existing R200 identities, it forms six
+R400 groups and a final R100 tail. Static ACS ordering is recomputed inside each
+group, and cumulative prior banks retain R24 plus every completed earlier group.
+Exact provenance, hashes, and the clean optimized four-arm R200 restart are in
+[`../paper_partials/2026-08-12-optimized-four-arm-r200-and-large-banks.md`](../paper_partials/2026-08-12-optimized-four-arm-r200-and-large-banks.md).
+
+A separate five-scientist oracle family tests whether explicit classical,
+Alexander, and Jones information improves the raster controller, and whether
+late, FiLM, or dual-tower fusion is best. It is an ablation of human knowledge,
+not a replacement for the invariant-free arms. Its protocol is in
+[`../paper_partials/2026-08-12-human-invariant-oracle-family.md`](../paper_partials/2026-08-12-human-invariant-oracle-family.md).
+
 ## Replay and sharing
 
 Maintain permanent positive and negative episode banks with per-example usage

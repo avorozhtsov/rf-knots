@@ -1,6 +1,7 @@
 # Search and evaluation optimization audit
 
-Date: 2026-08-12. Status: locally verified; not applied to active Nebius runs.
+Date: 2026-08-12. Status: locally verified and admitted for future Nebius
+runs; active experiments remain pinned to their original code.
 
 The audit started from `pgx-mcts-bench` commit
 `bb886413f21ca549a89a34655d5550c5ea07b75a` with uncommitted Semantic-v2 and
@@ -88,3 +89,25 @@ The focused search, Semantic-v2, collaboration, raster, tape, and controller
 tests passed after the changes: 114 tests initially, followed by 51 focused
 state/search tests after JIT compilation. Active Nebius checkouts and processes
 were not changed or restarted.
+
+## Nebius admission
+
+The published optimized commit `4be0bac` was cloned into the separate checkout
+`/srv/braid/work-optimized/pgx-mcts-bench`; neither active checkout was edited.
+Eight focused search and collaboration correctness tests passed there. An
+equal-seed, equal-work CPU benchmark used `raster-axial`, stage 1, four actors,
+four evaluation games per ratio, 64 simulations, two measured optimizer steps,
+two isolated CPU cores, and PyTorch 2.13.0. The old and optimized runs both
+generated 256 self-play positions.
+
+| phase | old | optimized | speedup |
+|---|---:|---:|---:|
+| self-play | 54.23 s | 43.51 s | 1.25x |
+| evaluation | 100.46 s | 67.69 s | 1.48x |
+| normalized full iteration | 277.40 s | 206.30 s | 1.34x |
+
+The earlier 2.90x result is therefore correctly described as an isolated EV4
+evaluation speedup on the local benchmark, not an end-to-end training-loop
+speedup. Future Nebius launchers should use the pinned optimized checkout with
+its `src` directory first on `PYTHONPATH`. Existing jobs continue under their
+original immutable manifests and code.
