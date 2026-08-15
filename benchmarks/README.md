@@ -72,3 +72,25 @@ uv run --with pandas --with xlrd --with-editable . \
   python scripts/build_unknotting_gap_candidates.py \
   --knotinfo-xls /path/to/knotinfo_data_complete-2026-08-14.xls
 ```
+
+## Unknotting evidence index
+
+[`unknotting-evidence-index-20260815.json`](unknotting-evidence-index-20260815.json)
+is the replay-verified cross-run witness database used by the single-knot
+mastery curriculum. It maps knot identities to each scientist's best native
+crossing-change witness and retains event/bank paths and SHA-256 hashes. It also
+contains the two ten-slot curriculum blocks described in
+[`research/20-single-knot-mastery.md`](../research/20-single-knot-mastery.md).
+
+Regenerate it from a current recovery mirror with:
+
+```bash
+uv run python scripts/build_unknotting_evidence_index.py \
+  --results ../pgx-mcts-bench/artifacts/nebius-semantic-v2-live-backup/mirror/results \
+  --output benchmarks/unknotting-evidence-index-20260815.json
+```
+
+The pseudo-scientist `knotinfo-shortest-evidence` is fail-closed: a KnotInfo
+scalar upper bound or bibliography link is not assigned an L10 score. It becomes
+rankable only when the source supplies a complete semantic action path that
+passes the same replay verifier as native evidence.
