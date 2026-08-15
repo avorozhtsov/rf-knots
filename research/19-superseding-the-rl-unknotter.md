@@ -41,10 +41,19 @@ canned simplifier to call and when to backtrack; the knot theory is done by
 what the learned part can be responsible for.
 
 **The results.** 94.57% per-run success on the 385-instance "very hard unknot"
-benchmark, with all 385 unknotted in at least one of ten runs; roughly sixty knots
-with improved intervals in their Table 1 and about forty intervals collapsed to
-exact values; and `4_1 # 9_10` recovered at `u <= 3` via a single flip to
-`15n4866`, which has `u = 2`.
+benchmark, with all 385 unknotted in at least one of ten runs; **72** knots with
+improved intervals in their Table 1, of which **30** intervals collapsed to exact
+values in that published snapshot; and `4_1 # 9_10` recovered at `u <= 3` via a
+single flip to `15n4866`, which has `u = 2`.
+
+The published rows, a current KnotInfo overlay, and executable braid
+representations are frozen in
+[`../benchmarks/dkt2026-table1-upper-bounds-v1.json`](../benchmarks/dkt2026-table1-upper-bounds-v1.json),
+[`../benchmarks/dkt2026-table1-knotinfo-20260814.json`](../benchmarks/dkt2026-table1-knotinfo-20260814.json),
+and
+[`../benchmarks/dkt2026-table1-authors-pd-braids-v1.json`](../benchmarks/dkt2026-table1-authors-pd-braids-v1.json).
+The current KnotInfo snapshot has since made 48 of the 72 values exact; 24 remain
+open and are the actual upper-bound contribution targets.
 
 **Their own stated limits.** No certification of minimality; Jones identification
 detects only about 73% and fails outside 3–13 crossings; results are empirical

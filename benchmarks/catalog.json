@@ -18,6 +18,20 @@
         "veryhardunknots.zip"
       ],
       "note": "Download separately, record each archive SHA-256, and freeze exact instances before evaluation. The source currently lists 384 very-hard diagrams whereas arXiv:2603.07955 reports 385."
+    },
+    {
+      "name": "dkt2026-table1-upper-bound-targets",
+      "paper": "https://arxiv.org/pdf/2603.07955v3",
+      "target_catalog": "dkt2026-table1-upper-bounds-v1.json",
+      "current_baseline": "dkt2026-table1-knotinfo-20260814.json",
+      "manifest": "dkt2026-table1-authors-pd-braids-v1.json",
+      "note": "All 72 published Table 1 knots. The pinned current KnotInfo overlay has 48 exact calibration knots and 24 open contribution targets; the manifest contains authors-workbook PD presentations converted to braids, not the paper's inflated witnesses."
+    },
+    {
+      "name": "knotinfo-unknotting-gap-candidates-20260814",
+      "source": "https://knotinfo.org/knotinfo_data_complete.xls",
+      "target_catalog": "knotinfo-unknotting-gap-candidates-20260814.json",
+      "note": "All 482 knots with pinned intervals [1,3], [1,4], or [2,4]. Fifty-one have a stored local braid representation; the catalogue is a target list and contains no upper-bound witness."
     }
   ],
   "local": [

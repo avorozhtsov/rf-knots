@@ -1,0 +1,1254 @@
+{
+  "name": "dkt2026-table1-upper-bound-targets",
+  "schema": "rf-knots-upper-bound-targets-v1",
+  "scope": "Exactly the 72 rows printed in Table 1. Values from later live workbooks are not substituted for the published intervals. These are knot-type upper-bound targets, not starting representations or replayable unknotting witnesses.",
+  "source": {
+    "arxiv_id": "2603.07955",
+    "arxiv_version": "v3",
+    "authors": [
+      "Anne Dranowski",
+      "Yura Kabkov",
+      "Daniel Tubbenhauer"
+    ],
+    "caption": "Current upper bound improvements visible in the self-improving workbook.",
+    "printed_page": 17,
+    "retrieved_at": "2026-08-14",
+    "sha256": "79116ca7294da7d525c6f35abfc1377fc7f75401e172cdabdcbd99da502b05a2",
+    "table": 1,
+    "title": "RL unknotter, hard unknots and unknotting number",
+    "url": "https://arxiv.org/pdf/2603.07955v3"
+  },
+  "summary": {
+    "exact_values_reported": 30,
+    "strict_upper_bound_improvements": 72,
+    "target_count": 72,
+    "total_upper_bound_drop": 73
+  },
+  "targets": [
+    {
+      "canonical_name": "11a_14",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 1,
+      "paper_label": "11a14",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 1,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "11a_18",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 2,
+      "paper_label": "11a18",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 2,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "11a_83",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 3,
+      "paper_label": "11a83",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 3,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "11n_23",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 4,
+      "paper_label": "11n23",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 4,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_41",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 5,
+      "paper_label": "12a41",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 5,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_49",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 6,
+      "paper_label": "12a49",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 6,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_107",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 7,
+      "paper_label": "12a107",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 7,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_240",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 8,
+      "paper_label": "12a240",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 8,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_244",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 9,
+      "paper_label": "12a244",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 9,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_262",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 10,
+      "paper_label": "12a262",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 10,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_639",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 11,
+      "paper_label": "12a639",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 11,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12a_680",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 12,
+      "paper_label": "12a680",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 12,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12n_90",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 13,
+      "paper_label": "12n90",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 13,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12n_135",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 14,
+      "paper_label": "12n135",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 14,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12n_208",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 15,
+      "paper_label": "12n208",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 15,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "12n_212",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 16,
+      "paper_label": "12n212",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 16,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_12",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 17,
+      "paper_label": "13a12",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 17,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_15",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 18,
+      "paper_label": "13a15",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 18,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_19",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 19,
+      "paper_label": "13a19",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 19,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_55",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 20,
+      "paper_label": "13a55",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 20,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_120",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 21,
+      "paper_label": "13a120",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 21,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_121",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 22,
+      "paper_label": "13a121",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 22,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_133",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 23,
+      "paper_label": "13a133",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 23,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_157",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 24,
+      "paper_label": "13a157",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 24,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_160",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 25,
+      "paper_label": "13a160",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 25,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_162",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 26,
+      "paper_label": "13a162",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 26,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_174",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 27,
+      "paper_label": "13a174",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 27,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_179",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "left",
+      "panel_row": 28,
+      "paper_label": "13a179",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 28,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_195",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 29,
+      "paper_label": "13a195",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 29,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_203",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 30,
+      "paper_label": "13a203",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 30,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_236",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 31,
+      "paper_label": "13a236",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 31,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_247",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 32,
+      "paper_label": "13a247",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 32,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_271",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 33,
+      "paper_label": "13a271",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 33,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_275",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 34,
+      "paper_label": "13a275",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 34,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_314",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 35,
+      "paper_label": "13a314",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 35,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_329",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "left",
+      "panel_row": 36,
+      "paper_label": "13a329",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 36,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_339",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 1,
+      "paper_label": "13a339",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 37,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_358",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 2,
+      "paper_label": "13a358",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 38,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_369",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 3,
+      "paper_label": "13a369",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 39,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_422",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 4,
+      "paper_label": "13a422",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 40,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_523",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 5,
+      "paper_label": "13a523",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 41,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_568",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 6,
+      "paper_label": "13a568",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 42,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_579",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 7,
+      "paper_label": "13a579",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 43,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_616",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 8,
+      "paper_label": "13a616",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 44,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_650",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 9,
+      "paper_label": "13a650",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 45,
+      "upper_bound_drop": 2
+    },
+    {
+      "canonical_name": "13a_656",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 10,
+      "paper_label": "13a656",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 46,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_660",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 11,
+      "paper_label": "13a660",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 47,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_825",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 12,
+      "paper_label": "13a825",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 48,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_828",
+      "knotinfo_interval_at_paper": [
+        2,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 13,
+      "paper_label": "13a828",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "table_order": 49,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_863",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 14,
+      "paper_label": "13a863",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 50,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_1069",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 15,
+      "paper_label": "13a1069",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 51,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_1549",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 16,
+      "paper_label": "13a1549",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 52,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_1656",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 17,
+      "paper_label": "13a1656",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 53,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_1698",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 18,
+      "paper_label": "13a1698",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 54,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_1712",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 19,
+      "paper_label": "13a1712",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 55,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_1997",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 20,
+      "paper_label": "13a1997",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 56,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_3147",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 21,
+      "paper_label": "13a3147",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 57,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_3149",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 22,
+      "paper_label": "13a3149",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 58,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_3177",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 23,
+      "paper_label": "13a3177",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 59,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_3184",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 24,
+      "paper_label": "13a3184",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 60,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_3212",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 25,
+      "paper_label": "13a3212",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 61,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_3236",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 26,
+      "paper_label": "13a3236",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 62,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13a_3268",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 27,
+      "paper_label": "13a3268",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 63,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_489",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 28,
+      "paper_label": "13n489",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 64,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_616",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 29,
+      "paper_label": "13n616",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 65,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_669",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 30,
+      "paper_label": "13n669",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 66,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_675",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 31,
+      "paper_label": "13n675",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 67,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_709",
+      "knotinfo_interval_at_paper": [
+        3,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 32,
+      "paper_label": "13n709",
+      "paper_reports_exact_value": true,
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "table_order": 68,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_735",
+      "knotinfo_interval_at_paper": [
+        2,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 33,
+      "paper_label": "13n735",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "table_order": 69,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_3800",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 34,
+      "paper_label": "13n3800",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 70,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_3801",
+      "knotinfo_interval_at_paper": [
+        1,
+        3
+      ],
+      "panel": "right",
+      "panel_row": 35,
+      "paper_label": "13n3801",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "table_order": 71,
+      "upper_bound_drop": 1
+    },
+    {
+      "canonical_name": "13n_4588",
+      "knotinfo_interval_at_paper": [
+        1,
+        4
+      ],
+      "panel": "right",
+      "panel_row": 36,
+      "paper_label": "13n4588",
+      "paper_reports_exact_value": false,
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "table_order": 72,
+      "upper_bound_drop": 1
+    }
+  ],
+  "version": "1"
+}

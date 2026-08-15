@@ -32,6 +32,7 @@ numerically comparable with current work.
 | [17-text-mediated-sharing.md](17-text-mediated-sharing.md) | Longer-horizon theory/language sharing proposal |
 | [18-raster-representation.md](18-raster-representation.md) | Active masked raster representation |
 | [19-superseding-the-rl-unknotter.md](19-superseding-the-rl-unknotter.md) | Hard-knot upper-bound campaign and evidence standard |
+| [20-single-knot-mastery.md](20-single-knot-mastery.md) | Heap-guided, self-training search for lower unknotting upper bounds |
 
 Implementation references are in [`../docs/`](../docs/). Generated experiment
 artifacts live in the sibling `pgx-mcts-bench` repository. A result enters an

@@ -160,6 +160,11 @@ late, FiLM, or dual-tower fusion is best. It is an ablation of human knowledge,
 not a replacement for the invariant-free arms. Its protocol is in
 [`../paper_partials/2026-08-12-human-invariant-oracle-family.md`](../paper_partials/2026-08-12-human-invariant-oracle-family.md).
 
+The dated interim paper evidence, including paired innovation versus portfolio
+metrics, exact solved-set checks, capacity mutations, durable native-event
+logging, and the planned causal L1000 objective-mixture ablation, is in
+[`../paper_partials/2026-08-13-interim-r200-innovation-and-objective-ablation.md`](../paper_partials/2026-08-13-interim-r200-innovation-and-objective-ablation.md).
+
 ## Replay and sharing
 
 Maintain permanent positive and negative episode banks with per-example usage

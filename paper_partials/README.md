@@ -23,3 +23,12 @@ Prefer descriptive filenames such as
 `2026-08-09-foundation-pretrain-admission-table.md`. Keep generated figures
 beside their source data or link both from the partial. Do not copy an aggregate
 number here without preserving enough provenance to reproduce it.
+
+## Current experiment evidence
+
+- [`2026-08-14-r200-static-random-no-sharing.md`](2026-08-14-r200-static-random-no-sharing.md): registered fifth R200 arm using a frozen random order, canonical post-R24 states, no sharing, and ten-rung checkpoints.
+- [`2026-08-14-dkt72-pd-v1-l1000-evaluation.md`](2026-08-14-dkt72-pd-v1-l1000-evaluation.md): named external Table 1 panel, frozen five-scientist L1000 protocol, and the measured 25/72 representation-capacity boundary.
+- [`2026-08-13-interim-r200-innovation-and-objective-ablation.md`](2026-08-13-interim-r200-innovation-and-objective-ablation.md): paired interim R200 evidence, invariant-scientist results, innovation metric, capacity mutations, durable native logging, and the planned L1000 objective-mixture ablation.
+- [`2026-08-12-optimized-four-arm-r200-and-large-banks.md`](2026-08-12-optimized-four-arm-r200-and-large-banks.md): immutable four-arm launch and 2,700-representation continuation banks.
+- [`2026-08-12-human-invariant-oracle-family.md`](2026-08-12-human-invariant-oracle-family.md): invariant feature definitions and the five-architecture admission protocol.
+- [`2026-08-12-search-evaluation-optimization.md`](2026-08-12-search-evaluation-optimization.md): search/evaluation performance engineering and its measured speedups.

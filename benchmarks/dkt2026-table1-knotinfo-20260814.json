@@ -1,0 +1,1104 @@
+{
+  "name": "dkt2026-table1-knotinfo-baseline-20260814",
+  "schema": "rf-knots-upper-bound-baseline-v1",
+  "scope": "Live KnotInfo intervals for the 72 published Table 1 knots at the pinned snapshot. Use the open subset as contribution targets and the exact subset as calibration.",
+  "source": {
+    "name": "KnotInfo",
+    "retrieved_at": "2026-08-14",
+    "sha256": "1829b7056eefc653f77a42acc9e471df4020e64fe93a8b6a211ca3d49fe86e7b",
+    "target_catalog": {
+      "path": "dkt2026-table1-upper-bounds-v1.json",
+      "sha256": "bfcd8747aa9e2a5e2351f73d70c39dbee30af509166e3d85d7bdb1a49c2fb010"
+    },
+    "url": "https://knotinfo.org/knotinfo_data_complete.xls"
+  },
+  "summary": {
+    "exact_count": 48,
+    "open_count": 24,
+    "target_count": 72,
+    "upper_endpoints_changed_since_paper": 0
+  },
+  "targets": [
+    {
+      "canonical_name": "11a_14",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 1,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "11a_18",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 2,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "11a_83",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 3,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "11n_23",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 4,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_41",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 5,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_49",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 6,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_107",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 7,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_240",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 8,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_244",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 9,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_262",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 10,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_639",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 11,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12a_680",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 12,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12n_90",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 13,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12n_135",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 14,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12n_208",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 15,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "12n_212",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 16,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_12",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 17,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_15",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 18,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_19",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 19,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_55",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 20,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_120",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 21,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_121",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 22,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_133",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 23,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_157",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 24,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_160",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 25,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_162",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 26,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_174",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 27,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_179",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 28,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_195",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 29,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_203",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 30,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_236",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 31,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_247",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 32,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_271",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 33,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_275",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 34,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_314",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 35,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_329",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 36,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_339",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 37,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_358",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 38,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_369",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 39,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_422",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 40,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_523",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 41,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_568",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 42,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_579",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 43,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_616",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 44,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_650",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 45,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_656",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 46,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_660",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 47,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_825",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 48,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_828",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        2,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 49,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_863",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 50,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_1069",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 51,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_1549",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 52,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_1656",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 53,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_1698",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 54,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_1712",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 55,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_1997",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 56,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_3147",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 57,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_3149",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 58,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_3177",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 59,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_3184",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 60,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_3212",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 61,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_3236",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 62,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13a_3268",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 63,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_489",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 1,
+      "table_order": 64,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_616",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 65,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_669",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 66,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_675",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 67,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_709",
+      "knotinfo_interval_at_snapshot": [
+        3,
+        3
+      ],
+      "paper_workbook_interval": [
+        3,
+        3
+      ],
+      "status": "exact",
+      "strict_upper_bound_target": 2,
+      "table_order": 68,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_735",
+      "knotinfo_interval_at_snapshot": [
+        2,
+        3
+      ],
+      "paper_workbook_interval": [
+        2,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 69,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_3800",
+      "knotinfo_interval_at_snapshot": [
+        1,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 1,
+      "table_order": 70,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_3801",
+      "knotinfo_interval_at_snapshot": [
+        1,
+        2
+      ],
+      "paper_workbook_interval": [
+        1,
+        2
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 1,
+      "table_order": 71,
+      "upper_endpoint_changed_since_paper": false
+    },
+    {
+      "canonical_name": "13n_4588",
+      "knotinfo_interval_at_snapshot": [
+        1,
+        3
+      ],
+      "paper_workbook_interval": [
+        1,
+        3
+      ],
+      "status": "open",
+      "strict_upper_bound_target": 2,
+      "table_order": 72,
+      "upper_endpoint_changed_since_paper": false
+    }
+  ],
+  "version": "1"
+}

@@ -1,0 +1,104 @@
+{
+  "schema": "rf-knots-paper-evidence-v1",
+  "status": "preliminary",
+  "snapshot_utc": "2026-08-13T22:28:54Z",
+  "caps": {
+    "L10": 328,
+    "L1000": 20128
+  },
+  "r200": {
+    "source_commit": "4be0bac60c7dec35f995f9a4912cedf9907a12f2",
+    "executable_source_sha256": "7169d55a938bf5316f2dc1d07998088071f3efc38da87040d23bfe0b7599be2e",
+    "event_counts": {
+      "static-no-sharing": 50,
+      "adaptive-no-sharing": 31,
+      "static-sharing": 29,
+      "adaptive-sharing": 49
+    },
+    "event_tree_sha256": {
+      "static-no-sharing": "aec5286bb86056fed69cf672ffcfc6f75f931c30df458c0598a6e6e76631861a",
+      "adaptive-no-sharing": "398a7f35d8b227f333bfa334488f115f6178886ae1522fffb1b4e23c0f6ccdae",
+      "static-sharing": "ae905b00e21d0c312130171f0fd24a78bd55468d6f340028f734789d91db62a8",
+      "adaptive-sharing": "260c5ff3475dc370ca030f44bae079df3cada105783480ce550bb1518c8fc91c"
+    },
+    "manifest_sha256": {
+      "static-no-sharing": "a175738c63780ddf550db41b7d961d237ad2d193b6fbb3c1794ac3b853814ed8",
+      "adaptive-no-sharing": "3b282deecea1be161554dbbcdfa2f8b3bc60831d936bd6596b43c322b87a7337",
+      "static-sharing": "5542b89c622782af9e4f976c20f93ad3bdfc437e349dd622099d850da43c1a3b",
+      "adaptive-sharing": "3d26407b4b822da7919eb19a55ab8f037ff6b2521b0372c1a1fad8ada1dc075d"
+    },
+    "paired_comparisons": {
+      "static_first_25": {
+        "common_representations": 25,
+        "L10": {
+          "no-sharing": {"innovation": 0.509146, "portfolio_average": 86.2, "scientist_average": 110.346667, "portfolio_solved": 22},
+          "sharing": {"innovation": 0.600610, "portfolio_average": 86.2, "scientist_average": 134.213333, "portfolio_solved": 22},
+          "treatment_only_solved": [],
+          "control_only_solved": []
+        },
+        "L1000": {
+          "no-sharing": {"innovation": 0.262189, "portfolio_average": 6033.56, "scientist_average": 7878.6, "portfolio_solved": 22},
+          "sharing": {"innovation": 0.471118, "portfolio_average": 5714.52, "scientist_average": 8491.066667, "portfolio_solved": 22},
+          "treatment_only_solved": [],
+          "control_only_solved": []
+        }
+      },
+      "adaptive_first_25_intersection": {
+        "common_representations": 18,
+        "L10": {
+          "no-sharing": {"innovation": 0.996443, "portfolio_average": 48.055556, "scientist_average": 95.0, "portfolio_solved": 18},
+          "sharing": {"innovation": 0.530996, "portfolio_average": 56.222222, "scientist_average": 94.629630, "portfolio_solved": 18},
+          "treatment_only_solved": [],
+          "control_only_solved": []
+        },
+        "L1000": {
+          "no-sharing": {"innovation": 0.388977, "portfolio_average": 3638.0, "scientist_average": 5192.611111, "portfolio_solved": 18},
+          "sharing": {"innovation": 0.200500, "portfolio_average": 4301.222222, "scientist_average": 5843.851852, "portfolio_solved": 18},
+          "treatment_only_solved": [],
+          "control_only_solved": []
+        }
+      }
+    }
+  },
+  "invariant_r24": {
+    "completed_representations": 23,
+    "event_tree_sha256": "ba99cd00cd246b1ea58ed93ac4e58c231cc8c2b0d115da30ad491ac674d852c5",
+    "L10": {
+      "raster-invariant-jones": {"innovation": 2.4090, "coverage": 23, "capped_average": 24.83, "network_evaluations": 3426410},
+      "raster-invariant-combined-film": {"innovation": 0.5742, "coverage": 22, "capped_average": 37.48, "network_evaluations": 3133520},
+      "raster-invariant-combined-dual": {"innovation": 0.0564, "coverage": 21, "capped_average": 51.65, "network_evaluations": 4216225},
+      "raster-invariant-classical": {"innovation": 0.0310, "coverage": 21, "capped_average": 63.52, "network_evaluations": 5676580},
+      "raster-invariant-alexander": {"innovation": 0.0574, "coverage": 16, "capped_average": 115.09, "network_evaluations": 6452940}
+    },
+    "L1000": {
+      "raster-invariant-classical": {"innovation": 0.3521, "coverage": 22, "capped_average": 2839.87, "network_evaluations": 5676580},
+      "raster-invariant-combined-film": {"innovation": 0.1542, "coverage": 22, "capped_average": 2359.74, "network_evaluations": 3133520},
+      "raster-invariant-jones": {"innovation": 0.1288, "coverage": 21, "capped_average": 3061.78, "network_evaluations": 3426410},
+      "raster-invariant-combined-dual": {"innovation": 0.0878, "coverage": 23, "capped_average": 2051.17, "network_evaluations": 4216225},
+      "raster-invariant-alexander": {"innovation": 0.0249, "coverage": 19, "capped_average": 5202.65, "network_evaluations": 6452940}
+    }
+  },
+  "depth_dose": {
+    "completed_suffix_representations": 9,
+    "event_tree_sha256": "8d2fcaabca605adc72031cb6c46cffbd7d2ea56ad2ef463b3eff103c8e3cf13f",
+    "promotion_decision": "none; panel incomplete and margins too small"
+  },
+  "operational_compute_estimate": {
+    "host_vcpus": 32,
+    "load_average_1m": 8.38,
+    "memory_used_gib": 33,
+    "memory_available_gib": 92,
+    "estimated_remaining_wall_days": [12, 16],
+    "estimated_remaining_cpu_core_days": [45, 60],
+    "status": "planning estimate; replace with final systemd CPU accounting"
+  },
+  "durable_native_event_commit": "f557eee3a8f31568f8ea0bffeb1ce8bda202045d",
+  "backup": {
+    "path": "/Users/artemvorozhtsov/Documents/rf-knots-experiment-backups/nebius-20260813.tar",
+    "size_mib": 405,
+    "sha256": "3a2588fdeafcd27d582bc86c92ab49355597e2d66d7df351ab7bae8a26b294e5",
+    "paper_evidence_path": "/Users/artemvorozhtsov/Documents/rf-knots-experiment-backups/paper-evidence-20260813T222854Z.tar",
+    "paper_evidence_size_mib": 26,
+    "paper_evidence_sha256": "1bdbc2bde20bb6873430f27a7c7efba7fbc6c8a456512e02a1c59b4b07a4856d"
+  }
+}
