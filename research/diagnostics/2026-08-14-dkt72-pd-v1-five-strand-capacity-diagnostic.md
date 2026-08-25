@@ -1,6 +1,12 @@
-# DKT72-PD-v1 external L1000 evaluation
+# DKT72-PD-v1 five-strand capacity diagnostic
 
-Date: 2026-08-14. Status: **completed held-out evaluation**.
+Date: 2026-08-14. Status: **completed internal diagnostic; not paper evidence**.
+
+This result is intentionally excluded from publication claims. Five-strand
+scientists cannot evaluate 47 of the 72 presentations, and the supported
+25-row subset produced no strict current upper-bound improvement. Preserve the
+artifact for engineering provenance only. Revisit DKT72 with scientists that
+were actually trained at 12-strand capacity.
 
 ## Benchmark name and scope
 
@@ -89,3 +95,23 @@ The machine-readable leaderboard, exact solved-set differences, portfolio
 witnesses, and upper-bound checks are in `leaderboard.json` under the immutable
 artifact root. Its SHA-256 is
 `9dac80495135276498d73dbe07bc07d4920b9a24ec7c83093e46623f8b7c5272`.
+
+## Registered retry criterion
+
+Do not rerun this five-strand protocol. A future `DKT72-PD-v2` evaluation is
+eligible only when the selected scientists:
+
+1. declare `max_strands >= 12` and can execute all 72 frozen presentations;
+2. were trained on a genuine 6--12-strand curriculum rather than only migrated
+   into a wider input shape;
+3. use frozen checkpoints and no learning during the evaluation;
+4. share the identical 72-row panel, objective, stochastic seeds, simulation
+   dose, action horizon, and failure accounting; and
+5. report all 72 rows in coverage and capped-loss denominators, with genuine
+   capacity exceptions separately audited rather than silently dropped.
+
+The primary scientific endpoint should be strict current upper-bound
+improvements with replay certificates. Coverage and objective quality are
+secondary diagnostics. This retry should begin only after the Q-program has
+produced trained 12-strand checkpoints that pass its registered retention and
+capacity gates.

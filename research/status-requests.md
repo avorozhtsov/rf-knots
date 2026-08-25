@@ -15,7 +15,7 @@ and reproducible without silently changing metric denominators.
 | `R-Invariant-run` | The completed R24 comparison of classical, Alexander-only, Jones-only, combined FiLM, and combined dual-tower invariant scientists. |
 | `R-Mutation-run` | The completed paired R11 architecture-mutation experiment. |
 | `P-Invariant-run` | The completed five-family invariant foundation pretraining and deterministic checkpoint selection. |
-| `DKT72-run` | The frozen five-scientist L1000 evaluation on DKT72-PD-v1. |
+| `DKT72-run` | Internal five-strand capacity diagnostic; future full-panel eligibility status. |
 | `Recovery-sync` | The MacBook mirror and Google Drive recovery-capsule process. This is infrastructure, not a scientific run. |
 
 Names are case-insensitive. Hyphens, spaces, and harmless spelling errors such
@@ -383,6 +383,10 @@ training compute is visible.
 
 ### DKT72-run
 
+`DKT72-PD-v1` is an internal five-strand capacity diagnostic, not a
+paper-result surface. Its 25 supported rows must never be described as a full
+DKT72 evaluation. Do not rerun it with the frozen five-strand scientists.
+
 - `DKT72-run leaderboard`: the frozen supported-panel scientist and portfolio
   table, with capacity-unsupported rows reported separately.
 - `DKT72-run upper-bound status`: supported open knots, incumbent intervals,
@@ -391,6 +395,12 @@ training compute is visible.
 - `DKT72-run witnesses`: witness identity, scientist, stochastic seed,
   crossing changes, semantic moves, replay verification, and stored artifact
   path/hash. Do not print long action sequences unless explicitly requested.
+
+`DKT72-PD-v2 status` reports whether genuinely trained 12-strand checkpoints
+exist and pass their source curriculum's retention/capacity gates. Until then,
+the response is `not eligible`. A future v2 evaluation must use frozen
+checkpoints, no learning, the identical complete 72-row panel and paired seeds,
+and all 72 rows in its primary denominators.
 
 ### Completed bounded runs
 

@@ -1,0 +1,5 @@
+scientist,committed_rows,l10_coverage,l10_denominator,l10_capped_mean,l10_evaluation_network_evals,l1000_coverage,l1000_denominator,l1000_capped_mean,l1000_evaluation_network_evals,six_strand_completed,six_strand_successes,skip_count
+raster-axial-12,20,15,20,123.000000,209820,15,20,8289.300000,208260,5,0,0
+strand-graph-12,20,15,20,109.500000,415251,15,20,7037.950000,418089,5,0,0
+cyclic-memory-12,16,15,16,125.125000,815280,15,16,4986.937500,954600,1,0,0
+raster-invariant-combined-dual-12,16,15,16,65.875000,81640,15,16,5016.812500,69940,1,0,0
