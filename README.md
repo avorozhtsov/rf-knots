@@ -1,13 +1,59 @@
 # rf-knots
 
-> **Continuing this work?** Start with [what this project is](#what-this-project-is) below, then
-> [docs/rungs.md](docs/rungs.md) for what the curriculum is made of. The operational state of the
-> training runs — what is running, on which machine, and what is next — lives in
-> `../pgx-mcts-bench/HANDOFF.md`, next to the runs it describes.
+**Learning representations of knots by teaching neural networks to transform
+and compare them.**
 
-Braid-word unknotting environments for [Pgx](https://github.com/sotetsuk/pgx), built as the
-foundation for a population self-play system where agents both *propose* and *solve* problems
-from a fixed, machine-verifiable family.
+RF Knots is the research home for neural knot manipulation. The current system
+trains agents to unknot braid representations; the longer-term goal is to learn
+models that can also:
+
+- establish that two representations describe the same knot;
+- estimate **Gordian distance**, the minimum number of crossing changes (CCs)
+  needed to pass from one knot type to another; and
+- produce embeddings from which both crossing-change distance and
+  representation distance can be recovered.
+
+Here, representation distance means the number of zero-CC transformations
+between two diagrams or braid words: Reidemeister moves, braid relations,
+Markov moves, and stabilization/destabilization. It is deliberately kept
+separate from Gordian distance, because changing a diagram without changing
+its knot type is not the same operation as changing the knot itself.
+
+The repository provides the mathematics, encodings, legal moves, invariant
+checks, generators, and [Pgx](https://github.com/sotetsuk/pgx) environments.
+The neural training loops, MCTS implementations, checkpoints, and curriculum
+runs live in
+[pgx-mcts-bench](https://github.com/avorozhtsov/pgx-mcts-bench), which depends
+on this package.
+
+> **Continuing this work?** Read [docs/rungs.md](docs/rungs.md) for the knot
+> curriculum. The operational state of training runs lives in
+> `../pgx-mcts-bench/HANDOFF.md`, next to the code and artifacts it describes.
+
+## The three-project system
+
+| Repository | Responsibility |
+|---|---|
+| **rf-knots** | Knot representations, legal transformations, invariants, environments, model-facing features, and the neural-knot research agenda. |
+| [**pgx-mcts-bench**](https://github.com/avorozhtsov/pgx-mcts-bench) | MCTS games and training infrastructure, including the braid objectives `L10` and `L1000`. |
+| [**unknotdb**](https://github.com/avorozhtsov/unknotdb) | A replayable proof graph of representations, witnesses, invariants, and sidecar data. It uses RF Knots models to preprocess representations and exports graph-derived supervision for future models. |
+
+The intended feedback loop is:
+
+```text
+RF Knots model + pgx-mcts-bench search
+                    │
+                    ▼
+          replay-verified witnesses
+                    │
+                    ▼
+             unknotdb proof graph
+                    │
+                    ▼
+       graph-derived training examples
+                    │
+                    └──────────────► next RF Knots model
+```
 
 ## What this project is
 
@@ -29,13 +75,6 @@ truth rather than against another agent.
 searches for them transfer to instances no random generator would emit?* That is
 the claim [research/09](research/09-vs-learning-to-unknot.md) argues is worth
 making, and it is why the project is a propose/solve league rather than a solver.
-
-**What is here versus next door.** This repository is the mathematics and the
-environment: the encoding, the legal moves, the instance generator, knot
-invariants, and the research notes. Training, search and the curriculum ladder
-live in [pgx-mcts-bench](https://github.com/avorozhtsov/pgx-mcts-bench), which
-depends on this repository by path; its `HANDOFF.md` is the operational state of
-the training runs.
 
 The design study is in [research/](research/); start with [research/README.md](research/README.md).
 
