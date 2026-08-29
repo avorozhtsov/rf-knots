@@ -1,0 +1,608 @@
+#!/usr/bin/env python3
+"""Run one reproducible end-to-end embedding calibration workload."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import platform
+import sqlite3
+import time
+from collections import defaultdict
+from pathlib import Path
+
+import torch
+from torch.utils.data import DataLoader
+
+from rf_knots.embedding_augmentation import (
+    MaterializedSyntheticPair,
+    SyntheticEmbeddingIterableDataset,
+    SyntheticPairSpec,
+    collate_embedding_pairs,
+    scramble_zero_cc,
+)
+from rf_knots.embedding_curriculum_io import load_million_pair_curriculum
+from rf_knots.embedding_encoder import ScalableBraidEmbeddingEncoder
+from rf_knots.embedding_gordian import load_gordian_pairs
+from rf_knots.embedding_metric import MetricBatch, MetricEmbeddingObjective
+from rf_knots.embedding_supervision import UnknotDBEmbeddingSidecar
+
+SCHEMA = "rf-knots-embedding-calibration-v0"
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def atomic_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.part")
+    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    os.replace(temporary, path)
+
+
+def atomic_torch_save(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.part")
+    torch.save(payload, temporary)
+    os.replace(temporary, path)
+
+
+def move(batch: dict, device: torch.device) -> dict:
+    return {
+        key: value.to(device, non_blocking=True) if isinstance(value, torch.Tensor) else value
+        for key, value in batch.items()
+    }
+
+
+def synchronize(device: torch.device) -> None:
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    elif device.type == "mps":
+        torch.mps.synchronize()
+
+
+def validation_probe(path: Path, limit: int) -> list[MaterializedSyntheticPair]:
+    buckets = defaultdict(list)
+    with UnknotDBEmbeddingSidecar(path) as sidecar:
+        for pair in sidecar.pairs("validation"):
+            buckets[(pair.metric, pair.lower, pair.upper)].append(pair)
+        selected = []
+        keys = sorted(buckets)
+        while len(selected) < limit and any(buckets.values()):
+            for key in keys:
+                if buckets[key] and len(selected) < limit:
+                    selected.append(buckets[key].pop(0))
+        rows = []
+        for index, pair in enumerate(selected):
+            left = sidecar.representation(pair.left_representation)
+            right = sidecar.representation(pair.right_representation)
+            spec = SyntheticPairSpec(
+                index,
+                "validation_replay",
+                pair.metric,
+                pair.left_representation,
+                pair.right_representation,
+                pair.lower,
+                pair.upper,
+                pair.witness_semantic_length,
+                0,
+                0,
+                1.0,
+            )
+            rows.append(
+                MaterializedSyntheticPair(
+                    spec,
+                    pair.metric,
+                    left.word,
+                    right.word,
+                    left.strands,
+                    right.strands,
+                    pair.witness_semantic_length,
+                )
+            )
+    return rows
+
+
+def hard_probe(
+    pairs_path: Path, hard_cases_path: Path
+) -> list[MaterializedSyntheticPair]:
+    hard = sqlite3.connect(f"file:{hard_cases_path}?mode=ro", uri=True)
+    source_rows = list(
+        hard.execute(
+            "SELECT case_id,left_representation,right_representation,metric,"
+            "distance_lower,distance_upper,witness_semantic_length "
+            "FROM hard_case_pairs ORDER BY case_id,left_representation,"
+            "right_representation"
+        )
+    )
+    hard.close()
+    rows = []
+    with UnknotDBEmbeddingSidecar(pairs_path) as sidecar:
+        for index, row in enumerate(source_rows):
+            case_id, left_id, right_id, metric, lower, upper, length = row
+            left = sidecar.representation(int(left_id))
+            right = sidecar.representation(int(right_id))
+            spec = SyntheticPairSpec(
+                index,
+                f"protected:{case_id}",
+                str(metric),
+                int(left_id),
+                int(right_id),
+                float(lower),
+                float(upper),
+                int(length),
+                0,
+                0,
+                1.0,
+            )
+            rows.append(
+                MaterializedSyntheticPair(
+                    spec,
+                    str(metric),
+                    left.word,
+                    right.word,
+                    left.strands,
+                    right.strands,
+                    int(length),
+                )
+            )
+    return rows
+
+
+def gordian_probe(
+    pairs_path: Path,
+    gordian_path: Path,
+    *,
+    split: str,
+    limit: int,
+) -> list[MaterializedSyntheticPair]:
+    """Build a fixed knot-identity-held-out Gordian challenge probe."""
+    buckets = defaultdict(list)
+    for pair in load_gordian_pairs(gordian_path, split):
+        buckets[(pair.lower, pair.upper)].append(pair)
+    selected = []
+    keys = sorted(buckets)
+    while len(selected) < limit and any(buckets.values()):
+        for key in keys:
+            if buckets[key] and len(selected) < limit:
+                selected.append(buckets[key].pop(0))
+    rows = []
+    with UnknotDBEmbeddingSidecar(pairs_path) as sidecar:
+        for index, pair in enumerate(selected):
+            left_id = pair.left.representation_ids[index % len(pair.left.representation_ids)]
+            right_id = pair.right.representation_ids[
+                (index * 3 + 1) % len(pair.right.representation_ids)
+            ]
+            left = sidecar.representation(left_id)
+            right = sidecar.representation(right_id)
+            left_depth, right_depth = index % 7, (index * 5 + 2) % 7
+            left_variant = scramble_zero_cc(
+                left, 0xF1ED + index, left_depth, mirror=pair.left.mirror
+            )
+            right_variant = scramble_zero_cc(
+                right, 0xF1ED + index * 7, right_depth, mirror=pair.right.mirror
+            )
+            stratum = (
+                f"gordian_{split}_exact3"
+                if pair.exact
+                else f"gordian_{split}_lower{pair.lower:g}"
+            )
+            spec = SyntheticPairSpec(
+                index,
+                stratum,
+                "cc",
+                left_id,
+                right_id,
+                pair.lower,
+                pair.upper,
+                0,
+                0xF1ED + index,
+                0xF1ED + index * 7,
+                1.0,
+                pair.left.mirror,
+                pair.right.mirror,
+                left_depth,
+                right_depth,
+            )
+            rows.append(
+                MaterializedSyntheticPair(
+                    spec,
+                    "cc",
+                    left_variant.word,
+                    right_variant.word,
+                    left_variant.strands,
+                    right_variant.strands,
+                    left_variant.semantic_length + right_variant.semantic_length,
+                )
+            )
+    return rows
+
+
+@torch.no_grad()
+def evaluate(
+    model,
+    objective,
+    rows: list[MaterializedSyntheticPair],
+    batch_size: int,
+    device: torch.device,
+) -> float:
+    model.eval()
+    losses = []
+    for start in range(0, len(rows), batch_size):
+        batch = move(collate_embedding_pairs(rows[start : start + batch_size]), device)
+        left = model(batch["left_word"], batch["left_length"], batch["left_strands"])
+        right = model(batch["right_word"], batch["right_length"], batch["right_strands"])
+        loss, _ = objective(
+            left,
+            right,
+            MetricBatch(
+                batch["metric"],
+                batch["lower"],
+                batch["upper"],
+                batch["witness_semantic_length"],
+            ),
+        )
+        losses.append(float(loss.cpu()))
+    model.train()
+    return sum(losses) / len(losses)
+
+
+@torch.no_grad()
+def evaluate_hard_metrics(
+    model,
+    objective,
+    rows: list[MaterializedSyntheticPair],
+    batch_size: int,
+    device: torch.device,
+) -> dict:
+    model.eval()
+    groups = defaultdict(list)
+    violations = []
+    exact_errors = []
+    for start in range(0, len(rows), batch_size):
+        batch = move(collate_embedding_pairs(rows[start : start + batch_size]), device)
+        left = model(batch["left_word"], batch["left_length"], batch["left_strands"])
+        right = model(batch["right_word"], batch["right_length"], batch["right_strands"])
+        for index, metric in enumerate(batch["metric"]):
+            head = "knot" if metric == "cc" else "isotopy"
+            cosine = (left[head][index] * right[head][index]).sum()
+            predicted = float((objective.scale(metric) * (1 - cosine)).cpu())
+            lower = float(batch["lower"][index].cpu())
+            upper = float(batch["upper"][index].cpu())
+            violation = max(lower - predicted, predicted - upper, 0.0)
+            violations.append(violation)
+            if lower == upper:
+                exact_errors.append(abs(predicted - lower))
+            key = f"{batch['stratum'][index]}:{metric}:{lower:g}-{upper:g}"
+            groups[key].append((predicted, violation))
+    model.train()
+    return {
+        "pairs": len(rows),
+        "mean_interval_violation": sum(violations) / len(violations),
+        "exact_mae": sum(exact_errors) / len(exact_errors),
+        "groups": {
+            key: {
+                "pairs": len(values),
+                "mean_predicted": sum(value[0] for value in values) / len(values),
+                "mean_interval_violation": sum(value[1] for value in values) / len(values),
+            }
+            for key, values in sorted(groups.items())
+        },
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pairs", type=Path, required=True)
+    parser.add_argument("--geodesic", type=Path, required=True)
+    parser.add_argument("--hard-cases", type=Path, required=True)
+    parser.add_argument("--gordian", type=Path)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--device", choices=("cpu", "cuda", "mps"), required=True)
+    parser.add_argument("--batch-size", type=int, default=256)
+    parser.add_argument("--learning-rate", type=float, default=1e-3)
+    parser.add_argument("--depth", type=int, default=4)
+    parser.add_argument("--width", type=int, default=96)
+    parser.add_argument("--embedding-dim", type=int, default=64)
+    parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--steps", type=int, default=100)
+    parser.add_argument("--warmup-steps", type=int, default=10)
+    parser.add_argument("--virtual-size", type=int, default=1_000_000)
+    parser.add_argument("--seed", type=int, default=20260829)
+    parser.add_argument("--amp", action="store_true")
+    parser.add_argument("--validation-pairs", type=int, default=2048)
+    parser.add_argument("--gordian-validation-pairs", type=int, default=2048)
+    parser.add_argument("--curve-every-steps", type=int, default=0)
+    parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--checkpoint-every-steps", type=int, default=0)
+    parser.add_argument("--resume", type=Path)
+    args = parser.parse_args()
+    if args.steps <= args.warmup_steps:
+        raise ValueError("steps must exceed warmup steps")
+    if args.device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA requested but unavailable")
+    if args.device == "mps" and not torch.backends.mps.is_available():
+        raise RuntimeError("MPS requested but unavailable")
+
+    torch.manual_seed(args.seed)
+    device = torch.device(args.device)
+    resume_payload = (
+        torch.load(args.resume, map_location="cpu", weights_only=False)
+        if args.resume
+        else None
+    )
+    start_step = int(resume_payload["completed_steps"]) if resume_payload else 0
+    if start_step >= args.steps:
+        raise ValueError("resume checkpoint already reached requested steps")
+    curriculum_started = time.perf_counter()
+    curriculum, pools = load_million_pair_curriculum(
+        args.pairs,
+        args.geodesic,
+        args.hard_cases,
+        args.gordian,
+        size=args.virtual_size,
+        seed=args.seed,
+    )
+    curriculum_seconds = time.perf_counter() - curriculum_started
+    dataset = SyntheticEmbeddingIterableDataset(
+        args.pairs,
+        curriculum,
+        infinite=True,
+        start_position=start_step * args.batch_size,
+    )
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        num_workers=args.workers,
+        collate_fn=collate_embedding_pairs,
+        pin_memory=device.type == "cuda",
+        persistent_workers=args.workers > 0,
+        prefetch_factor=2 if args.workers > 0 else None,
+        drop_last=True,
+    )
+    model = ScalableBraidEmbeddingEncoder(
+        width=args.width, depth=args.depth, embedding_dim=args.embedding_dim
+    ).to(device)
+    objective = MetricEmbeddingObjective().to(device)
+    optimizer = torch.optim.AdamW(
+        list(model.parameters()) + list(objective.parameters()),
+        lr=args.learning_rate,
+        weight_decay=1e-4,
+    )
+    scaler = torch.amp.GradScaler("cuda", enabled=args.amp and device.type == "cuda")
+    if resume_payload:
+        model.load_state_dict(resume_payload["model"])
+        objective.load_state_dict(resume_payload["objective"])
+        optimizer.load_state_dict(resume_payload["optimizer"])
+        scaler.load_state_dict(resume_payload["scaler"])
+    probe = validation_probe(args.pairs, args.validation_pairs)
+    protected_probe = hard_probe(args.pairs, args.hard_cases)
+    if args.gordian:
+        protected_probe.extend(
+            gordian_probe(
+                args.pairs,
+                args.gordian,
+                split="validation",
+                limit=args.gordian_validation_pairs,
+            )
+        )
+    validation_before = evaluate(
+        model, objective, probe, args.batch_size, device
+    )
+    protected_before = evaluate_hard_metrics(
+        model, objective, protected_probe, args.batch_size, device
+    )
+    iterator = iter(loader)
+    step_records = []
+    curve = [
+        {
+            "completed_steps": start_step,
+            "examples_seen": start_step * args.batch_size,
+            "validation_loss": validation_before,
+            "protected": protected_before,
+        }
+    ]
+    initial_loss = None
+    started = time.perf_counter()
+    for step in range(start_step, args.steps):
+        fetch_started = time.perf_counter()
+        batch = move(next(iterator), device)
+        synchronize(device)
+        fetch_seconds = time.perf_counter() - fetch_started
+        train_started = time.perf_counter()
+        optimizer.zero_grad(set_to_none=True)
+        with torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+            enabled=args.amp,
+        ):
+            left = model(batch["left_word"], batch["left_length"], batch["left_strands"])
+            right = model(
+                batch["right_word"], batch["right_length"], batch["right_strands"]
+            )
+            loss, diagnostics = objective(
+                left,
+                right,
+                MetricBatch(
+                    batch["metric"],
+                    batch["lower"],
+                    batch["upper"],
+                    batch["witness_semantic_length"],
+                ),
+            )
+        if not torch.isfinite(loss):
+            raise RuntimeError(f"non-finite loss at step {step}")
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+        synchronize(device)
+        train_seconds = time.perf_counter() - train_started
+        value = float(loss.detach().cpu())
+        if initial_loss is None:
+            initial_loss = value
+        step_records.append(
+            {
+                "step": step,
+                "loss": value,
+                "fetch_seconds": fetch_seconds,
+                "train_seconds": train_seconds,
+                "diagnostics": {
+                    key: float(value.cpu()) for key, value in diagnostics.items()
+                },
+            }
+        )
+        completed_steps = step + 1
+        if args.curve_every_steps and completed_steps % args.curve_every_steps == 0:
+            point = {
+                "completed_steps": completed_steps,
+                "examples_seen": completed_steps * args.batch_size,
+                "validation_loss": evaluate(
+                    model, objective, probe, args.batch_size, device
+                ),
+                "protected": evaluate_hard_metrics(
+                    model,
+                    objective,
+                    protected_probe,
+                    args.batch_size,
+                    device,
+                ),
+            }
+            curve.append(point)
+            print(
+                json.dumps(
+                    {
+                        "progress": point["completed_steps"],
+                        "examples_seen": point["examples_seen"],
+                        "validation_loss": point["validation_loss"],
+                        "protected_exact_mae": point["protected"]["exact_mae"],
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
+        if (
+            args.checkpoint
+            and args.checkpoint_every_steps
+            and completed_steps % args.checkpoint_every_steps == 0
+        ):
+            atomic_torch_save(
+                args.checkpoint,
+                {
+                    "schema": SCHEMA,
+                    "completed_steps": completed_steps,
+                    "examples_seen": completed_steps * args.batch_size,
+                    "model": model.state_dict(),
+                    "objective": objective.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "scaler": scaler.state_dict(),
+                    "config": vars(args),
+                },
+            )
+    synchronize(device)
+    total_seconds = time.perf_counter() - started
+    validation_after = evaluate(model, objective, probe, args.batch_size, device)
+    protected_after = evaluate_hard_metrics(
+        model, objective, protected_probe, args.batch_size, device
+    )
+    if curve[-1]["completed_steps"] != args.steps:
+        curve.append(
+            {
+                "completed_steps": args.steps,
+                "examples_seen": args.steps * args.batch_size,
+                "validation_loss": validation_after,
+                "protected": protected_after,
+            }
+        )
+    if args.checkpoint:
+        atomic_torch_save(
+            args.checkpoint,
+            {
+                "schema": SCHEMA,
+                "completed_steps": args.steps,
+                "examples_seen": args.steps * args.batch_size,
+                "model": model.state_dict(),
+                "objective": objective.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scaler": scaler.state_dict(),
+                "config": vars(args),
+            },
+        )
+    measured = step_records[min(args.warmup_steps, len(step_records) - 1) :]
+    measured_seconds = sum(
+        row["fetch_seconds"] + row["train_seconds"] for row in measured
+    )
+    measured_examples = len(measured) * args.batch_size
+    payload = {
+        "schema": SCHEMA,
+        "status": "completed",
+        "device": str(device),
+        "torch_version": torch.__version__,
+        "cuda_version": torch.version.cuda,
+        "gpu": (
+            torch.cuda.get_device_name(device)
+            if device.type == "cuda"
+            else "Apple Metal" if device.type == "mps" else None
+        ),
+        "host": platform.node(),
+        "machine": platform.machine(),
+        "config": {
+            "batch_size": args.batch_size,
+            "learning_rate": args.learning_rate,
+            "depth": args.depth,
+            "width": args.width,
+            "embedding_dim_each": args.embedding_dim,
+            "workers": args.workers,
+            "steps": args.steps,
+            "warmup_steps": args.warmup_steps,
+            "amp_bfloat16": args.amp,
+            "validation_pairs": len(probe),
+            "protected_and_gordian_pairs": len(protected_probe),
+            "seed": args.seed,
+            "infinite_stream": True,
+        },
+        "parameters": sum(parameter.numel() for parameter in model.parameters()),
+        "virtual_pairs": len(curriculum),
+        "start_step": start_step,
+        "source_pools": pools,
+        "curriculum_load_seconds": curriculum_seconds,
+        "total_loop_seconds": total_seconds,
+        "measured_examples": measured_examples,
+        "measured_seconds": measured_seconds,
+        "examples_per_second": measured_examples / measured_seconds,
+        "mean_fetch_seconds": sum(row["fetch_seconds"] for row in measured) / len(measured),
+        "mean_train_seconds": sum(row["train_seconds"] for row in measured) / len(measured),
+        "initial_loss": initial_loss,
+        "final_loss": step_records[-1]["loss"],
+        "minimum_loss": min(row["loss"] for row in step_records),
+        "validation_loss_before": validation_before,
+        "validation_loss_after": validation_after,
+        "validation_improvement": validation_before - validation_after,
+        "protected_before": protected_before,
+        "protected_after": protected_after,
+        "learning_curve": curve,
+        "checkpoint": str(args.checkpoint.resolve()) if args.checkpoint else None,
+        "checkpoint_sha256": sha256(args.checkpoint) if args.checkpoint else None,
+        "pairs_sha256": sha256(args.pairs),
+        "geodesic_sha256": sha256(args.geodesic),
+        "hard_cases_sha256": sha256(args.hard_cases),
+        "gordian_sha256": sha256(args.gordian) if args.gordian else None,
+        "steps": step_records,
+    }
+    atomic_json(args.output, payload)
+    summary = {key: payload[key] for key in (
+        "device", "parameters", "examples_per_second", "mean_fetch_seconds",
+        "mean_train_seconds", "initial_loss", "final_loss", "minimum_loss",
+        "validation_loss_before", "validation_loss_after", "validation_improvement"
+    )}
+    print(json.dumps(summary, indent=2, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

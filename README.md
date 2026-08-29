@@ -21,10 +21,10 @@ its knot type is not the same operation as changing the knot itself.
 
 The repository provides the mathematics, encodings, legal moves, invariant
 checks, generators, and [Pgx](https://github.com/sotetsuk/pgx) environments.
-The neural training loops, MCTS implementations, checkpoints, and curriculum
-runs live in
+MCTS training loops and large policy runs live in
 [pgx-mcts-bench](https://github.com/avorozhtsov/pgx-mcts-bench), which depends
-on this package.
+on this package. Full-representation embedding models and their metric-training
+loop live here because they are part of the RF Knots model architecture.
 
 > **Continuing this work?** Read [docs/rungs.md](docs/rungs.md) for the knot
 > curriculum. The operational state of training runs lives in
@@ -54,6 +54,51 @@ RF Knots model + pgx-mcts-bench search
                     │
                     └──────────────► next RF Knots model
 ```
+
+## Graph-derived embedding training
+
+The repository owns the full-representation encoder, the crossing-change and
+diagram-distance objectives, augmentation, streaming/materialized data loaders,
+training, checkpoints, and evaluation. Unknot DB remains a read-only evidence
+source during training: it exports versioned SQLite sidecars and never owns
+model or optimizer state.
+
+Install the optional Torch dependency and run the canonical trainer against
+explicitly pinned sidecars:
+
+```bash
+uv sync --extra embeddings --extra dev --python 3.12
+
+uv run python scripts/train_embedding_metric.py \
+  --pairs ../unknotdb/outputs/unknotdb-embedding-pairs-v4.sqlite \
+  --geodesic ../unknotdb/outputs/unknotdb-embedding-geodesic-pairs-v3.sqlite \
+  --hard-cases ../unknotdb/outputs/unknotdb-embedding-hard-cases-v4.sqlite \
+  --gordian artifacts/gordian-fks-v0/gordian-supervision-v0.sqlite \
+  --output artifacts/embedding-run/report.json \
+  --checkpoint artifacts/embedding-run/checkpoint.pt \
+  --device mps --batch-size 512 --steps 1954
+```
+
+Every run records the exact source hashes, model and optimizer state, seed,
+throughput, learning curve, and protected metrics. Generated sidecars,
+checkpoints, and reports remain under ignored `artifacts/`; only code and
+versioned contracts belong in Git.
+
+The current implementation includes an infinite deterministic pair stream,
+replayable zero-CC augmentation, compact pre-materialized shards, Gordian-bound
+supervision, and a graph-derived validation/quarantine protocol. Validation and
+test identities are isolated together with their known CC=0 closure and
+one-CC graph neighborhood; unresolved actions and interval upper bounds are not
+silently converted into exact labels.
+
+The first one-million-example Apple MPS calibrations prove that the pipeline
+trains at roughly 500--600 pairs/s, but they do **not** yet establish a useful
+hard-knot embedding. Aggregate validation loss improved while the protected
+Wang--Zhang and long-witness cases remained largely collapsed. No checkpoint is
+promoted on that evidence. The next experiment is a fixed-validation,
+checkpoint-continuation tournament in which several branches consume separate
+deterministic million-pair streams and only the best complete checkpoint
+continues.
 
 ## What this project is
 
@@ -175,6 +220,12 @@ date and snapshot hash, together with the corresponding Spherogram identifier
 | `src/rf_knots/certified_value.py` | the certified bound as a floor on the objective, for clamping a value head |
 | `src/rf_knots/verified_bounds.py` | a bounds ratchet that stores the move sequence and replays it on read |
 | `src/rf_knots/rollout.py` | random play, scramble generation, batched benchmarking |
+| `src/rf_knots/embedding_encoder.py` | variable-length full-braid encoder with separate knot, isotopy, and layout heads |
+| `src/rf_knots/embedding_metric.py` | interval-aware crossing-change and diagram-distance objective |
+| `src/rf_knots/embedding_augmentation.py` | infinite replayable pair stream and zero-CC augmentation |
+| `src/rf_knots/embedding_shards.py` | compact resumable materialized training shards |
+| `scripts/train_embedding_metric.py` | canonical embedding training entry point |
+| `scripts/build_embedding_validation_protocol.py` | graph-neighborhood validation and test quarantine |
 | `docs/representation.md` | how a knot is encoded and what may be done to it |
 | `docs/rungs.md` | every ladder rung, its rationale, and the knot it really is |
 | `docs/lessons.md` | process notes: the mistakes that cost time, and what to do instead |
@@ -186,8 +237,10 @@ date and snapshot hash, together with the corresponding Spherogram identifier
 
 ## Status
 
-M2 of the roadmap in [research/08-roadmap.md](research/08-roadmap.md). The environment is
-complete and tested; training runs in `../pgx-mcts-bench`, which depends on this repo by path.
+The braid environment is at M2 of the roadmap in
+[research/08-roadmap.md](research/08-roadmap.md) and is complete and tested.
+MCTS policy runs live in `../pgx-mcts-bench`; the newer embedding-metric branch
+lives here and remains an unpromoted calibration experiment.
 
 What is established, on generated torus-knot instances scored against proved unknotting numbers:
 

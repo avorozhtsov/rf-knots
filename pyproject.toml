@@ -27,6 +27,9 @@ bounds = [
   "spherogram>=2.2",
   "knot-floer-homology>=1.2",
 ]
+embeddings = [
+  "torch>=2.2",
+]
 
 [project.scripts]
 rf-knots = "rf_knots.cli:app"
