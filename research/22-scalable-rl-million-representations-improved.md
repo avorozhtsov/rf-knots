@@ -1466,13 +1466,68 @@ rescoped first job from §2.3: the head must rank **where the diagram may grow**
 since 95.9% of legal successors on a long word are `INSERT`.
 
 Per-crossing policy over the raster; set-valued supervision from
-backward-generated witnesses. **Gate:** recall@10 >= 0.8 of a witness-realising
-site on held-out identities, reported by length and strand count, including a
-transfer row at a strand count absent from training.
+backward-generated witnesses.
 
-**Kill criterion.** Recall@10 no better than ranking by a hand-written heuristic
-— for instance, sites whose flip reduces free-reduced length — means the head has
-learned nothing the search could not have had for free.
+> ### The original gate was broken. It was measured, and it fell.
+>
+> The gate read: *recall@10 >= 0.8 of a witness-realising site.* Built and
+> measured over 12,033 states from 324 witnesses, with brute force on 288 states
+> as referee, it fails three separate ways:
+>
+> | ranker | recall@10, all | recall@10, B-long |
+> |---|---:|---:|
+> | uniform chance | 0.353 | 0.209 |
+> | `free_reduced_drop` — *the heuristic the kill criterion named* | 0.483 | 0.369 |
+> | `growth_aware` | 0.735 | 0.638 |
+> | **`kind_prior` — reads the action kind and never looks at the word** | **0.846** | **0.789** |
+>
+> 1. **A ranker with no inputs passes it.** `kind_prior` sees only which of the
+>    nine action kinds a site belongs to. It scores 0.846 and clears the 0.80 bar.
+>    A gate a constant can pass is not a gate.
+> 2. **The target itself is near-vacuous.** Under the witness's own remaining
+>    budget, brute force found that **80.5% of all legal sites** admit a
+>    completion (87.3% at B-long), so *uniform random* scores recall@10 = 0.953.
+>    The cause is mechanical and worth keeping: there is a cliff at `m* + 2`
+>    moves of slack — 8.7 sites jumping to 52.7 — which is exactly the cost of
+>    undoing one move in a move set closed under inverses. **Feasibility within
+>    budget is the wrong question**; with any slack, nearly everything is
+>    feasible because nearly everything is undoable.
+> 3. **The kill criterion named the weaker heuristic.** Free-reduced drop loses
+>    to plain kind ordering by 0.36 recall@10, so the criterion would have been
+>    cleared by a head that is worse than sorting by action type.
+>
+> **Also refuted: my own `A_plus` method 1.** Multi-seed re-walking, as specified
+> above, does not work — 0 of 108 emitted words repeated at the two larger
+> configurations. Different seeds drift to different words rather than
+> reconverging. Commutation closure is the method that survives, and it is the
+> only one that *improves* with length (firing at 29% -> 35% -> 43%). The cheap
+> methods together cover just **5.4%** of the brute-force set (1.8% at B-long) —
+> but they are sound: brute force reproduced all 938 cheap sites with **zero
+> disagreements**.
+
+**The revised gate.** Three changes, each answering one of the failures above:
+
+* **Target the shortest known completion, not feasibility.** This removes the
+  `m*+2` cliff that made the old target vacuous.
+* **Report recall@1, split by region and word length.** On the tight target
+  `growth_aware` reaches recall@1 = 0.941 against chance 0.157, so recall@10 has
+  no headroom left to measure.
+* **Gate on the `INSERT` block specifically, with `kind_prior` as the baseline.**
+
+**Why `INSERT` is where the milestone now lives.** It is **78.5% of legal sites
+but only 16.1% of `A_plus`** — the largest and least discriminating part of the
+action space — and **no hand-written score tried here beats random ordering
+inside it.** That is the one region where a learned head has demonstrated room,
+and it is the same region M0.4 independently identified as 95.9% of legal
+successors on a long word. Two measurements, taken for different reasons,
+pointing at the same block.
+
+**Kill criterion, restated.** Inside the `INSERT` block, recall@1 on the
+shortest-completion target no better than `kind_prior` or than random ordering
+means the head has learned nothing the search could not have had for free. The
+crossing-change block is explicitly *not* the gate: cheap heuristics already
+handle it well, and a head scored there would pass on work that needs no
+network.
 
 ### M2 — Depth-`k` outer search with identification (weeks)
 
