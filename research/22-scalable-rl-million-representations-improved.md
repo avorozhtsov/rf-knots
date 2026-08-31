@@ -163,9 +163,11 @@ the test would need `bound > 4`.
    change. Controlled inflation is a first-class requirement, not a risk note.
 4. M1–M5 are **not** premature — but "reproduce the published witness" is struck
    from M0's deliverables and replaced by "construct an independent one".
-5. **Fix the fingerprint before anything else.** It is one import, it dominates
-   the only search this project ships, and every later milestone runs on top of
-   it. Nothing in M1–M5 should start until it is measured again afterwards.
+5. **Fix the fingerprint before anything that searches.** It is one import and it
+   dominates the only search this project ships. **Correction to an earlier draft
+   of this list:** it said "nothing in M1–M5 should start until it is measured
+   again", which is wrong. M1 is supervised training on generated data and never
+   calls `unknot_search`, so it is not blocked by this. M2 onward are.
 6. **Change the record format, do not merely compress it.** At M3's stated shape
    a raw record is 844.7 kB, so `10^6` is **844 GB** — impossible — and 14.0 GB
    gzipped, which is 42% of the 31 GiB free on a 93%-full volume. Storing
@@ -1364,6 +1366,31 @@ The encoder is not part of this question. `ScalableBraidEmbeddingEncoder` alread
 sizes its tables at 1,023 generators and 1,024 strands, and the raster of
 [18](18-raster-representation.md) is strand-count-agnostic by construction. The
 head is the only learned object with a size dependence.
+
+**The one prerequisite that is not yet built, and it is not the network.** The
+gate is "recall@10 of a witness-realising site", and **its denominator is
+currently undefined**. A generated instance carries one witness, so one site is
+known to work; nothing says the other sites fail. Note 21 §5.1's rule applies
+directly — absent is unexplored, not negative — so a recall figure computed
+against a single witness underestimates the head by an unknown amount, and a gate
+whose error bar is unknown cannot be passed or failed honestly.
+
+`A_plus(s)`, the set of known-good sites at a state, has to be constructed before
+the gate means anything. Three ways, cheapest first:
+
+* **Emit several witnesses per instance.** The seeded generator runs at 43–60
+  instances/s and is deterministic in `(seed, index)`, so re-walking one emitted
+  word under different seeds is nearly free and yields genuinely different first
+  actions.
+* **Close under commutation.** Actions that commute can be reordered, so a
+  witness's first action generalises to an equivalence class — cheap, exact, and
+  it needs no extra search.
+* **Measure `|A_plus|` on a sample by brute force**, checking which single sites
+  admit a completion within budget. Expensive, but it is the only way to know how
+  much the first two methods miss, and it calibrates the gate.
+
+Until at least the first two are in place, report recall against the *known*
+positive set and say so — never as though it were recall against the true one.
 
 **Why it is first.** The branching factor *is* the search. M0.4 measured 10,598
 legal successors on the target's long word — **95.9% of them `INSERT`** — at 39
