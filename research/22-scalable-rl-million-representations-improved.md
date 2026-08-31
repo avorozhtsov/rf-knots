@@ -1864,7 +1864,70 @@ backward-generated witnesses.
 > Two cautions carried from elsewhere in this note. §4.3's quarantine binds
 > hardest here, since seeds of the form `K # m(K)` sit next to the exam; and
 > `connected_summands` splits such a word unaided (§1.2), so any instance must be
-> checked not to be solvable by the summand-wise shortcut §1.4 warns about. The next step is volume on
+> checked not to be solvable by the summand-wise shortcut §1.4 warns about.
+>
+> ### It was built, and the family is circular. Close this direction.
+>
+> **The premise held, decisively.** Across ten members of `K # m(K)` — `T(2,3)`
+> through `T(2,13)`, plus `T(3,4)`, `4_1`, `5_2`, `6_2` — the certified floor is
+> **2 in every case**, while `2u(K)` runs to **12**. `sigma` and `tau` are 0
+> throughout, exactly as slice predicts, and Montesinos on `Z/q (+) Z/q` is the
+> only bound that fires. Interval widths run 0, 2, 4, 6, 8, 10; the floor is tight
+> only for `u(K) = 1` members, where `[2, 2]` closes by arithmetic.
+>
+> **And the looseness transferred to the emitted words**, which is what a gap
+> needs: **0 of 109** candidates were settled by a tight floor, against **0.921**
+> in the previous run. The mechanism that killed every certified-hard seed does
+> not fire here. The reasoning was right.
+>
+> **The corpus is still empty.** Acceptance from the `K # m(K)` families: **0 of
+> 207**. All 18 accepted instances came from controls — 17 reproducing the
+> published `churn-unknot-k1-long` rate at exactly 17/300 = 0.057. Joint
+> distribution `{(c_full, gap)}` = `{(0,1): 17, (1,2): 1}`. **Instances with
+> `c_full >= 2` and a gap: zero**, which is the combination the family was chosen
+> to produce.
+>
+> **Why — and this is the finding, not the failure.** On the `k = 0` rows, where
+> the knot is fixed and only the diagram is churned, `c_shrink == 2u(K)` on **26
+> of 26**, never above. The growth-free search always recovers the summand-wise
+> route and never does worse. So §1.4's free baseline **is** `c_shrink` for this
+> family, and a gap means `c_full < 2u(K)` — that is, exhibiting
+> **non-additivity of the unknotting number**. For `7_1` that is exactly
+> Brittenham–Hermiller's theorem and this note's own target.
+>
+> > **The interval is loose precisely where the answer is unknown.** A gap in this
+> > family cannot be verified without first doing the mathematics the corpus was
+> > meant to train for. The construction is circular, and no amount of compute
+> > removes the circle.
+>
+> A second, softer barrier sits on top: with `c_shrink` at 3–4, deciding a gap
+> needs a growth-capped search at budget 2–3 on a 10–14 letter three-strand word,
+> and that search did not terminate — 18 rows at 8x the node cap (480,000 nodes,
+> 52 s each) resolved none, and a probe reached 1,500,000 nodes without
+> exhausting.
+>
+> **What this leaves.** The circularity is specific to connected sums, because the
+> summand-wise route is always available and always growth-free. **Prime knots
+> escape it** — there is no formula pinning `c_shrink`, so a gap is an ordinary
+> search result needing no theorem — and indeed **all 18 accepted instances are
+> prime**. So the axis-combining problem is not "find a better family": it is
+> **push prime instances to higher `c_full`**, which is bounded by search cost,
+> not by mathematics.
+>
+> That re-points the work at §Status consequence 5. The search's hot path is the
+> transposition fingerprint, still importing a determinant route measured at
+> **1,539x** the cost of an equivalent one in the same package. A decision
+> procedure that fails at 1.5M nodes is exactly the thing that fix was for.
+>
+> **A real quarantine defect, surfaced by running the guard.**
+> `Quarantine.screen_name` **cannot** catch the target: `invariants` labels its
+> summands `'7_1 or 12n_749'` — §1.2's identification-ambiguity trap — so the
+> subset test `{'7_1','m(7_1)'} ⊆ {...}` is false and only the
+> `(det, |sigma|) = (49, 0)` fingerprint fires. The documented trap had quietly
+> opened a hole in the leak guard. Fixed with a `summand_alias_hit` that matches
+> quarantined names inside ambiguous labels, and pinned by a test. The screen is
+> still not `k`-ball closure, and the fingerprint remains over-broad — it also
+> rejects `5_2 # m(5_2)`. The next step is volume on
 > `churn-unknot-k1-long` plus a `growth_aware`-versus-head comparison scored on
 > the states those instances carry — and that is a corpus question, not a head
 > question.
