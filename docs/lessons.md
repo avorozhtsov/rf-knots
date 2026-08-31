@@ -65,6 +65,31 @@ may since have moved; the lesson is the durable part.
   `10_132` agree on both the Jones and the Alexander polynomial and have
   different unknotting numbers. A lookup that keeps the first match answers
   confidently and wrongly.
+- **A low distinct-key count is not evidence of a bad fingerprint.** The
+  crossing-change frontier of the Brittenham--Hermiller B5 word turns 2,800
+  candidate flips into 6 determinant fingerprints, which looked like a collision
+  disaster worth replacing the key over. Scored against a Jones-plus-signature
+  referee, those 2,800 states *are* 6 knots up to mirror, and the determinant's
+  partition is exactly the right one -- zero false merges, zero false splits.
+  `_explore_level` returns 140 diagrams of one knot, so a handful of classes is
+  what the structure permits. Count the knots before blaming the key.
+- **Hyperbolic volume is a worse transposition key than the determinant, and the
+  reason is the non-hyperbolic majority.** 80% of that frontier and 59% one level
+  deeper are connected sums, where `volume()` does not raise -- it returns a
+  plausible number from a degenerate triangulation. 307 of 2,240 came back above
+  1e-3 (4.5921, 6.4435), one summand came back *negative*, and repeating the same
+  word varied the answer by up to 1.7e-4, so the key is not even a function of the
+  input. Gated on `solution_type()` it merges 76% of same-bucket pairs across knot
+  classes against the determinant's 4%; ungated it merges *and* splits at once.
+  Added to a tuple it is a measured no-op: `(volume, det, |sig|)` scored
+  identically to `(det, |sig|)` at 5.4x the cost. The cheap real fix was
+  `abs(signature)`: +1.5 ms/state, 99.8% of the false merges gone, no false
+  splits. Evidence in `artifacts/volume-fingerprint/`.
+- **When a float invariant is the candidate key, test reproducibility before
+  discrimination.** The naive-volume class count came out 192 on one run and 203
+  on the next from an identical frontier. That alone disqualifies it, and it took
+  one 30-second script to find -- much less than the sweep that measured how fine
+  the key was.
 
 ## Running things
 

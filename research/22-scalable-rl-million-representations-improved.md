@@ -130,13 +130,25 @@ verified. The arithmetic makes it inevitable: a branch is cut when
 `used + 1 + bound > cap`, and one change in the bound is 0–2, so at `used = 0`
 the test would need `bound > 4`.
 
-> **And the bound is not what makes it intractable — the fingerprint is.**
+> **And the bound is not what makes it intractable — the fingerprint's cost is.**
 > Certified-bound computation took 1.32 s of 646 s (0.2%). The cost is
 > `_fingerprint` calling `invariants.determinant` at ~80 ms per candidate against
-> the ~10 ms its own docstring assumes. Level 0 spent **199 s** turning ~2,800
-> flips into **6** distinct fingerprints. This is the same defect §3.1 flags from
-> the other direction, now measured at 20 crossings rather than 254, and it is
-> the single cheapest speedup available anywhere in the search.
+> the ~10 ms its own docstring assumes; level 0 spent **199 s** on it. This is the
+> same defect §3.1 flags from the other direction, now measured at 20 crossings
+> rather than 254, and it is the single cheapest speedup available anywhere in
+> the search.
+>
+> **Correction — the cost is the defect; the *quality* is not.** An earlier draft
+> of this note read "199 s turning ~2,800 flips into 6 distinct fingerprints" as
+> a collision disaster, and said a key mapping 2,800 states to 6 classes was
+> "erasing knots rather than identifying them". That was wrong, and a dedicated
+> experiment refuted it: scored against an independent referee (Jones plus
+> `seifert.signature`), those 2,800 states **genuinely are 6 knots up to mirror**
+> — the determinant's partition is identical to the true one, with 0 classes
+> absorbed, 0 false merges and 0 false splits. `_explore_level` returns 140
+> diagrams that are all the same knot, so a handful of classes is what the
+> structure permits. The fingerprint was finding knots, not erasing them. Fix its
+> speed; do not "fix" its discrimination.
 
 **Consequences, which reorder the plan:**
 
@@ -489,6 +501,34 @@ primary loop.
   and `identify()` correctly returns `[]` on the composite root, since the census
   is of prime knots and a connected sum is not hyperbolic. Composites go through
   `connected_summands` first — which already splits this target unaided.
+* **The key should be `(determinant, |signature|)` — and not hyperbolic volume.**
+  Measured one crossing change deeper than the level-0 frontier, on 2,525 states
+  spanning 36 knots, against an up-to-mirror referee:
+
+  | key | classes | absorbed | false-merge | false-split | ms/state |
+  |---|---:|---:|---:|---:|---:|
+  | determinant (status quo) | 34 | 2 | 0.0439 | 0.0000 | 1.4 |
+  | **`(det, abs sig)`** | 35 | 1 | **0.0001** | 0.0000 | **2.9** |
+  | `(volume, det, abs sig)` | 35 | 1 | 0.0001 | 0.0000 | 15.8 |
+  | volume, gated on solution type | 24 | 12 | **0.7600** | 0.0000 | 13.0 |
+  | volume, naive rounding | 192–203 | 4 | 0.0122 | **0.5811** | 13.0 |
+
+  Adding `|signature|` costs 1.5 ms per state and removes **99.8% of the false
+  merges** (12,920 pairs down to 24), with zero false splits, exactly and without
+  floats. In a tuple **volume is a measured no-op** — `(volume, det, abs sig)`
+  scores byte-identically to `(det, abs sig)` at 5.4x the cost, because where
+  volume works it separates exactly what the determinant already separated.
+* **Why volume fails here, recorded so it is not retried.** Connected sums are
+  **80%** of the level-0 frontier and 59% of level 1 — non-hyperbolic inputs are
+  the majority, not an edge case, and §4.1b's torus-knot seeds are non-hyperbolic
+  too. Worse, **`volume()` does not raise on them, it lies quietly**: 307
+  degenerate states returned plausible values (4.5921, 6.4435), a `T(2,7)`
+  summand returned **-1.06e-7**, and the same word varied by up to 1.7e-4 between
+  calls — so an identical frontier produced 192 classes on one run and 203 on the
+  next. A key that changes between runs is not a key. The summand-wise fallback
+  (decompose, per-factor volume, `(det, abs sig)` for non-hyperbolic factors) is
+  the only key that reproduces the referee partition perfectly, but at 16 ms per
+  state it belongs on a shortlist, never on every candidate flip.
 * **Smith normal form is the one real casualty.** `branched_cover_homology` did
   not return in 600 s on any 254-letter state (153 MB of resident integers).
   Note 19 §4.1's mod-`p` corank replaces it: now built, and validated 7/7 against
