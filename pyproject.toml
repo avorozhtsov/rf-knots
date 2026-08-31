@@ -27,6 +27,17 @@ bounds = [
   "spherogram>=2.2",
   "knot-floer-homology>=1.2",
 ]
+# Naming a knot the bundled table cannot. `knot_table` covers prime knots to 12
+# crossings; the search reaches 14- and 15-crossing knots routinely, and their
+# names are what turn a reached state into a usable `u` bound. SnapPy's census
+# lookup identifies `K14a18636` in 0.02 s where the bundled fingerprint returns
+# nothing. Optional, and genuinely so: nothing here computes a bound from it, and
+# an unnamed knot degrades the search rather than breaking it.
+# Note SnapPy's own `determinant`/`signature` need Sage and raise without it;
+# use `rf_knots.seifert` for those.
+identify = [
+  "snappy>=3.3",
+]
 embeddings = [
   "torch>=2.2",
 ]
