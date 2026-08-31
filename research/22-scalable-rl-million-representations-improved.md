@@ -1200,6 +1200,42 @@ per possible action — `REDUCE(p)`, `COMMUTE(p)`, `BRAID(p)`, `INSERT(p,g,s)`,
 `CROSSING_CHANGE(p)`, plus the four singletons — so the head's width is
 `3L + 2L(N-1) + 4 + L`, and those are the 1,156 and 25,604 above.
 
+**What M1 does *not* include: raising the capacity.** Two size dependences exist
+and only one of them is M1's.
+
+| | what it is | does M1 change it? |
+|---|---|---|
+| the **head's** width | `Linear(d -> 3L + 2L(N-1) + 4 + L)` — parameters welded to `(L, N)` | **yes, this is M1** |
+| the **environment's** array capacity | `max_len`, `max_strands` in `BraidConfig`, baked into the jitted step | **no** |
+
+`config.py` already states the relationship in its own docstring: changing those
+fields "changes the action space, so a network trained under one config cannot be
+loaded under another **unless the policy head is positional**." M1 is what makes
+it positional. The JAX arrays stay fixed-size regardless — that is a tensor
+allocation, not a learned shape, and M1 neither needs nor removes it.
+
+So the ordering in §2.3 stands: add a larger tier **after** the head is positional,
+because before that a checkpoint cannot transfer into it and the extra capacity
+buys nothing. Two consequences worth being explicit about:
+
+* **M1's own gate needs one modestly larger config, not `(512, 24)`.** The gate
+  requires a transfer row at a strand count absent from training, so evaluation
+  must run somewhere bigger than training — train at TIER1 `(64, 8)`, evaluate at
+  something like `(128, 12)`. That is all M1 requires.
+* **`(512, 24)` belongs to M2, and its size is not yet known.** M0.1 established
+  that campaigns start from the 20-letter five-strand word and that the
+  254-letter chart is not an entry point, so how far reshaping actually inflates a
+  diagram is open — it is §11 question 1. Set the tier from that measurement
+  rather than from the cube's dimensions, which are one author's chart and not a
+  requirement. M0.4 has already priced the ceiling if it is needed: 25,604 actions
+  cost 35 us per mask and 13% of per-state time, with search memory at 3,255
+  nodes/GB.
+
+The encoder is not part of this question. `ScalableBraidEmbeddingEncoder` already
+sizes its tables at 1,023 generators and 1,024 strands, and the raster of
+[18](18-raster-representation.md) is strand-count-agnostic by construction. The
+head is the only learned object with a size dependence.
+
 **Why it is first.** The branching factor *is* the search. M0.4 measured 10,598
 legal successors on the target's long word — **95.9% of them `INSERT`** — at 39
 nodes/s, and `INSERT` is likewise 23,552 of the 25,604 slots (92%) of the action
