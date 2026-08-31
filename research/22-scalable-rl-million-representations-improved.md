@@ -845,6 +845,61 @@ one is evidence that it discovers.
 
 ---
 
+### 4.4 SnapPy as a supervision source — and the standard it has to meet
+
+**A distinction this note had been getting wrong.** Everywhere above, SnapPy
+output is held to the *proof* standard: `attested`, never `verified`, never a
+proof edge (§3.1, §Status). That is correct for the proof graph and stays.
+But it is the wrong standard for **training targets**, and applying it everywhere
+silently discarded a large, cheap, accurate supervision source.
+
+The network's `h(K)` is explicitly **not** admissible (§3.1) — it orders a
+best-first queue, it does not certify anything. A target that is merely *usually
+right* is fine for it. The two uses have different standards and this note had
+only ever stated the strict one.
+
+Measured on the chain's first state, all of it sub-millisecond after a
+`simplify('global')` that itself costs 0.02 s:
+
+| SnapPy output | measured | use as |
+|---|---|---|
+| `identify()` -> census name -> catalogue `u` | 0.02 s | target for `h(K)`; terminal-test shortlist |
+| `volume()` | < 1 ms (18.7152) | auxiliary regression target — **gated, see below** |
+| `homology()` | < 1 ms (`Z`) | auxiliary target; also a cheap fingerprint component |
+| `symmetry_group()` | 1 ms (`Z/2`) | auxiliary target |
+| `is_isometric_to()` | < 1 ms | **equivalence labels** — positive pairs for the `knot` head and for §7.2's `p_same_knot` |
+| `simplify('global')` crossing count | 0.02 s | a move-set-independent estimate of how far a diagram *can* reduce — a shaping potential, or a value target |
+
+`is_isometric_to` is the quietly valuable one: it manufactures verified-equivalent
+pairs at a millisecond each, which is exactly what the metric objective in
+`embedding_metric.py` has been starved of on the `lower` side.
+
+**The caveat, which our own experiment paid for.** `volume()` does not raise on
+non-hyperbolic input — it **lies quietly**. The fingerprint experiment measured
+307 degenerate states returning plausible values, a `T(2,7)` summand returning
+`-1.06e-7`, and identical words varying by 1.7e-4 between calls. Connected sums
+are **80%** of the level-0 frontier and §4.1b's torus seeds are non-hyperbolic
+too. As a *training label* that is worse than as a key: you would be regressing
+the network onto noise across most of the distribution and it would look like
+ordinary loss. **Gate every geometric label on `verify_hyperbolicity()`**, which
+is available and cheap, and give non-hyperbolic states an explicit separate class
+rather than a fabricated number.
+
+**Two things SnapPy must still never supply.**
+
+* **Policy imitation.** Its moves do not translate — M0.1 measured 2 of 518, and
+  0 of 16 crossing-creating ones. A SnapPy simplification is a demonstration in a
+  language this project cannot replay.
+* **Proof.** Unchanged from §3.1. A catalogue `u` reached through a census name
+  composes to a *catalogue-composed* bound, and must be filed as one.
+
+**And the quarantine binds here too.** Identification is a channel into the
+answer: naming a state as `14a_18636` hands over a chain knot §4.3 excludes. Run
+SnapPy-derived labels through the same screen as generated words, and record that
+they were screened.
+
+---
+
 ## 5. Learning contract, corrected
 
 ### 5.1 A monotone survival head over the whole budget vector
