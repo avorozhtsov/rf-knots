@@ -146,4 +146,22 @@ may since have moved; the lesson is the durable part.
   ~1.6-2.0 ms, and the head is ~4x the encoder once both are batched. Record the
   batch size beside every throughput figure, or the comparison it invites will be
   the wrong one.
+- **A `1x1` `Conv1d` is a linear map, and PyTorch charges 280x for saying it the
+  other way.** `Conv1d(96->192, kernel 1)` on `[b, 96, 64]` costs 0.068 ms at
+  batch 12 and 19.043 ms at batch 16 — 280x the time for 1.33x the work, rising
+  to 68 ms at batch 64. `F.linear` with the *same weight tensor* is 272-326x
+  cheaper and bit-identical. This was M0.4's "dispatch cliff between batch 12 and
+  16"; it is not a mysterious threshold, it is a layout choice, and it disappears
+  when the block stops transposing into `[B, C, L]` at all.
+- **`embedding(index).sum(dim=2)` materialises the whole gathered tensor.** A
+  `[B, L, span]` index over a `[B, L, span, W]` intermediate cost 131 ms on MPS at
+  `(256,21)` batch 256 — nearly 2x the rest of the forward pass. Accumulating one
+  offset at a time is the same arithmetic at 5.2 ms. The first version of the
+  encoder ran at 312 examples/s for this reason and now runs at 3,758.
+- **Rotary position encoding buys nothing without attention.** Its identity is
+  about inner products *between* tokens; a convolution and a per-token linear head
+  consume neither. Worse, it breaks an equivariance you already had: a
+  wrap-around convolution permutes tokens bitwise under a cyclic shift, and adding
+  a rotary replaces that exact permutation with a rotation the downstream linear
+  functional cannot undo. Check what actually reads the encoding before adding it.
 - Negative results belong in commit messages and notes, not in dead code.

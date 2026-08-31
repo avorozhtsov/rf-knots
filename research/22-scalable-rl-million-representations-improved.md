@@ -1423,6 +1423,65 @@ TIER1 `state_dict` loads into a fresh head and scores bit-identically at
 Only if the gate fails should the scorer become an MLP over `[h_s; g; e_t]` —
 ~100x the per-site cost, and it should have to earn it.
 
+> **Built and measured — and one correction to the design above.**
+>
+> The trunk now exposes `encode_sites`, and the §6.4 geometry is implemented as an
+> opt-in `positional_geometry="necklace"` (the shipped encoder stays the default
+> and is bit-identical: 9 configurations, `max abs delta = 0.0`, `state_dict` keys
+> and RNG draw order frozen, so every calibration checkpoint still loads
+> `strict=True`).
+>
+> | property, cyclic word shift | necklace | legacy |
+> |---|---:|---:|
+> | token Gram, float64 (scale 186) | `2.8e-14` | — |
+> | `knot` embedding, float64 | `2.2e-16` | — |
+> | `knot` embedding, float32 | `6.0e-08` | **`0.377`** |
+> | trunk with rotary harmonics zeroed | **bitwise equal** | `1.6` |
+>
+> Conjugation is a no-op on the knot, and the shipped encoder moves its `knot`
+> embedding by up to **0.377** in a unit-normalised space under it. Exposing the
+> tokens is free (tokens/pooled ratio 0.86–1.17, median 1.00); the geometry costs
+> 10–30%, putting M1's state-level pass at ~38 h rather than 30.5 h.
+>
+> **And it removes M0.4's dispatch cliff as a side effect.** The necklace block
+> never leaves the `[B, L, W]` layout, so the two `1x1` convolutions are evaluated
+> as the linear maps they are. `Conv1d(96->192, k=1)` costs 0.068 ms at batch 12
+> and **19.043 ms at batch 16** — 280x for 1.33x the work — while `F.linear` with
+> the *same weight tensor* is 272–326x cheaper. Per-example CPU cost at batch 64:
+> **690 us against 6,431 us**.
+>
+> ### The rotary is wrong for *this* head, and the trunk already does the job
+>
+> A rotary encoding makes *relative* position readable through **inner products
+> between tokens** — `<R_j q, R_h k> = <q, R_{j-h} k>`. That is what an attention
+> layer consumes. This trunk is a convolution and §M1's head is a linear
+> functional of **one** token, and neither consumes an inner product between two
+> tokens. Under a shift the tokens transform as `h'_j = R(theta*s) h_{j-s}`, so
+> `<u_t, h'_j> != <u_t, h_{j-s}>`: **the head's logits are not shift-equivariant
+> even though its inputs are exactly so.** §M1's "position 7 versus 400" argument
+> holds for the encoder and, as specified, not for the head.
+>
+> **The resolution is to turn the rotary off, not to complicate the head.** With
+> the harmonics zeroed the wrap-around trunk permutes tokens **bitwise** under a
+> cyclic shift — it is already exactly `Z_L`-equivariant on its own, and a linear
+> functional of a permuted token *is* equivariant. The rotary was solving a
+> problem this architecture does not have. Two consequences worth stating:
+>
+> * **Absolute position is then absent entirely, which is correct here.** The
+>   braid relations hold at every index; a site should be scored by its local
+>   content, not its coordinate. Where the controller genuinely needs "where am I
+>   relative to the cursor", that is the head-relative feature of note 21 §3.5 —
+>   a separate, deliberate input rather than a global encoding.
+> * **Switch the rotary back on the moment attention appears.** §3.3's multiscale
+>   and recurrent-interaction variants consume token-token inner products, and
+>   that is exactly the regime rotary is for. The flag should stay, defaulted off.
+>
+> Keep the rest of the necklace geometry: the wrap-around convolution, the strand
+> buckets, and the masked-minimum pooling statistic that replaces `state[:, 0]` —
+> the latter is not cosmetic, since reading word position zero reads the storage
+> seam and would make the globals conjugation-*variant* by construction,
+> falsifying §6.1's first table row.
+
 **Which token is `h_s`.** A site is a *(position, generator)* pair for `INSERT`
 and a position for the rest — which is exactly a **cell of the raster** of
 [18](18-raster-representation.md), `strand x word-position`. The representation
