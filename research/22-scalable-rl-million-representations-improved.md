@@ -1077,6 +1077,15 @@ throughout: project the cost of a sweep, and log inside it, before launching it.
 
 ### M0 — Measure the floor (days, no training) — **done; results in §Status**
 
+**What.** Four measurements and no training: whether the published witnesses
+replay in this project's move set, what the certified machinery says about each
+state on the chain, what today's search achieves at cap 6 and cap 5, and what one
+network evaluation costs.
+
+**Why.** Every later milestone's plan is arithmetic on numbers only this stage
+produces — and `docs/lessons.md` is explicit that a gate set without a measured
+floor measures nothing. It is deliberately the one stage that can refute the rest.
+
 **M0.1 — replay.** Put the Brittenham-Hermiller chain and the Wang-Zhang cube
 through `rf_knots`' own verifier; confirm both parse, both replay, and record the
 **semantic-move length** of each leg. This decides §2.1's constant `A`.
@@ -1099,6 +1108,20 @@ premature.
 
 ### M1 — The per-site head (weeks) — **M0 verdict: feasible**
 
+**What.** One shared scorer applied to every candidate action site in a diagram —
+one logit per site, no fixed-width output — trained by ordinary supervision to
+rank two things: which crossing to change, and where the diagram may grow.
+
+**Why.** The branching factor *is* the search. M0.4 measured 10,598 legal
+successors on the target's long word, 95.9% of them `INSERT`, at 39 nodes/s;
+depth-5 search over that is hopeless, and turning thousands of sites into a
+top-ten shortlist is worth more than any value-head improvement. It is also the
+only head whose parameter count is independent of word length and strand count,
+so it is what lets a checkpoint transfer across problem sizes at all — M0.4
+measured the current head failing exactly there (`size mismatch [1156,96] vs
+[25604,96]`). And because the labels come free from generated witnesses, it can
+be trained and judged **before** any reinforcement learning is paid for.
+
 Measured cost: 1.1 h generation, then 0.5 h (instance-level) to 30.5 h
 (state-level) of MPS training, 115 MB. The binding constraint is the wall clock
 of the state-level pass; memory and disk are nowhere near their limits. Note the
@@ -1116,12 +1139,36 @@ learned nothing the search could not have had for free.
 
 ### M2 — Depth-`k` outer search with identification (weeks)
 
+**What.** The two-level search of §3: an outer best-first walk over the
+crossing-change graph, keyed on knot identity rather than diagram, with an inner
+MCTS doing zero-CC diagram surgery between changes, and identification as the
+terminal test.
+
+**Why.** The published pipeline this project is measured against is depth **one**
+— flip one crossing, then look the result up in a table. This is the depth-`k`
+generalisation `u(K) <= k + u(K_k)`, which is the structural advantage rf-knots
+has and the reason its witnesses are self-certifying rather than table lookups.
+Identification is what turns a reached state into a usable bound; note 19 called
+it the bottleneck of the prior work, and SnapPy now closes it.
+
 Reproduce the depth-1 DKT result on knots whose answer is known, then depth-2 and
 depth-3 on the chain's own descendants. **Gate:** re-derive the known `u` of a
 pre-registered set of tabulated knots, counting replay-complete terminals
 separately from catalogue-composed ones.
 
 ### M3 — Interleaved generator at scale (weeks)
+
+**What.** Run the interleaved backward generator (§4.1) at scale, seeded from
+knots carrying large certified lower bounds (§4.1b), to produce a corpus whose
+difficulty is known by construction rather than hoped for.
+
+**Why.** This is the training corpus for M1 and M4, so its quality caps theirs.
+M0 measured the unseeded version producing instances of mean certified difficulty
+**1.01** at `k = 5`, with 14% of them literally the unknot — a corpus that would
+train a per-site head on instances where any site works, and a survival head
+calibrated on a distribution that does not contain the target's regime. Note 21's
+first risk, "a million rows but little information", is realised here or avoided
+here.
 
 `10^5` then `10^6` deduplicated states with witnesses, spanning `k = 1..6`,
 lengths to 256 and strands to 21. **Gate:** note 21's four counters reported
@@ -1158,6 +1205,17 @@ counting augmentations.
 
 ### M4 — Joint training (weeks)
 
+**What.** Train the network end to end on the M3 corpus: the monotone survival
+head over the whole crossing-change budget vector, policy by GRPO with its
+stabilisers, set-valued targets from the proof graph, and note 20's retention
+panel running throughout.
+
+**Why.** This is where the parts become a solver rather than a collection of
+heads. The gates are calibration gates because a miscalibrated `p_solve` is worse
+than none at all — the outer search trusts it to decide what to expand, so a head
+that is confidently wrong at cap 5 wastes the entire compute budget in the one
+regime that matters.
+
 Monotone survival head, GRPO with stabilisers, set-valued policy targets, and
 note 20's retention panel at a fixed dose. **Gate:** calibration on the natural
 distribution (Brier, reliability by budget bucket, ECE); retention >= 0.8 on the
@@ -1178,6 +1236,13 @@ frozen panel; monotonicity violations exactly zero.
 
 ### M5 — The target (the point)
 
+**What.** A cap-5 campaign against `7_1 # m(7_1)`, run from the 20-letter entry
+word with the §4.3 quarantine enforced and the 254-letter cube unused.
+
+**Why.** It is the point of the plan; everything before it is instrumental. And
+it is the only stage whose success criterion is a mathematical object rather than
+a metric — a replay-verified sequence, or nothing.
+
 A cap-5 campaign on `7_1 # m(7_1)` from the 20-letter entry word, quarantine
 enforced, cube unused. **Success:** a replay-verified 5-change witness found
 natively, reported with seeds, dose, evaluations and the full path. **Partial
@@ -1187,6 +1252,15 @@ survives independent replay and a literature check, is new mathematics and shoul
 therefore be treated with corresponding suspicion first.
 
 ### M6 — Gordian (after M5, or in parallel once M3 lands)
+
+**What.** The two-representation network of §7 — one encoder applied to both
+inputs with a symmetric interaction — producing certified-interval estimates and
+replayable witnesses for the Gordian distance `d(A, B)`.
+
+**Why.** It is the stated second goal, and `u(K) = d(K, 0_1)` makes the first a
+special case of it rather than a separate system. §6.2 therefore builds the pair
+network first, and §7.4 means its corpus accrues during M3 at no extra search
+cost — so M6 is mostly the bill coming due for work already done.
 
 Pair head, cross-relaxation, meet-in-the-middle; gates as §7.5.
 
