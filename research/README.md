@@ -33,6 +33,7 @@ numerically comparable with current work.
 | [18-raster-representation.md](18-raster-representation.md) | Active masked raster representation |
 | [19-superseding-the-rl-unknotter.md](19-superseding-the-rl-unknotter.md) | Hard-knot upper-bound campaign and evidence standard |
 | [20-single-knot-mastery.md](20-single-knot-mastery.md) | Heap-guided, self-training search for lower unknotting upper bounds |
+| [21-scalable-rl-million-representations.md](21-scalable-rl-million-representations.md) | Variable-length raster/graph RL, honest failures, proof-graph supervision, and the million-state plan |
 
 Implementation references are in [`../docs/`](../docs/). Generated experiment
 artifacts live in the sibling `pgx-mcts-bench` repository. A result enters an
