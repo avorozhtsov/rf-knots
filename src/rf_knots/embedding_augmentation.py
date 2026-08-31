@@ -87,9 +87,7 @@ def augment_zero_cc(
         generator = rng.randint(1, largest_generator)
         sign = rng.choice((-1, 1))
         word[position:position] = [sign * generator, -sign * generator]
-        operations.append(
-            ZeroCCOperation("insert_inverse_pair", position, generator, sign)
-        )
+        operations.append(ZeroCCOperation("insert_inverse_pair", position, generator, sign))
     return AugmentedRepresentation(tuple(word), representation.strands, tuple(operations))
 
 
@@ -277,9 +275,7 @@ def procedural_cc_pair(
     *,
     simple: bool,
     root: EmbeddingRepresentation | None = None,
-) -> tuple[
-    EmbeddingRepresentation, AugmentedRepresentation, int
-]:
+) -> tuple[EmbeddingRepresentation, AugmentedRepresentation, int]:
     """Generate a replayed CC upper-bound pair outside the proof graph."""
     root = root or random_knot_braid(seed, simple=simple)
     rng = random.Random(seed ^ 0xD1B54A32D192ED03)
@@ -370,10 +366,10 @@ class MillionPairCurriculum:
             )
         if index < 6 * twentieth:
             pair = self._choose(self.exact_cc1, index, "hard-cc1")
-            stratum = "hard_cc1_detour"
+            stratum = "hard_cc1_long_detour" if index % 2 else "hard_cc1_detour"
         elif index < 7 * twentieth:
             pair = self._choose(self.exact_cc2, index, "hard-cc2")
-            stratum = "hard_cc2_detour"
+            stratum = "hard_cc2_long_detour" if index % 2 else "hard_cc2_detour"
         elif index < 8 * twentieth and self.gordian:
             pair = self._choose(self.gordian, index, "gordian-lower-bound")
             left_choice = _seed(self.seed, index, "gordian-left-posting") % len(
@@ -401,14 +397,12 @@ class MillionPairCurriculum:
             )
         elif index < 8 * twentieth:
             pair = self._choose(self.exact_cc2, index, "hard-cc2-fallback")
-            stratum = "hard_cc2_detour"
+            stratum = "hard_cc2_long_detour" if index % 2 else "hard_cc2_detour"
         elif index < 10 * twentieth:
             pair = self._choose(self.mirror_orbit, index, "mirror-orbit")
             stratum = "hard_mirror_orbit"
         elif index < 12 * twentieth:
-            representation_id = self._choose(
-                self.representation_ids, index, "zero-cc-orbit"
-            )
+            representation_id = self._choose(self.representation_ids, index, "zero-cc-orbit")
             return SyntheticPairSpec(
                 index,
                 "hard_zero_cc_orbit",
@@ -519,9 +513,7 @@ class SyntheticEmbeddingIterableDataset(IterableDataset):
     def __len__(self) -> int:
         return len(self.curriculum)
 
-    def _materialize(
-        self, sidecar, index: int, generation: int = 0
-    ) -> MaterializedSyntheticPair:
+    def _materialize(self, sidecar, index: int, generation: int = 0) -> MaterializedSyntheticPair:
         spec = self.curriculum.spec(index)
         # Every epoch sees the same metric pair, but a new deterministic zero-CC
         # presentation. This expands diagram diversity without changing labels.
@@ -558,9 +550,7 @@ class SyntheticEmbeddingIterableDataset(IterableDataset):
                 simple=simple,
                 existing_sha256=self.curriculum.existing_representation_sha256,
             )
-            left, right, cc_count = procedural_cc_pair(
-                procedural_seed, simple=simple, root=root
-            )
+            left, right, cc_count = procedural_cc_pair(procedural_seed, simple=simple, root=root)
             # Later generations may choose one or two CC independently. The
             # stored interval is widened conservatively rather than pretending
             # that the replayed path is a lower bound.
@@ -591,15 +581,9 @@ class SyntheticEmbeddingIterableDataset(IterableDataset):
                 mirror=spec.right_mirror,
             )
             if self.replay_check:
-                left_root = (
-                    tuple(-value for value in left.word)
-                    if spec.left_mirror
-                    else left.word
-                )
+                left_root = tuple(-value for value in left.word) if spec.left_mirror else left.word
                 right_root = (
-                    tuple(-value for value in right.word)
-                    if spec.right_mirror
-                    else right.word
+                    tuple(-value for value in right.word) if spec.right_mirror else right.word
                 )
                 if reverse_markov_zero_cc(augmented_left) != (left_root, left.strands):
                     raise ValueError(f"left Gordian scramble {index} failed replay")
@@ -615,8 +599,17 @@ class SyntheticEmbeddingIterableDataset(IterableDataset):
                 augmented_left.semantic_length + augmented_right.semantic_length,
             )
         if spec.stratum.startswith("hard_"):
-            augmented_left = augment_zero_cc(left, spec.left_seed ^ epoch_salt)
-            augmented_right = augment_zero_cc(right, spec.right_seed ^ epoch_salt)
+            augmentation_limits = (
+                {"minimum_insertions": 60, "maximum_insertions": 120}
+                if "_long_detour" in spec.stratum
+                else {}
+            )
+            augmented_left = augment_zero_cc(
+                left, spec.left_seed ^ epoch_salt, **augmentation_limits
+            )
+            augmented_right = augment_zero_cc(
+                right, spec.right_seed ^ epoch_salt, **augmentation_limits
+            )
             if self.replay_check:
                 if reverse_zero_cc(augmented_left) != left.word:
                     raise ValueError(f"left augmentation {index} failed inverse replay")
@@ -624,9 +617,7 @@ class SyntheticEmbeddingIterableDataset(IterableDataset):
                     raise ValueError(f"right augmentation {index} failed inverse replay")
             left_word = augmented_left.word
             right_word = augmented_right.word
-            added_length = (
-                augmented_left.semantic_length + augmented_right.semantic_length
-            )
+            added_length = augmented_left.semantic_length + augmented_right.semantic_length
         else:
             left_word = left.word
             right_word = right.word
@@ -651,9 +642,7 @@ class SyntheticEmbeddingIterableDataset(IterableDataset):
         multiplier = 6364136223846793005 % len(self.curriculum)
         while math.gcd(multiplier, len(self.curriculum)) != 1:
             multiplier += 2
-        offset = _seed(self.curriculum.seed, self.epoch, "order") % len(
-            self.curriculum
-        )
+        offset = _seed(self.curriculum.seed, self.epoch, "order") % len(self.curriculum)
         with UnknotDBEmbeddingSidecar(self.sidecar_path) as sidecar:
             cached_representation = lru_cache(maxsize=32_768)(sidecar.representation)
             position = start
@@ -664,9 +653,9 @@ class SyntheticEmbeddingIterableDataset(IterableDataset):
                     (self.epoch << 32) ^ generation,
                     "order-generation",
                 ) % len(self.curriculum)
-                index = (
-                    multiplier * within_generation + offset + generation_offset
-                ) % len(self.curriculum)
+                index = (multiplier * within_generation + offset + generation_offset) % len(
+                    self.curriculum
+                )
                 yield self._materialize(cached_representation, index, generation)
                 position += stride
 
@@ -695,22 +684,12 @@ def collate_embedding_pairs(rows: Sequence[MaterializedSyntheticPair]) -> dict:
         "right_word": right,
         "left_length": left_lengths,
         "right_length": right_lengths,
-        "left_strands": torch.tensor(
-            [row.left_strands for row in rows], dtype=torch.long
-        ),
-        "right_strands": torch.tensor(
-            [row.right_strands for row in rows], dtype=torch.long
-        ),
-        "lower": torch.tensor(
-            [row.spec.distance_lower for row in rows], dtype=torch.float32
-        ),
-        "upper": torch.tensor(
-            [row.spec.distance_upper for row in rows], dtype=torch.float32
-        ),
+        "left_strands": torch.tensor([row.left_strands for row in rows], dtype=torch.long),
+        "right_strands": torch.tensor([row.right_strands for row in rows], dtype=torch.long),
+        "lower": torch.tensor([row.spec.distance_lower for row in rows], dtype=torch.float32),
+        "upper": torch.tensor([row.spec.distance_upper for row in rows], dtype=torch.float32),
         "witness_semantic_length": torch.tensor(
             [row.witness_semantic_length for row in rows], dtype=torch.long
         ),
-        "confidence": torch.tensor(
-            [row.spec.confidence for row in rows], dtype=torch.float32
-        ),
+        "confidence": torch.tensor([row.spec.confidence for row in rows], dtype=torch.float32),
     }

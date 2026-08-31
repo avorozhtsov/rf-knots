@@ -36,6 +36,7 @@ def main() -> None:
     parser.add_argument("--geodesic", type=Path, required=True)
     parser.add_argument("--hard-cases", type=Path, required=True)
     parser.add_argument("--gordian", type=Path, required=True)
+    parser.add_argument("--validation-protocol", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--count", type=int, required=True)
     parser.add_argument("--shard-size", type=int, default=100_000)
@@ -60,6 +61,7 @@ def main() -> None:
         args.geodesic,
         args.hard_cases,
         args.gordian,
+        args.validation_protocol,
         size=args.virtual_size,
         seed=args.seed,
     )
@@ -101,6 +103,11 @@ def main() -> None:
                 "geodesic": sha256(args.geodesic),
                 "hard_cases": sha256(args.hard_cases),
                 "gordian": sha256(args.gordian),
+                "validation_protocol": (
+                    sha256(args.validation_protocol)
+                    if args.validation_protocol
+                    else None
+                ),
             },
             "source_pools": pools,
             "shards": shards,

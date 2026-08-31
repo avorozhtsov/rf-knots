@@ -11,6 +11,7 @@ from rf_knots.embedding_supervision import (
     DistanceInterval,
     UnknotDBEmbeddingSidecar,
 )
+from rf_knots.embedding_validation import load_training_quarantine
 
 
 def _geodesic_pairs(path: Path) -> tuple[DistanceInterval, ...]:
@@ -34,6 +35,7 @@ def load_million_pair_curriculum(
     geodesic_path: str | Path,
     hard_cases_path: str | Path,
     gordian_path: str | Path | None = None,
+    validation_protocol_path: str | Path | None = None,
     *,
     size: int = 1_000_000,
     seed: int = 20260829,
@@ -51,6 +53,17 @@ def load_million_pair_curriculum(
     }
     hard.close()
     protected_knots = protected_knot_ids(gordian_path) if gordian_path else frozenset()
+    quarantine = (
+        load_training_quarantine(validation_protocol_path)
+        if validation_protocol_path
+        else None
+    )
+    excluded_representations = protected | (
+        set(quarantine.representation_ids) if quarantine else set()
+    )
+    excluded_knots = protected_knots | (
+        quarantine.knot_ids if quarantine else frozenset()
+    )
     raw = sqlite3.connect(f"file:{pairs_path}?mode=ro", uri=True)
     representation_rows = {
         int(row[0]): (row[1], str(row[2]))
@@ -66,8 +79,8 @@ def load_million_pair_curriculum(
         representation_id
         for representation_id, (knot_id, split) in sorted(representation_rows.items())
         if split == "train"
-        and representation_id not in protected
-        and knot_id not in protected_knots
+        and representation_id not in excluded_representations
+        and knot_id not in excluded_knots
     )
     existing_representation_sha256 = frozenset(
         bytes(row[0]) for row in raw.execute("SELECT sha256 FROM representations")
@@ -78,12 +91,12 @@ def load_million_pair_curriculum(
         natural = tuple(
             pair
             for pair in sidecar.pairs("train")
-            if pair.left_representation not in protected
-            and pair.right_representation not in protected
+            if pair.left_representation not in excluded_representations
+            and pair.right_representation not in excluded_representations
             and sidecar.representation(pair.left_representation).knot_id
-            not in protected_knots
+            not in excluded_knots
             and sidecar.representation(pair.right_representation).knot_id
-            not in protected_knots
+            not in excluded_knots
         )
         edge_interior_ids = set(
             sidecar.representation_ids_by_domain(
@@ -93,8 +106,10 @@ def load_million_pair_curriculum(
     geodesic = tuple(
         pair
         for pair in _geodesic_pairs(geodesic_path)
-        if representation_knots.get(pair.left_representation) not in protected_knots
-        and representation_knots.get(pair.right_representation) not in protected_knots
+        if pair.left_representation not in excluded_representations
+        and pair.right_representation not in excluded_representations
+        and representation_knots.get(pair.left_representation) not in excluded_knots
+        and representation_knots.get(pair.right_representation) not in excluded_knots
     )
     edge_interior = tuple(
         pair
@@ -120,7 +135,19 @@ def load_million_pair_curriculum(
         for pair in geodesic
         if pair.metric == "cc" and pair.exact and pair.lower == 2
     )
-    gordian = load_gordian_pairs(gordian_path, "train") if gordian_path else ()
+    gordian = (
+        tuple(
+            pair
+            for pair in load_gordian_pairs(gordian_path, "train")
+            if pair.left.canonical_knot_id not in excluded_knots
+            and pair.right.canonical_knot_id not in excluded_knots
+            and not excluded_representations.intersection(
+                pair.left.representation_ids + pair.right.representation_ids
+            )
+        )
+        if gordian_path
+        else ()
+    )
     curriculum = MillionPairCurriculum(
         representation_ids=representation_ids,
         edge_interior=edge_interior,
@@ -143,4 +170,8 @@ def load_million_pair_curriculum(
         "gordian_pairs": len(gordian),
         "gordian_protected_knot_ids": len(protected_knots),
         "protected_representations": len(protected),
+        "quarantine_knot_ids": len(quarantine.knot_ids) if quarantine else 0,
+        "quarantine_representations": (
+            len(quarantine.representation_ids) if quarantine else 0
+        ),
     }

@@ -22,6 +22,7 @@ def main() -> None:
     parser.add_argument("--examples", type=int, default=10_000_000)
     parser.add_argument("--seed", type=int, default=20260829)
     parser.add_argument("--progress-every", type=int, default=1_000_000)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.examples <= 0 or args.examples % 20:
         raise ValueError("examples must be a positive multiple of twenty")
@@ -64,6 +65,7 @@ def main() -> None:
         args.geodesic,
         args.hard_cases,
         args.gordian,
+        args.protocol,
         size=args.examples,
         seed=args.seed,
     )
@@ -105,7 +107,9 @@ def main() -> None:
         },
         "embedding_near_duplicate_gate": "not_yet_applied",
     }
-    output = args.protocol.with_name("leakage-audit-10m-v0.json")
+    output = args.output or args.protocol.with_name(
+        f"leakage-audit-{args.examples}-integrated-v0.json"
+    )
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps(report, indent=2, sort_keys=True))
 
