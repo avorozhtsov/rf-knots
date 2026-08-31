@@ -80,6 +80,50 @@ def bfs_shortest(spec, word, strands, crossing_change_budget, growth=3, max_dept
     return None, frozenset()
 
 
+def bfs_optimal(spec, word, strands, crossing_change_budget, growth=3, max_depth=9):
+    """The same oracle, ordered lexicographically on `(crossing_changes, moves)`.
+
+    Written the same deliberately-naive way -- layer-synchronous, no heuristic,
+    no priority queue -- and it takes the lexicographic minimum over *every* goal
+    it meets rather than stopping at the first layer that has one, because under
+    `(cc, moves)` a later layer can carry a strictly better answer.
+    """
+    length_cap = min(len(word) + growth, spec.max_len)
+    if not word and strands == 1:
+        return (0, 0), frozenset()
+    frontier = {(word, strands, 0): frozenset()}
+    seen = {(word, strands, 0)}
+    best = None
+    firsts: frozenset = frozenset()
+    for depth in range(max_depth):
+        nxt: dict[tuple, frozenset] = {}
+        for (current, active, used), carried_in in frontier.items():
+            for action, next_word, next_strands in reference.successors(
+                spec, current, active, allow_crossing=True
+            ):
+                if len(next_word) > length_cap:
+                    continue
+                changes = used + int(spec.decode(action)[0] == CROSSING_CHANGE)
+                if changes > crossing_change_budget:
+                    continue
+                key = (next_word, next_strands, changes)
+                if key in seen:
+                    continue
+                carried = frozenset({action}) if depth == 0 else carried_in
+                nxt[key] = nxt.get(key, frozenset()) | carried
+        for key, value in nxt.items():
+            if key[0] or key[1] != 1:
+                continue
+            cost = (key[2], depth + 1)
+            if best is None or cost < best:
+                best, firsts = cost, value
+            elif cost == best:
+                firsts = firsts | value
+        seen |= set(nxt)
+        frontier = nxt
+    return best, firsts
+
+
 def small_states(count=4, depths=4):
     """A handful of real generated states small enough for the BFS oracle."""
     config = InterleavedConfig(
@@ -145,6 +189,7 @@ def test_shortest_completion_agrees_with_a_breadth_first_oracle():
         found = target.shortest_completion(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes, growth=3, node_cap=200_000,
+            objective="moves",
         )
         moves, firsts = bfs_shortest(
             spec, site.state.word, site.state.strands,
@@ -201,6 +246,7 @@ def test_the_shortest_completion_never_exceeds_the_witness_that_exists():
         found = target.shortest_completion(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes, growth=8, node_cap=200_000,
+            objective="moves",
         )
         if found.moves is None:
             continue
@@ -212,7 +258,7 @@ def test_a_cap_hit_is_undetermined_and_never_an_empty_target():
     site = spine.sites[index]
     found = target.shortest_completion(
         spec, site.state.word, site.state.strands,
-        site.remaining_crossing_changes, node_cap=1,
+        site.remaining_crossing_changes, node_cap=1, objective="moves",
     )
     assert found.moves is None
     assert found.first_actions == ()
@@ -228,6 +274,7 @@ def test_the_target_is_far_tighter_than_feasibility():
         found = target.shortest_completion(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes, node_cap=100_000,
+            objective="moves",
         )
         if found.moves is None:
             continue
@@ -359,12 +406,15 @@ def test_a_perfect_ranker_scores_one_and_an_adversary_scores_zero():
             assert row.hits["adversary"]["insert@1"] == 0
 
 
-def test_the_shortest_completion_target_contains_no_insert():
-    """The finding the gate rests on: `INSERT` is never optimal in this move set.
+def test_the_shortest_moves_target_contains_no_insert():
+    """`INSERT` is never optimal **under the move objective**, and only under it.
 
     `moves = (L + n - 1)/2 + 2i + 2s + c` exactly, so an insertion costs two
-    moves nothing pays back.  If this test ever fails the identity has been
-    broken by an edit to the move set, and §M1's `INSERT` gate may be live again.
+    moves nothing pays back.  This is the finding the published gate rests on and
+    it is pinned to `objective="moves"` on purpose: under the lexicographic
+    `(cc, moves)` of note 22 §2.1 the same block is not flat by any identity, and
+    whether it is flat in fact is what `research/experiments/m1_growth.py`
+    measures rather than assumes.
     """
     inserts = states = 0
     for spec, spine, index in small_states(count=4, depths=5):
@@ -372,6 +422,7 @@ def test_the_shortest_completion_target_contains_no_insert():
         found = target.shortest_completion(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes, node_cap=100_000,
+            objective="moves",
         )
         if found.moves is None:
             continue
@@ -379,6 +430,99 @@ def test_the_shortest_completion_target_contains_no_insert():
         inserts += sum(spec.decode(a)[0] == INSERT for a in found.first_actions)
     assert states >= 8
     assert inserts == 0
+
+
+# -- the retargeted objective: note 22 §2.1's `(cc, moves)` --------------------
+
+
+def test_the_lexicographic_target_agrees_with_a_breadth_first_oracle():
+    """The default objective, against the same deliberately-naive oracle."""
+    checked = 0
+    for spec, spine, index in small_states(count=3, depths=3):
+        site = spine.sites[index]
+        found = target.shortest_completion(
+            spec, site.state.word, site.state.strands,
+            site.remaining_crossing_changes, growth=3, node_cap=60_000,
+        )
+        cost, firsts = bfs_optimal(
+            spec, site.state.word, site.state.strands,
+            site.remaining_crossing_changes, growth=3, max_depth=8,
+        )
+        if cost is None or found.moves is None or found.moves > 8:
+            continue
+        assert (found.crossing_changes, found.moves) == cost, (
+            site.state.word, site.state.strands
+        )
+        assert set(found.first_actions) == set(firsts)
+        checked += 1
+    assert checked >= 4, "the lexicographic oracle never ran on enough states"
+
+
+def test_the_lexicographic_optimum_never_spends_more_changes_than_the_move_one():
+    """What the retarget is *for*: `cc` first, and `moves` only to break the tie."""
+    cheaper = compared = 0
+    for spec, spine, index in small_states(count=3, depths=3):
+        site = spine.sites[index]
+        common = dict(growth=3, node_cap=40_000)
+        lex = target.shortest_completion(
+            spec, site.state.word, site.state.strands,
+            site.remaining_crossing_changes, objective="lex", **common
+        )
+        moves = target.shortest_completion(
+            spec, site.state.word, site.state.strands,
+            site.remaining_crossing_changes, objective="moves", **common
+        )
+        if lex.moves is None or moves.moves is None:
+            continue
+        assert lex.crossing_changes <= moves.crossing_changes
+        assert lex.moves >= moves.moves
+        cheaper += int(lex.crossing_changes < moves.crossing_changes)
+        compared += 1
+    assert compared >= 4
+    #: Which way the *count* goes is a property of the corpus, not of the code,
+    #: and `research/experiments/m1_growth_run.py` measures it.  What is asserted
+    #: here is only the ordering the objective guarantees.
+    assert cheaper >= 0
+
+
+def test_a_lexicographic_target_site_replays_at_the_claimed_pair():
+    """Both components, exhibited.  `exhibit_target` raises on either mismatch."""
+    replayed = 0
+    for spec, spine, index in small_states(count=3, depths=4):
+        site = spine.sites[index]
+        found = target.shortest_completion(
+            spec, site.state.word, site.state.strands,
+            site.remaining_crossing_changes, node_cap=100_000,
+        )
+        if found.moves is None:
+            continue
+        exhibited = target.exhibit_target(
+            spec, site.state.word, site.state.strands,
+            site.remaining_crossing_changes, found,
+        )
+        for action, moves in exhibited.items():
+            assert moves == found.moves
+            assert action in found.legal_actions
+        replayed += len(exhibited)
+    assert replayed > 5
+
+
+def test_the_certified_floor_is_a_lower_bound_on_the_lexicographic_optimum():
+    """If it were not, the search would reach the unknot below it, and it raises."""
+    checked = 0
+    for spec, spine, index in small_states(count=3, depths=4):
+        site = spine.sites[index]
+        floor = target.certified_change_floor(site.state.word, site.state.strands)
+        found = target.shortest_completion(
+            spec, site.state.word, site.state.strands,
+            site.remaining_crossing_changes, node_cap=100_000, change_floor=floor,
+        )
+        if found.moves is None:
+            continue
+        assert found.crossing_changes >= floor
+        assert found.crossing_changes <= site.remaining_crossing_changes
+        checked += 1
+    assert checked >= 5
 
 
 def test_the_move_count_identity_holds_on_real_witness_suffixes():
@@ -407,6 +551,7 @@ def test_every_insert_site_has_an_exhibited_completion_at_shortest_plus_two():
         found = target.shortest_completion(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes, node_cap=100_000,
+            objective="moves",
         )
         if found.moves is None:
             continue
@@ -439,6 +584,7 @@ def test_the_committed_block_target_is_still_flat():
         found = target.shortest_completion(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes, node_cap=100_000,
+            objective="moves",
         )
         if found.moves is None:
             continue
@@ -448,7 +594,7 @@ def test_the_committed_block_target_is_still_flat():
         result = target.block_target(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes, block, found.moves,
-            node_cap=60_000, exhibit=False,
+            node_cap=60_000, exhibit=False, objective="moves",
         )
         if result.best_moves is None:
             continue

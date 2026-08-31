@@ -1740,10 +1740,142 @@ backward-generated witnesses.
 > measurable ranking gate, and the honest status is that the head is portable and
 > unproven.
 
+> ### That experiment was run, and both halves of the diagnosis were wrong in detail
+>
+> Artifacts in `artifacts/m1-growth/`; modules
+> `research/experiments/m1_growth.py` and `m1_growth_run.py`, driven by the
+> retargeted `m1_target.shortest_completion`.
+>
+> **First, the objective.** The block above scores the *shortest-moves*
+> completion, and §2.1 rejects exactly that: the campaign objective is
+> lexicographic `(cc, moves)`. `m1_target` now defaults to `objective="lex"` and
+> keeps `objective="moves"` so the table above stays reproducible. Re-run on the
+> **same** 185 held-out states, both objectives at once:
+>
+> | | shortest moves | `(cc, moves)` |
+> |---|---:|---:|
+> | states with an `INSERT` in the target | 0 of 200 | **1 of 185** |
+> | mean crossing changes at the optimum | 0.676 | **0.632** |
+> | mean moves at the optimum | 8.173 | 8.211 |
+> | states where the two optima differ | — | **7** |
+> | `kind_prior` recall@1 | 0.978 | 0.978 |
+> | `growth_aware` recall@1 | 0.995 | 0.984 |
+> | search seconds, one core | 385 | 292 |
+> | states left undetermined by the node cap | 19 | 34 |
+> | target sites replayed / selected | 570 / 570 | 524 / 524 |
+>
+> So the objective **was** a real defect — under shortest moves the `INSERT`
+> block is empty by the counting identity, and under `(cc, moves)` it is not —
+> and it was **not the binding one**. Retargeting alone moves the measured rate
+> from 0.000 to 0.005. The move-ordered optimum spends a crossing change it did
+> not have to on 7 of 185 states, which is §2.1's inversion at small scale.
+>
+> The lexicographic search is affordable only because of an admissible heuristic
+> on its first component: a **certified** lower bound on `u` from
+> `lower_bounds.computed_claims` (~2.5 ms). It was tight — `c* == L` — at 185 of
+> 185 states, and where `L` exceeds the budget the search returns *proved
+> infeasible* rather than *capped*. An unsound bound would be caught rather than
+> believed: reaching the unknot below it raises.
+>
+> **Second, the corpus.** The claim above — "the witness therefore never contains
+> an `INSERT`" — is false as stated. The forward walk also **reduces** and
+> **destabilises**, so **1,123 of 1,162** generated candidates carry a witness
+> that does contain a growth move. What the corpus lacked was never growth in the
+> witness; it was growth that is **necessary**, and that is a different property,
+> measured differently:
+>
+> ```text
+> c_shrink(W) = min crossing changes over completions that never INSERT or STABILIZE
+> c_full(W)   = min crossing changes over all completions, inside a growth cap
+> ```
+>
+> `c_full <= c_shrink` always; `c_full < c_shrink` **is** "growth is required",
+> and `c_shrink - c_full` is a difficulty score. An instance is kept only when the
+> shrink side **exhausted** — a capped search bounds from above and orders
+> nothing — and the cheaper completion replays through `UnknotWitness.from_actions`
+> and is checked to contain a growth move, which a growth-free completion at that
+> cost could not.
+>
+> | family | seed `L` | `k` | `l` | measured | accepted | acceptance |
+> |---|---:|---:|---:|---:|---:|---:|
+> | `churn-unknot-k1-long` | 0 | 1 | 40 | 300 | 17 | **0.057** |
+> | `churn-unknot-k1` | 0 | 1 | 20 | 300 | 14 | **0.047** |
+> | `churn-unknot-k2` | 0 | 2 | 20 | 300 | 5 | 0.017 |
+> | `churn-T(2,5)-k2` | 2 | 2 | 20 | 60 | 0 | 0.000 |
+> | `shrink-T(2,11)` | 5 | 3 | 3 | 35 | 0 | 0.000 |
+> | `shrink-P(3,g=4)` | 4 | 3 | 3 | 47 | 0 | 0.000 |
+> | `control-unknot` (§4.1) | 0 | 2 | 4 | 60 | 0 | 0.000 |
+> | `control-T(2,11)` (shipped walk) | 5 | 3 | 8 | 60 | 0 | 0.000 |
+>
+> **36 accepted of 1,162**, gap distribution `{1: 33, 2: 3}`, mean 1.31 growth
+> moves per accepted witness, **36 of 36 replayed** and **36 of 36 still accepted
+> with both node caps multiplied by four**. 56 candidates were left undetermined
+> by a cap and are counted in their own row, never as either outcome.
+>
+> **The construction that works, and the one that does not.** The obvious
+> inverse of the defect — a long certified seed with a short drift target, so the
+> forward walk *shrinks* and the reversed witness must grow — accepts **nothing**.
+> The reason is measured rather than guessed: **1,070 of 1,162 candidates are
+> settled with no search at all** because the certified floor already equals
+> `c_shrink`, and `c_full >= u >= L = c_shrink` closes the question. What works
+> instead is a long **churning** walk from the *unknot*: commute and braid until
+> two letters meet, change one, reduce the pair — the reduction destroys the
+> crossing a cheap change would have used, and reversing it is an `INSERT` that
+> has to happen **before** the change.
+>
+> **The consequence for §4.1b, stated plainly.** Every accepted instance has
+> `c_full` in `{0, 1}`: they are unknots and one-change knots wearing hard
+> diagrams. **The gap lives in the diagram, not in the knot.** Seeding harder is
+> §4.1b's answer to the *label* being loose, and it is the wrong lever here — a
+> certified-hard seed makes `L` large, and a large `L` is exactly what proves the
+> gap away. The two difficulty axes are independent and a corpus for M1 needs
+> both.
+>
+> **What this changes for M1's gate.** The corpus now contains the phenomenon
+> §Status says the target demands, at 3.1% acceptance and ~4 s per accepted
+> instance from the cheapest family. It does **not** yet make the `INSERT` block
+> gateable at scale: 36 instances is a demonstration, not a gate, and the largest
+> gap measured is 2 against the target's five changes.
+>
+> ### Where to look for both axes at once: the target's own family
+>
+> The two axes are not merely independent — the measurement shows *why* they
+> fight, and that points at the construction neither family above tried.
+>
+> A gap needs `c_shrink > c_full >= L`. If the certified floor is **tight**
+> (`c_shrink == L`) no gap can exist, which is exactly why 1,070 of 1,162
+> candidates were settled without a search and why every certified-hard seed
+> accepted nothing. **A gap requires a loose floor.** The accepted instances are
+> loose-floor cases at the bottom of the scale: `L = 0`, `c_shrink` 1 or 2.
+>
+> **The target is a loose-floor case at the top of the scale.** §1.2 measured
+> `7_1 # m(7_1)` at certified `L = 2` against a published `u <= 5`, and gave the
+> reason: `K # m(K)` is slice, so `g_4 = 0` and `tau = s = 0`, and every 4-genus
+> bound vanishes *structurally* rather than by accident. The Montesinos
+> obstruction on `Z/7 (+) Z/7` is the only bound that fires at all.
+>
+> That is the recipe. **Churn from `K # m(K)` seeds.** The family gives a
+> structurally loose floor — so gaps are not foreclosed — while `u` scales with
+> the choice of `K`, up to `2 u(K)`. It is the only construction identified so far
+> that can carry high crossing-change difficulty and required growth at the same
+> time, and it is the target's own family, which makes the resulting corpus a
+> rehearsal for the thing rather than an analogy to it.
+>
+> Two cautions carried from elsewhere in this note. §4.3's quarantine binds
+> hardest here, since seeds of the form `K # m(K)` sit next to the exam; and
+> `connected_summands` splits such a word unaided (§1.2), so any instance must be
+> checked not to be solvable by the summand-wise shortcut §1.4 warns about. The next step is volume on
+> `churn-unknot-k1-long` plus a `growth_aware`-versus-head comparison scored on
+> the states those instances carry — and that is a corpus question, not a head
+> question.
+
 **The revised gate.** Three changes, each answering one of the failures above:
 
-* **Target the shortest known completion, not feasibility.** This removes the
-  `m*+2` cliff that made the old target vacuous.
+* **Target the optimal known completion, not feasibility.** This removes the
+  `m*+2` cliff that made the old target vacuous. **Corrected above:** "shortest"
+  here meant shortest *in moves*, which is the objective §2.1 rejects; the target
+  is now the lexicographic `(cc, moves)` optimum, and `objective="moves"` is kept
+  only so the table above stays reproducible.
 * **Report recall@1, split by region and word length.** On the tight target
   `growth_aware` reaches recall@1 = 0.941 against chance 0.157, so recall@10 has
   no headroom left to measure.

@@ -50,7 +50,7 @@ import json
 import sys
 import time
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import zip_longest
 from pathlib import Path
 
@@ -319,7 +319,7 @@ def _measure_insert_block(
     measured = block_target(
         spec, state_word, strands, budget, inserts, shortest_moves,
         growth=args.growth, node_cap=args.block_node_cap, successors=succ,
-        exhibit=False,
+        exhibit=False, objective=args.objective,
     )
     exhibited = 0
     all_two = True
@@ -433,6 +433,7 @@ def evaluate(built: dict, split: dict, args, started: float) -> dict:
             growth=args.growth,
             node_cap=node_cap,
             successors=succ,
+            objective=args.objective,
         )
         seconds["search"] += time.monotonic() - begun
         if found.moves is None or not found.first_actions:
@@ -467,11 +468,7 @@ def evaluate(built: dict, split: dict, args, started: float) -> dict:
         replayed = exhibit_target(
             spec, site.state.word, site.state.strands,
             site.remaining_crossing_changes,
-            type(found)(
-                found.moves, tuple(chosen), found.legal_actions,
-                found.expanded, found.rounds, found.complete, found.reason,
-                found.growth, found.node_cap, found.candidates, found.commit,
-            ),
+            replace(found, first_actions=tuple(chosen)),
         )
         seconds["exhibit"] += time.monotonic() - begun
         stats["target_sites_claimed"] += len(claimed)
@@ -1477,7 +1474,10 @@ def render(payload: dict, args) -> str:
     )
     add("")
     add(
-        f"**Run metadata.** seed {payload['run_metadata']['seed']}, eval fraction "
+        f"**Run metadata.** seed {payload['run_metadata']['seed']}, objective "
+        f"`{payload['run_metadata']['objective']}` (note 22 §2.1's objective is "
+        f"`lex`; this table is the published `moves` one unless it says "
+        f"otherwise), eval fraction "
         f"{payload['run_metadata']['eval_fraction']}, growth cap "
         f"+{payload['run_metadata']['growth_cap']}, positional geometry "
         f"`{payload['run_metadata']['positional_geometry']}`, "
@@ -1558,6 +1558,14 @@ def main() -> None:
     parser.add_argument("--states-per-instance", type=int, default=4)
     parser.add_argument("--eval-fraction", type=float, default=0.5)
     parser.add_argument("--growth", type=int, default=3)
+    #: The published `artifacts/m1-gate` table was taken under `moves`, and its
+    #: prose is an argument about that objective, so `moves` stays the default
+    #: here and the run records which one it used.  Note 22 §2.1's objective is
+    #: `lex`, which is `m1_target`'s default and what
+    #: `research/experiments/m1_growth.py` reports beside this one.
+    parser.add_argument(
+        "--objective", choices=["moves", "lex"], default="moves"
+    )
     parser.add_argument("--commutation-window", type=int, default=8)
     parser.add_argument(
         "--exhibit-per-state", type=int, default=4,
@@ -1619,6 +1627,7 @@ def main() -> None:
     payload["head_status"] = result["head_status"]
     payload["run_metadata"] = {
         "seed": args.seed,
+        "objective": args.objective,
         "eval_fraction": args.eval_fraction,
         "growth_cap": args.growth,
         "positional_geometry": args.head_geometry,

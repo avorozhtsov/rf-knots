@@ -27,14 +27,46 @@ gating on the `INSERT` block.  `BlockTarget`'s docstring carries the argument an
 the numbers; the short form is that `moves = (L + n - 1)/2 + 2i + 2s + c` exactly,
 so an insertion costs two moves nothing pays back, and `REDUCE(p)` undoes
 `INSERT(p, ...)`, so every `INSERT` site reaches the unknot in exactly `m* + 2`.
-The block is flat under any target derived from distance to the unknot -- so
+The block is flat under a target derived from *move* distance to the unknot -- so
 `score_state` reports it, and reports the residual `rest@k` beside it, and the
 driver gates on neither alone.
+
+## The retarget: `(crossing_changes, moves)`, lexicographically
+
+**The flatness above is a property of the objective, not of the move set.**  §2.1
+rejects `A*cc + B*moves` as a scalar and asks for the lexicographic comparison
+`(cc, moves)` with `A = 100_000 > M = 10_000` wherever a scalar is forced -- and
+the previous target here scored *shortest moves*, which is the objective the
+campaign threw out.  Under shortest-moves the `INSERT` block is provably
+uninteresting from the counting identity; under `(cc, moves)` an insertion that
+removes even one crossing change wins outright, because `cc` dominates
+absolutely.  `objective="lex"` is now the default and `objective="moves"` is kept
+so the published `artifacts/m1-gate` table stays reproducible; the two are never
+mixed in one column.
+
+`shortest_completion` therefore returns **both** components of the optimum:
+`crossing_changes` is `c*(s)` and `moves` is the fewest moves among completions
+achieving it.  Two things make the lexicographic search affordable:
+
+* the priority is the pair `(max(used, floor), moves + move_bound)`, which is
+  consistent for exactly the same reason the scalar one was -- the first
+  component never decreases along an edge and the second is the old consistent
+  `f` -- so A* may still test the goal on pop and the first-action mask is still
+  exact;
+* `floor` is a **certified** lower bound on `u` of the starting state
+  (`certified_change_floor`, from `rf_knots.lower_bounds.computed_claims`, so a
+  theorem rather than a table row).  Without it the search has to exhaust the
+  whole `cc < c*` region to prove `c*`; with a tight floor it stops at the first
+  goal it pops, and costs what the move-ordered search cost.  An unsound floor
+  would be caught rather than believed: reaching the unknot with fewer changes
+  than the floor raises.
 
 **Nothing here ever records a site as bad.**  A search that hits its cap leaves
 the state `undetermined` and the state is dropped from the gate and counted;
 `aplus.py`'s rule -- absent is unexplored, never negative -- is why the target is
-only ever called *shortest known*.
+only ever called *optimal known* -- shortest known moves under
+`objective="moves"`, and the lexicographically least known `(cc, moves)` under
+`objective="lex"`.
 """
 
 from __future__ import annotations
@@ -87,17 +119,22 @@ def move_bound(length: int, strands: int) -> int:
     return max(strands - 1, -(-(length + strands - 1) // 2))
 
 
-# -- the shortest-completion target --------------------------------------------
+# -- the optimal-completion target ---------------------------------------------
 
 
 @dataclass(frozen=True)
 class ShortestCompletion:
-    """`m*(s)` and every site that starts a completion of that length.
+    """The optimum `(c*(s), m*(s))` and every site that starts a completion of it.
 
     `moves is None` means **no completion was found under the caps**, which is a
     statement about the search and never about the state.  `complete` is True
-    only when the search that produced `first_actions` exhausted its `f <= m*`
+    only when the search that produced `first_actions` exhausted its `f <= f*`
     layer, which is what makes the set exact for the searched subgraph.
+
+    `crossing_changes` is the first component of the optimum under
+    `objective="lex"`, and is simply the change count of the shortest completion
+    under `objective="moves"` -- under that objective it is *not* minimised and
+    must not be read as `c*`.
     """
 
     moves: int | None
@@ -114,10 +151,22 @@ class ShortestCompletion:
     candidates: tuple[int, ...] = ()
     #: True when no path was allowed to re-enter the starting state.
     commit: bool = False
+    #: "lex" -- minimise `(crossing_changes, moves)`; "moves" -- minimise moves
+    #: subject to the crossing-change budget, which is what the published
+    #: `artifacts/m1-gate` run scored.
+    objective: str = "lex"
+    #: The optimum's crossing-change count; `None` alongside `moves is None`.
+    crossing_changes: int | None = None
+    #: The certified lower bound on `u` that the lexicographic search used as its
+    #: admissible first-component heuristic.  Zero is always sound.
+    crossing_change_floor: int = 0
 
     def to_dict(self) -> dict:
         return {
+            "objective": self.objective,
             "shortest_completion_moves": self.moves,
+            "optimal_crossing_changes": self.crossing_changes,
+            "crossing_change_floor": self.crossing_change_floor,
             "candidates": len(self.candidates),
             "commit": self.commit,
             "first_actions": list(self.first_actions),
@@ -127,6 +176,34 @@ class ShortestCompletion:
             "complete": self.complete,
             "reason": self.reason,
         }
+
+
+LEX = "lex"
+MOVES = "moves"
+OBJECTIVES = (LEX, MOVES)
+
+
+def certified_change_floor(word: Word, strands: int) -> int:
+    """A **certified** lower bound on `u` of the closure, or 0 if none is free.
+
+    `rf_knots.lower_bounds.computed_claims` computes from the word alone -- the
+    Murasugi signature bound, the Montesinos cyclic obstruction and the
+    Ozsvath-Szabo `tau` bound -- so every value is a theorem and never a table
+    row, which is the rule §4.1b's second hazard states.  Measured at ~2.5 ms per
+    state, and it is what makes the lexicographic search affordable: it is the
+    admissible heuristic on the first component.
+
+    Returns 0 rather than raising when the backend is unavailable.  Zero is sound
+    -- it is the trivial bound -- and it costs search time, not correctness.
+    """
+    from rf_knots import lower_bounds
+
+    try:
+        claims = lower_bounds.computed_claims(tuple(word), int(strands))
+    except Exception:  # pragma: no cover - optional backend
+        return 0
+    value = lower_bounds.strongest(claims)
+    return int(value) if value else 0
 
 
 def _successors_for(spec: ActionSpec, successors: Successors | None) -> Successors:
@@ -139,64 +216,88 @@ def _successors_for(spec: ActionSpec, successors: Successors | None) -> Successo
     return call
 
 
+def _goal(cost: tuple[int, int] | None, changes: int) -> tuple[int, int] | None:
+    """`(crossing changes, moves)` of the optimum, whichever objective ordered it."""
+    return None if cost is None else (changes, cost[1])
+
+
 def _f_bounded_pass(
     spec: ActionSpec,
     word: Word,
     strands: int,
     crossing_change_budget: int,
-    f_limit: int,
+    f_limit: tuple[int, int],
     length_cap: int,
     node_cap: int,
     successors: Successors,
     index_of: dict[int, int],
     forbidden: frozenset[tuple[Word, int]],
-) -> tuple[int | None, int, int | None, int, bool]:
+    lex: bool,
+    change_floor: int,
+) -> tuple[tuple[int, int] | None, int, tuple[int, int] | None, int, bool]:
     """One A* pass restricted to `f <= f_limit`, propagating first-action masks.
 
-    Returns `(goal_moves, goal_mask, next_f, expanded, hit_cap)`.  `next_f` is the
-    smallest `f` the pass refused, so the caller can raise the limit to it and
-    re-run; `None` means the whole `f <= f_limit` component was exhausted.
+    Returns `(goal_cost, goal_mask, next_f, expanded, hit_cap)`.  `goal_cost` is
+    the pair `(crossing_changes, moves)`; `next_f` is the smallest `f` the pass
+    refused, so the caller can raise the limit to it and re-run, and `None` means
+    the whole `f <= f_limit` component was exhausted.
 
-    `index_of` doubles as the restriction on the first move: only actions it
-    names may leave the start, which is what turns this into a search over one
-    kind block.  `forbidden` names states no path may enter, which is what turns
-    it into a search that has *committed* to its first move.
+    **The priority.**  `f = (max(used, change_floor), moves + move_bound)` under
+    `lex`, and `(0, moves + move_bound)` otherwise -- so the scalar case is the
+    lexicographic one with its first component held constant, and one code path
+    serves both.  Both components are consistent: the first never decreases along
+    an edge because `used` never decreases, and the second is the old `f`, since
+    `move_bound` moves by at most one per move.  A maximum of consistent
+    functions is consistent, so lexicographic order on the pair is too.
 
-    Correctness of the mask, which is the only subtle part.  `move_bound`
-    is consistent -- it is the maximum of two functions that each move by at most
-    one per move -- so for any edge `u -> v` on an optimal path,
-    `f(u) <= f(v)`, and popping in `(f, g)` order with `g` ascending therefore
-    pops every optimal predecessor of `v` strictly before `v`.  The mask read at
-    `v`'s pop is complete.
+    Correctness of the mask, which is the only subtle part.  Consistency gives
+    `f(u) <= f(v)` for any edge `u -> v` on an optimal path, and the heap breaks
+    ties on `f` by `g = (used, moves)` ascending -- which every edge strictly
+    increases, since it adds `(0, 1)` or `(1, 1)`.  So every optimal predecessor
+    of `v` pops strictly before `v`, and the mask read at `v`'s pop is complete.
     """
     start = (word, strands, 0)
     best: dict[tuple[Word, int, int], int] = {start: 0}
     masks: dict[tuple[Word, int, int], int] = {start: 0}
     settled: set[tuple[Word, int, int]] = set()
     counter = 0
-    heap: list[tuple[int, int, int, tuple[Word, int, int]]] = [
-        (move_bound(len(word), strands), 0, counter, start)
+    floor = change_floor if lex else 0
+    heap: list[tuple[int, int, int, int, int, tuple[Word, int, int]]] = [
+        (floor, move_bound(len(word), strands), 0, 0, counter, start)
     ]
     expanded = 0
-    goal_moves: int | None = None
+    goal_cost: tuple[int, int] | None = None
     goal_mask = 0
-    next_f: int | None = None
+    goal_changes = 0
+    next_f: tuple[int, int] | None = None
     while heap:
-        f, g, _tie, key = heapq.heappop(heap)
-        if goal_moves is not None and f > goal_moves:
+        f_changes, f_moves, _used, g, _tie, key = heapq.heappop(heap)
+        if goal_cost is not None and (f_changes, f_moves) > goal_cost:
             break
         if key in settled or best.get(key, -1) < g:
             continue
         settled.add(key)
         current, active, used = key
         if not current and active == 1:
-            if goal_moves is None or g < goal_moves:
-                goal_moves, goal_mask = g, masks[key]
-            elif g == goal_moves:
+            if lex and used < floor:  # pragma: no cover - a false certificate
+                raise AssertionError(
+                    f"reached the unknot in {used} crossing changes from a state "
+                    f"whose certified lower bound is {floor}"
+                )
+            #: The ordering key, which under `moves` must not see `used` at all
+            #: -- two completions of equal length tie however many changes they
+            #: spend, and their first actions are pooled.  `goal_changes` is the
+            #: fewest changes among the completions that attain the optimum, and
+            #: under `lex` it *is* the optimum's first component.
+            here = (used, g) if lex else (0, g)
+            if goal_cost is None or here < goal_cost:
+                goal_cost, goal_mask, goal_changes = here, masks[key], used
+            elif here == goal_cost:
                 goal_mask |= masks[key]
+                goal_changes = min(goal_changes, used)
             continue
         if expanded >= node_cap:
-            return goal_moves, goal_mask, next_f, expanded, True
+            return _goal(goal_cost, goal_changes), goal_mask, next_f, expanded, True
         expanded += 1
         mask_here = masks[key]
         at_start = key == start
@@ -214,7 +315,10 @@ def _f_bounded_pass(
             child = (next_word, next_strands, changes)
             if child in settled:
                 continue
-            bound = moves + move_bound(len(next_word), next_strands)
+            bound = (
+                (changes if changes > floor else floor) if lex else 0,
+                moves + move_bound(len(next_word), next_strands),
+            )
             if bound > f_limit:
                 next_f = bound if next_f is None else min(next_f, bound)
                 continue
@@ -224,10 +328,10 @@ def _f_bounded_pass(
                 best[child] = moves
                 masks[child] = mask
                 counter += 1
-                heapq.heappush(heap, (bound, moves, counter, child))
+                heapq.heappush(heap, (*bound, changes, moves, counter, child))
             elif moves == recorded:
                 masks[child] = masks[child] | mask
-    return goal_moves, goal_mask, next_f, expanded, False
+    return _goal(goal_cost, goal_changes), goal_mask, next_f, expanded, False
 
 
 def shortest_completion(
@@ -240,33 +344,70 @@ def shortest_completion(
     successors: Successors | None = None,
     block: Sequence[int] | None = None,
     commit: bool = False,
+    objective: str = LEX,
+    change_floor: int | None = None,
 ) -> ShortestCompletion:
-    """Every site that begins a shortest completion, in one search.
+    """Every site that begins an optimal completion, in one search.
+
+    Under `objective="lex"` -- the default, and §2.1's objective -- the optimum is
+    the lexicographic minimum of `(crossing_changes, moves)`: fewest crossing
+    changes first, then fewest moves among those.  Under `objective="moves"` it is
+    the fewest moves subject to the crossing-change budget, which is what the
+    published `artifacts/m1-gate` table scored and what the counting identity in
+    `BlockTarget` makes flat on the `INSERT` block.
 
     The crossing-change budget is the witness's remaining one -- that is the
-    `u <= k` constraint and it is what makes the problem the problem.  The move
-    budget is deliberately **not** the witness's: the shortest completion is
-    whatever it is, and the old gate's slack is exactly what made it vacuous.
+    `u <= k` constraint and it is what makes the problem the problem.  A witness
+    achieving it exists by construction, so under `lex` the budget never binds the
+    optimum; it only bounds the search.  The move budget is deliberately **not**
+    the witness's: the shortest completion is whatever it is, and the old gate's
+    slack is exactly what made it vacuous.
+
+    `change_floor` is the admissible first-component heuristic and must be a
+    *certified* lower bound on `u` of `(word, strands)`; `None` computes one with
+    `certified_change_floor`, and `0` disables it at a cost in search, never in
+    correctness.  It is ignored under `objective="moves"`.
 
     `block` restricts the first move to one kind block, so the result is the
-    shortest completion *through that block* and the set is its argmin.
-    `commit` additionally forbids every path from re-entering the starting state,
-    which is what makes the `INSERT` block a real question rather than a
-    degenerate one -- see `BlockTarget`.
+    optimum *through that block* and the set is its argmin.  `commit`
+    additionally forbids every path from re-entering the starting state, which is
+    what makes the `INSERT` block a real question rather than a degenerate one --
+    see `BlockTarget`.
 
     `growth` caps the word length at `len(word) + growth`, following
     `aplus.bounded_completion`; a completion that has to grow the diagram further
     is outside the searched subgraph and this is a limit of the target, recorded
-    as such.  The returned set is therefore *shortest known*: exact for the
-    searched subgraph, an upper bound on the true shortest length.
+    as such.  The returned set is therefore *optimal known*: exact for the
+    searched subgraph, an upper bound on the true optimum.
     """
+    if objective not in OBJECTIVES:
+        raise ValueError(f"objective must be one of {OBJECTIVES}, not {objective!r}")
+    lex = objective == LEX
     succ = _successors_for(spec, successors)
     legal = tuple(action for action, _w, _s in succ(word, strands))
     candidates = tuple(block) if block is not None else legal
     index_of = {action: bit for bit, action in enumerate(candidates)}
     forbidden = frozenset({(word, strands)}) if commit else frozenset()
     length_cap = min(len(word) + growth, spec.max_len)
-    limit = move_bound(len(word), strands)
+    floor = 0
+    if lex:
+        floor = (
+            certified_change_floor(word, strands) if change_floor is None
+            else int(change_floor)
+        )
+        if floor > crossing_change_budget:
+            #: A **proof**, not a cap.  `floor` is a certified lower bound on
+            #: `u`, and any completion spends at least `u` crossing changes, so
+            #: no completion fits inside a budget below it.  `complete` is True
+            #: and `moves` is None: infeasible-and-proved, which is a different
+            #: fact from infeasible-as-far-as-the-search-got and is why the two
+            #: carry different `reason` strings.
+            return ShortestCompletion(
+                None, (), tuple(action for action, _w, _s in succ(word, strands)),
+                0, 0, True, "certified-floor-exceeds-budget", growth, node_cap,
+                candidates, commit, objective, None, floor,
+            )
+    limit = (floor, move_bound(len(word), strands))
     total = 0
     rounds = 0
     while True:
@@ -282,25 +423,27 @@ def shortest_completion(
             succ,
             index_of,
             forbidden,
+            lex,
+            floor,
         )
         total += expanded
         if hit_cap:
             return ShortestCompletion(
                 None, (), legal, total, rounds, False, "node-cap", growth, node_cap,
-                candidates, commit,
+                candidates, commit, objective, None, floor,
             )
         if goal is not None:
             firsts = tuple(
                 sorted(candidates[bit] for bit in range(len(candidates)) if mask >> bit & 1)
             )
             return ShortestCompletion(
-                goal, firsts, legal, total, rounds, True, "found", growth, node_cap,
-                candidates, commit,
+                goal[1], firsts, legal, total, rounds, True, "found", growth, node_cap,
+                candidates, commit, objective, goal[0], floor,
             )
         if next_f is None:
             return ShortestCompletion(
                 None, (), legal, total, rounds, True, "exhausted", growth, node_cap,
-                candidates, commit,
+                candidates, commit, objective, None, floor,
             )
         limit = next_f
 
@@ -395,6 +538,16 @@ def exhibit_target(
         return {}
     out: dict[int, int] = {}
     length_cap = min(len(word) + result.growth, spec.max_len)
+    #: Under `lex` the tail is searched inside the optimum's *own* change count,
+    #: not the state's budget.  Fewer moves at that count would contradict `m*`
+    #: and fewer changes would contradict `c*`, so the min-moves path under this
+    #: budget is exactly the optimum's tail -- and the replay below checks it
+    #: rather than trusting the argument.
+    budget = (
+        result.crossing_changes
+        if result.objective == LEX and result.crossing_changes is not None
+        else crossing_change_budget
+    )
     for action in result.first_actions:
         next_word, next_strands = reference.apply(spec, word, strands, action)
         is_change = spec.decode(action)[0] == CROSSING_CHANGE
@@ -402,7 +555,7 @@ def exhibit_target(
             spec,
             next_word,
             next_strands,
-            crossing_change_budget - int(is_change),
+            budget - int(is_change),
             result.moves - 1,
             length_cap,
             node_cap=node_cap,
@@ -415,11 +568,20 @@ def exhibit_target(
                 f"target site {spec.describe(action)} replayed at {witness.moves} "
                 f"moves, but the target claims {result.moves}"
             )
-        if witness.crossing_changes > crossing_change_budget:
+        if witness.crossing_changes > budget:
             raise AssertionError(
                 f"target site {spec.describe(action)} spends "
                 f"{witness.crossing_changes} crossing changes over a budget of "
-                f"{crossing_change_budget}"
+                f"{budget}"
+            )
+        if (
+            result.objective == LEX
+            and witness.crossing_changes != result.crossing_changes
+        ):
+            raise AssertionError(
+                f"target site {spec.describe(action)} replayed at "
+                f"{witness.crossing_changes} crossing changes against a claimed "
+                f"optimum of {result.crossing_changes}"
             )
         out[action] = witness.moves
     return out
@@ -448,7 +610,9 @@ class BlockTarget:
     identity pays back, and an `INSERT` reaches a shortest completion only by
     buying back two length-preserving moves.  Measured over 212 states of three
     configurations, at word lengths 3 to 21 and 2 to 6 strands, that happened at
-    **no state**: the shortest-completion target contains zero `INSERT` sites.
+    **no state**: the shortest-*moves* target contains zero `INSERT` sites.  That
+    is a statement about the move objective and about nothing else, and it is
+    what `objective="lex"` exists to stop being the only thing measured.
 
     Worse than empty, the block is *degenerate*.  `INSERT(p, g, s)` splices a
     cancelling pair before position `p` and `REDUCE(p)` deletes it again --
@@ -524,6 +688,8 @@ def block_target(
     node_cap: int = 20_000,
     successors: Successors | None = None,
     exhibit: bool = True,
+    objective: str = LEX,
+    change_floor: int | None = None,
 ) -> BlockTarget:
     """The committed shortest completion through one kind block, in one search.
 
@@ -543,11 +709,18 @@ def block_target(
         successors=successors,
         block=block,
         commit=True,
+        objective=objective,
+        change_floor=change_floor,
     )
     exhibited: dict[int, int] = {}
     if exhibit and found.moves is not None:
         forbidden = frozenset({(word, strands)})
         length_cap = min(len(word) + growth, spec.max_len)
+        budget = (
+            found.crossing_changes
+            if objective == LEX and found.crossing_changes is not None
+            else crossing_change_budget
+        )
         for action in found.first_actions:
             is_change = spec.decode(action)[0] == CROSSING_CHANGE
             next_word, next_strands = reference.apply(spec, word, strands, action)
@@ -555,7 +728,7 @@ def block_target(
                 spec,
                 next_word,
                 next_strands,
-                crossing_change_budget - int(is_change),
+                budget - int(is_change),
                 found.moves - 1,
                 length_cap,
                 node_cap=node_cap,
@@ -1115,6 +1288,10 @@ def assign_split(
 
 __all__ = [
     "BASELINES",
+    "LEX",
+    "MOVES",
+    "OBJECTIVES",
+    "certified_change_floor",
     "BlockTarget",
     "block_target",
     "undo_completion",
