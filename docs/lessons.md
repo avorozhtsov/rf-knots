@@ -131,4 +131,19 @@ may since have moved; the lesson is the durable part.
   with the bound computed twice: once to know what optimal was, once to certify the
   answer met it. The bound makes the result a theorem; it does not have to be the
   thing that guides the search.
+- **`Tensor.gather`'s backward is a `scatter_add`, and on MPS that is 28x slower
+  than `F.embedding`.** A per-site head gathering 10,598 rows from a 9-row learned
+  table spent 19.7 ms in one backward call against 0.70 ms for the identical
+  arithmetic written as `F.embedding` over a flattened table. It was the entire
+  backward: 235 ms, of which 228 ms vanished when the parameters were frozen —
+  which is the diagnostic, since a forward-bound cost does not move when you stop
+  computing gradients. The rewrite took the MPS backward 235 -> 16 ms and the CPU
+  forward 3.5 -> 1.5 ms. Any head that gathers from a small learned table and
+  trains on MPS will hit this.
+- **An amortised benchmark number is not a per-call number.** A 219 us encoder
+  forward measured at batch 256 was quoted as the cost of one forward, making a
+  new head look free against it. One batch-1 forward at the same shape is
+  ~1.6-2.0 ms, and the head is ~4x the encoder once both are batched. Record the
+  batch size beside every throughput figure, or the comparison it invites will be
+  the wrong one.
 - Negative results belong in commit messages and notes, not in dead code.

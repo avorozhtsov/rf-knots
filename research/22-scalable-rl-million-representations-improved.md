@@ -1385,14 +1385,43 @@ kind (9 of them), and `W`, `b`, `e` are shared by every site. The four
 positionless actions (`DESTABILIZE`, two `STABILIZE`s, `PASS`) get four learned
 vectors scored against the global context the same way.
 
-**Is the score just a scalar product? Start with yes.** `<e_t, W h_s>` is one
-projection plus a dot product — about `d` multiplies per site, so ~1 MFLOP across
-all 10,598 sites of the target's long word, which is free next to the encoder
-pass that produced `h`. It is the same form a pointer network or an attention
-logit uses. Condition it on the global context and the remaining budgets by FiLM
-on `h_s` rather than by concatenation, so the per-site cost stays a dot product.
-Only if the M1 gate fails should this become an MLP over `[h_s; g; e_t]` — that
-is ~100x the per-site cost and should have to earn it.
+**Is the score just a scalar product? Yes — and it is built.**
+`<e_t, W h_s> + b_t`, with `u_t = W^T e_t` precomputed for the nine kinds so the
+per-site work stays a dot product. Generator and sign enter as **FiLM on `h_s`**
+(a diagonal bilinear form, so "insert `sigma_3` *here*" is expressible, not just a
+per-generator bias); context and budgets are one `(gamma, beta)` per *state*,
+folded into the nine kind directions, so they never become a per-site tensor.
+That is the concrete reason for FiLM over concatenation.
+
+> **Measured, and it corrects the draft's cost claim.** At the target's 10,598
+> sites (95.9% `INSERT`): forward **1.51 ms CPU / 1.92 ms MPS**, i.e. 0.14–0.18 us
+> per site.
+>
+> * **Per state, in a search loop: free enough** — 0.7–1.1x one encoder forward.
+> * **Amortised over a training batch: not free.** The encoder is `O(B*L)` and
+>   falls to 207 us per state; the head is `O(B*S)` and stays ~900 us per state,
+>   so **~4x the encoder** in batched training. The draft's "free next to the
+>   encoder pass" was true only in the search loop, and it rested on a
+>   mis-citation: the 219 us figure from M0.4 is a *batch-256 amortised* number,
+>   while a single batch-1 encoder forward at `(256, 21)` is ~1.6–2.0 ms.
+>
+> Against the flat head it deletes (11.7 us/state on MPS) it is ~80x the wall
+> clock for ~5x *fewer* FLOPs — it runs ~7x below roofline because it is
+> lookup-bound, not arithmetic-bound. The site table is a product space, so the
+> `INSERT` block can become a single GEMM; that is the named next step if the
+> batched cost bites.
+
+**Parameter independence, proven rather than argued.** **49,833 parameters at
+every size**, against the flat head's 112,132 / 323,204 / 1,092,996 /
+**2,483,588**. A test enumerates the permitted dimensions and fails on any
+parameter dimension not drawn from `(width, embedding_dim, num_kinds, budget_dim,
+boundary_clip)`; one instance scores both `(8, 3)` and `(1024, 257)`. **And a
+TIER1 `state_dict` loads into a fresh head and scores bit-identically at
+`(512, 24)`** — the exact transfer M0.4 measured failing with
+`size mismatch [1156,96] vs [25604,96]`. That failure is now fixed.
+
+Only if the gate fails should the scorer become an MLP over `[h_s; g; e_t]` —
+~100x the per-site cost, and it should have to earn it.
 
 **Which token is `h_s`.** A site is a *(position, generator)* pair for `INSERT`
 and a position for the rest — which is exactly a **cell of the raster** of
