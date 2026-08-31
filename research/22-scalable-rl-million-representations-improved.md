@@ -30,6 +30,8 @@ several are used before the section that introduces them.
 | `l` | length of the type-preserving (zero-CC) isotopy walk *between* two consecutive crossing changes (§4.1) |
 | `R`, `R'` | a seed representation, and the representation generated from it (§4.1b) |
 | `L(K)` | a **certified** lower bound on `u(K)` — a theorem, never a table row (§1.2) |
+| `h(K)` | the network's **learned estimate of how many crossing changes still separate `K` from the unknot** — an estimate of `u(K)`. It is the `h` of an `f = g + h` best-first priority, with `g = ` changes already spent. Deliberately **not admissible**: it may overestimate, so the search proves upper bounds only (§3.1). Clamped below by `L(K)`, which is a theorem. |
+| `A_plus(s)` | the set of **known-good** action sites at state `s` — the target of the set-valued policy loss. Absent from it means unexplored, never wrong (§5.3). |
 | `cap` | the strict crossing-change budget a search is conditioned on; the target's is 5 (§1.4) |
 | `dose` | the compute budget of one search run — simulations, or beam width (§9) |
 | `A`, `M` | objective weight and internal move cap in `A*cc + moves`; M0 recommends `A = 100_000`, `M = 10_000` (§2.1) |
