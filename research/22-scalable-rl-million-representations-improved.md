@@ -1145,46 +1145,70 @@ premature.
 
 ### M1 — The per-site head (weeks) — **M0 verdict: feasible**
 
-**How it works today.** `src/rf_knots/actions.py` lays the action space out as a
-flat integer range with one slot per possible action — `REDUCE(p)`, `COMMUTE(p)`,
-`BRAID(p)`, `INSERT(p,g,s)`, `CROSSING_CHANGE(p)`, plus four singletons. Its width
-is therefore `3L + 2L(N-1) + 4 + L`, fixed by `(max_len, max_strands)`: **1,156
-slots** at TIER1 `(64, 8)` and **25,604** at `(512, 24)`. The policy head is a
-linear layer of exactly that width, so it has one independent weight column per
-slot.
+> **M1 is a change to the neural-network architecture** — specifically to the
+> policy head — together with the supervised training that justifies it. It is
+> the only milestone in this plan that changes the network's shape.
 
-**What M1 changes.** Replace that fixed output layer with a small **scorer** — a
-few layers — that takes the encoder's token for one *site* (see Notation: the
-position `p`, or `(p, g)` for `INSERT`), plus the global context and an embedding
-of the action kind, and returns one number. Run it once per legal site. The
-number of outputs becomes a property of the state; the number of parameters stops
-being one.
+**The proposal in one line.** Delete the fixed-width output layer. Score each
+legal action individually, with weights shared across all of them:
+
+```text
+today:   logits = Linear(d -> 25_604)(g)             one column per action slot
+M1:      logit(site s, kind t) = <e_t, W h_s> + b_t   one score per legal site
+         pi = softmax over the legal (s, t) pairs only
+```
+
+`h_s` is the encoder's token at site `s`, `e_t` a learned embedding of the action
+kind (9 of them), and `W`, `b`, `e` are shared by every site. The four
+positionless actions (`DESTABILIZE`, two `STABILIZE`s, `PASS`) get four learned
+vectors scored against the global context the same way.
+
+**Is the score just a scalar product? Start with yes.** `<e_t, W h_s>` is one
+projection plus a dot product — about `d` multiplies per site, so ~1 MFLOP across
+all 10,598 sites of the target's long word, which is free next to the encoder
+pass that produced `h`. It is the same form a pointer network or an attention
+logit uses. Condition it on the global context and the remaining budgets by FiLM
+on `h_s` rather than by concatenation, so the per-site cost stays a dot product.
+Only if the M1 gate fails should this become an MLP over `[h_s; g; e_t]` — that
+is ~100x the per-site cost and should have to earn it.
+
+**Which token is `h_s`.** A site is a *(position, generator)* pair for `INSERT`
+and a position for the rest — which is exactly a **cell of the raster** of
+[18](18-raster-representation.md), `strand x word-position`. The representation
+this project already settled on emits precisely the token grid this head indexes;
+no new encoder is needed, only the removal of the pooling step that currently
+throws the per-cell tokens away before the head sees them.
+
+**What changes, in shapes:**
 
 | | today | with M1 |
 |---|---|---|
-| output width | fixed by `(max_len, max_strands)` — 1,156 at TIER1, 25,604 at TIER2 | one score per legal site in *this* state |
-| head parameters | one column per slot: `25,604 x 96 = 2.46M` | one small scorer, reused at every site |
-| position 7 vs position 400 | independent columns — nothing learned at one transfers to the other | same weights, different local features |
-| a longer or wider braid | needs a new head; a TIER1 checkpoint **fails to load** at TIER2 | same weights, unchanged |
-| what gets scored | all 25,604 slots, then masked | only the legal sites |
+| head | `Linear(96 -> 25_604)` = **2.46M** parameters | `W`, `b`, 9 kind embeddings — a few thousand, and constant |
+| output width | fixed by `(max_len, max_strands)`: 1,156 at TIER1 `(64,8)`, 25,604 at `(512,24)` | the number of legal sites in *this* state |
+| softmax over | all slots, then masked | legal sites only |
+| position 7 vs 400 | **independent weight columns** — nothing transfers | same `W`, different `h_s` |
+| longer or wider braid | needs a new head; a TIER1 checkpoint **fails to load** at TIER2 | same weights, unchanged |
 
-The middle row is the mathematical argument, not just an engineering one: the
-braid relations are stated for *any* generator index and the word is a necklace,
-so "what makes this a good position" cannot legitimately depend on the absolute
-index. A per-slot head is forced to relearn the same rule at every position, from
-separate data, and cannot express it at a position it never saw.
+The "position 7 vs 400" row is a mathematical argument, not an efficiency one.
+The braid relations hold for *any* generator index and the word is a necklace, so
+"what makes this a good position" cannot legitimately depend on the absolute
+index. A per-slot head must relearn one rule separately at every position, and
+cannot express it at all at a position it never saw in training.
+
+**For contrast, today's layout.** `src/rf_knots/actions.py` gives one integer slot
+per possible action — `REDUCE(p)`, `COMMUTE(p)`, `BRAID(p)`, `INSERT(p,g,s)`,
+`CROSSING_CHANGE(p)`, plus the four singletons — so the head's width is
+`3L + 2L(N-1) + 4 + L`, and those are the 1,156 and 25,604 above.
 
 **Why it is first.** The branching factor *is* the search. M0.4 measured 10,598
 legal successors on the target's long word — **95.9% of them `INSERT`** — at 39
 nodes/s, and `INSERT` is likewise 23,552 of the 25,604 slots (92%) of the action
-space. So both the head's capacity and the search's branching are dominated by
-the question *where may the diagram grow*, which nothing currently ranks and
-which §Status forbids answering by banning growth. Turning thousands of sites
-into a top-ten shortlist is worth more than any value-head improvement. It is
-also the only change that makes a checkpoint portable across problem sizes at all
-— M0.4 measured the present head failing exactly there (`size mismatch [1156,96]
-vs [25604,96]`). And because the labels come free from generated witnesses, it is
-trainable and judgeable **before** any reinforcement learning is paid for.
+space. Both the head's capacity and the search's branching are dominated by *where
+may the diagram grow*, which nothing currently ranks and which §Status forbids
+answering by banning growth. It is also the only change that makes a checkpoint
+portable across problem sizes at all. And because the labels come free from
+generated witnesses, it is trainable and judgeable **before** any reinforcement
+learning is paid for.
 
 Measured cost: 1.1 h generation, then 0.5 h (instance-level) to 30.5 h
 (state-level) of MPS training, 115 MB. The binding constraint is the wall clock
