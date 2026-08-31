@@ -708,6 +708,42 @@ the shape `rf_knots.embedding_metric.MetricEmbeddingObjective` already consumes:
 it is an interval loss with `lower` and `upper` fields, and until now the lower
 side has mostly been zero.
 
+> **Measured. The inheritance works, and the effect is not marginal.**
+> 18,000 instances over a 36-cell grid of seed strength against walk depth.
+> Acceptance at independently computed certified `u >=`, at `k = 5`:
+>
+> | seed | `L` | `>=2` | `>=3` | **`>=4`** | `>=5` | inst/s | s per `>=4` |
+> |---|---:|---:|---:|---:|---:|---:|---:|
+> | `0_1` (the §4.1 control) | 0 | 0.31 | 0.08 | **0.01** | 0.00 | 59.9 | 1.193 |
+> | `T(2,7)` | 3 | 0.73 | 0.39 | **0.18** | 0.05 | 51.3 | 0.106 |
+> | `T(2,11)` | 5 | 0.94 | 0.71 | **0.52** | 0.26 | 48.9 | 0.039 |
+> | `T(2,15)` | 7 | 1.00 | 0.92 | **0.79** | 0.56 | 46.3 | 0.027 |
+> | `T(2,21)` | 10 | 1.00 | 1.00 | **1.00** | 1.00 | 43.0 | 0.023 |
+> | `P(4,23)` | 10 | 1.00 | 1.00 | **1.00** | 1.00 | 22.1 | 0.045 |
+>
+> Certified `u >= 4` at depth five goes from **0.014 to 1.000**, and a hard
+> positive costs **23 ms** instead of 1.2 s — 52x cheaper. The control reproduces
+> M0 (mean 1.11 against M0's 1.01), confirming the diagnosis: **the generator was
+> never weak, it was seeded where nothing is certified.**
+>
+> **The bound is sound and conservative.** Over 18,000 instances the
+> independently computed bound fell below the inherited one **0 times**, and
+> *exceeded* it **62.2%** of the time, by up to +8. The walk adds difficulty at
+> least as often as it preserves it; the inheritance is a floor, not an estimate.
+>
+> **Hazard 4, measured.** At `k = 5` from `L = 3` the inheritance is exhausted
+> (`L - k <= 0`) and acceptance collapses to 0.18. "Depth must come from the
+> seed" is not a stylistic preference — it is the shape of the `T(2,7)` row.
+>
+> **The Gordian side is now populated.** 83.7% of emitted pairs carry a non-zero
+> certified lower bound, against almost none before, and **40.6% are exact**
+> (`lower = upper`). Distribution over the lower bound:
+> `{0: 2934, 1: 8567, 2: 3568, 3: 2210, 4: 365, 5: 356}`.
+>
+> One implementation subtlety worth keeping: the Lipschitz values are **signed**.
+> A knot and its mirror sit at `+3` and `-3`, so the unsigned form would report a
+> Gordian distance of 0 between them.
+
 **Four hazards, all of which bite if ignored.**
 
 * **Quarantine moves to seed selection, and must close under the `k`-ball.** A
@@ -1202,6 +1238,20 @@ counting augmentations.
 > **Revised M3:** `10^5` at the stated shape, or `10^6` in compact form with the
 > filter budget explicitly cut — but not both, and not on this host without
 > saying which was given up.
+>
+> **Update from §4.1b, which may reopen `10^6`.** The seeded generator measured
+> the cost split: 81 s generating against **298 s (79%) computing the independent
+> certified bound**. A seeded corpus does not pay that 79% at all — its difficulty
+> is inherited from the seed, not measured on each instance. That removes the
+> "18.75 single-core days under the filter" constraint outright and leaves the
+> record format as the only binding one, which §Status consequence 6 already
+> solves at 2.24 GB.
+>
+> **This is a projection, not a measurement, and must not be quoted as one.** The
+> seeded rates above are at the depth-five shape; generation at M3's *full* stated
+> shape (lengths to 256, strands to 21) was measured only unseeded, at 7.4
+> instances/s. One measurement — seeded throughput at the full shape — decides
+> whether `10^6` is back on. Run it before re-declaring M3 feasible.
 
 ### M4 — Joint training (weeks)
 
