@@ -1009,6 +1009,32 @@ plan that assumes a cluster is a plan that does not run.
 > `PYTORCH_ENABLE_MPS_FALLBACK` is watched; and there is no multi-GPU path, so
 > the only way to buy more throughput here is a bigger batch or a smaller model.
 >
+> **On moving training to a remote GPU.** `pgx-mcts-bench/docs/nebius-device-gate.md`
+> already defines the protocol and prices it (L40S `1gpu-8vcpu-32gb` at
+> $1.55/hour, $0.75 preemptible), and it accepts CUDA "only when it is at least
+> 3x faster end to end and cheaper per equal-work iteration". It also records the
+> fact that decides the ceiling: **the models are below 200k parameters**, so
+> "H100/H200 capacity is not the limiting factor".
+>
+> That is the whole shape of the answer. A 24-hour run here is not one large
+> matmul; it is ~1e9 evaluations of a tiny network, so it is **launch-latency
+> bound, not FLOP bound** — which is exactly what M0.4 saw locally in the 674x
+> dispatch cliff and the +/-80% MPS queue noise below batch 32. A bigger GPU does
+> not fix a dispatch-bound workload; batching, fusion and CUDA graphs do.
+>
+> Two consequences. First, **part of the speedup is claimable here, for free**:
+> peak usage was 1.16 GB of ~16 GB, so batch size is being left on the table, and
+> length bucketing alone is ~2x. Claim those before renting anything, or the
+> cloud number will flatter itself against an unoptimised baseline. Second,
+> **do not buy GPU time to run a gate** — M1's instance-level pass is 0.5 h
+> locally and decides whether to proceed at all; only the state-level pass and M4
+> are worth offloading.
+>
+> Expect 5–15x end to end for this shape rather than the 20–50x raw FLOP ratio
+> suggests, and treat that as a hypothesis for the existing 3x gate to test, not
+> a plan. At $0.75/hour the cost is irrelevant; the engineering time and the risk
+> of optimising against the wrong baseline are not.
+
 > **Two free multipliers, both found by measurement rather than design.**
 >
 > 1. **A PyTorch CPU dispatch cliff between batch 12 and 16.**
