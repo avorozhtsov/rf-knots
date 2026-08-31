@@ -973,6 +973,67 @@ d(b,a)` holds by construction rather than by training. For the unknotting task
 the second input is the empty word and its embedding is a cached constant, so the
 extra cost is the interaction MLP alone. §7 develops this.
 
+### 6.4 Positional encoding: one axis is a circle, the other is not
+
+Note 21's §3.5 specified head-relative Fourier features and this note inherited
+them by reference. They deserve restating, because the two axes of the raster
+have **different geometry** and giving them the same encoding is a correctness
+error, not a tuning choice.
+
+| axis | geometry | group | encoding |
+|---|---|---|---|
+| word position `j` | a genuine circle — the closure joins the word to itself | `Z_L` exactly | **rotary, normalised by `L`** |
+| strand index `g` | an interval with two real boundaries; a cylinder, not a torus | translation covariance, broken at the ends | **relative bucket of `g-h`, clipped, plus boundary distances** |
+
+**The word axis is where rotary belongs, and it fits better here than in
+language.** RoPE's defining property is `<R_j q, R_h k> = <q, R_{j-h} k>`, so
+scores depend only on the relative offset. In language that is a representation
+of `Z` and the periodicity is an artefact to be worked around; here the word
+*really is* a necklace — `braid.py` is explicit that the storage seam carries no
+meaning and conjugation is exactly a rotation of it — so with `theta = 2*pi/L`
+the encoding is exactly `Z_L`-equivariant. The periodicity is the geometry, not
+a bug.
+
+Two consequences worth taking:
+
+* **Normalise the word frequencies by `L`.** That is what lets one set of weights
+  score a 20-letter word and a 254-letter one, which §Status makes mandatory.
+* **Head-relative encoding then comes free.** Note 21 §3.5 asks for
+  `delta(j,h) = ((j - h) mod L)/L` as an explicit feature; under a rotary word
+  axis, relative dependence on `j - h` *is* what the encoding provides. Do not
+  add both, and recompute only the head's own token when the cursor moves (§6.3).
+
+**The strand axis should not be rotary.** Rotary buys smooth extrapolation over
+long, unbounded ranges. The strand direction has neither property. What actually
+matters there is a **hard threshold**: far commutation is legal exactly when
+`|g - h| >= 2`, and the braid relation acts exactly at `|g - h| = 1`. A learned
+embedding of `clip(g - h, -k, k)` represents that exactly; a frequency ladder
+approximates it and can never be exact. Strand distance is also *absolute* — two
+strands apart means the same thing at `n = 5` and `n = 21` — so unlike the word
+axis it must **not** be normalised by the strand count. Add the boundary features
+note 21 already lists (distance to strand 1 and to strand `n-1`), because the
+cylinder's edges are real structure and translation covariance genuinely fails
+there.
+
+**When is it actually a torus?** Exactly when `BraidConfig.cyclic_band_generators`
+is on. That flag adds the seam generator `b_n` between strand positions `n` and
+`1`, interpreted as the Birman-Ko-Lee band generator `a_{1,n}` — which, as
+`config.py` notes, compiles back into ordinary `B_n` and is "not the unchecked
+affine braid group". With it enabled the diagram really is a torus, the symmetry
+really is `U(1) x U(1)`, and a genuine two-axis rotary — a factorised
+representation of that group, one `SO(2)` block per Fourier mode pair — is the
+right object.
+
+**With it disabled, a cyclic strand encoding is a false invariance and worse than
+none.** It would tell the network that strand `1` and strand `n` are adjacent
+when no legal move connects them, and the network would spend capacity learning
+to distrust its own input. Notes 17 and 18 already impose the discipline that the
+wrap generator is "a separately defined semantic extension, not ordinary `B_n`
+hidden in preprocessing"; the encoding must obey the same rule. **The rule to
+follow is: encode the symmetries the enabled move set actually has, and no
+others** — and since the flag is per-config, the encoding must be built to switch
+with it rather than hard-coded either way.
+
 ### 6.3 Incremental recompute and the throughput gate
 
 Note 21's requirement that a head move recompute only the positional context,
