@@ -33,6 +33,7 @@ several are used before the section that introduces them.
 | `cap` | the strict crossing-change budget a search is conditioned on; the target's is 5 (§1.4) |
 | `dose` | the compute budget of one search run — simulations, or beam width (§9) |
 | `A`, `M` | objective weight and internal move cap in `A*cc + moves`; M0 recommends `A = 100_000`, `M = 10_000` (§2.1) |
+| *site* | the **location** part of an action, as opposed to its kind: the word position `p`, and for `INSERT` the pair `(p, g)`. `ActionSpec` encodes an action as (kind, position, generator, sign); the site is everything except the kind. |
 | `recall@k` | **unrelated to the `k` above** — the top-`k` of a ranked list, used only for the site head and retrieval (§3.4, M1) |
 
 ## The milestones at a glance
@@ -1144,19 +1145,46 @@ premature.
 
 ### M1 — The per-site head (weeks) — **M0 verdict: feasible**
 
-**What.** One shared scorer applied to every candidate action site in a diagram —
-one logit per site, no fixed-width output — trained by ordinary supervision to
-rank two things: which crossing to change, and where the diagram may grow.
+**How it works today.** `src/rf_knots/actions.py` lays the action space out as a
+flat integer range with one slot per possible action — `REDUCE(p)`, `COMMUTE(p)`,
+`BRAID(p)`, `INSERT(p,g,s)`, `CROSSING_CHANGE(p)`, plus four singletons. Its width
+is therefore `3L + 2L(N-1) + 4 + L`, fixed by `(max_len, max_strands)`: **1,156
+slots** at TIER1 `(64, 8)` and **25,604** at `(512, 24)`. The policy head is a
+linear layer of exactly that width, so it has one independent weight column per
+slot.
 
-**Why.** The branching factor *is* the search. M0.4 measured 10,598 legal
-successors on the target's long word, 95.9% of them `INSERT`, at 39 nodes/s;
-depth-5 search over that is hopeless, and turning thousands of sites into a
-top-ten shortlist is worth more than any value-head improvement. It is also the
-only head whose parameter count is independent of word length and strand count,
-so it is what lets a checkpoint transfer across problem sizes at all — M0.4
-measured the current head failing exactly there (`size mismatch [1156,96] vs
-[25604,96]`). And because the labels come free from generated witnesses, it can
-be trained and judged **before** any reinforcement learning is paid for.
+**What M1 changes.** Replace that fixed output layer with a small **scorer** — a
+few layers — that takes the encoder's token for one *site* (see Notation: the
+position `p`, or `(p, g)` for `INSERT`), plus the global context and an embedding
+of the action kind, and returns one number. Run it once per legal site. The
+number of outputs becomes a property of the state; the number of parameters stops
+being one.
+
+| | today | with M1 |
+|---|---|---|
+| output width | fixed by `(max_len, max_strands)` — 1,156 at TIER1, 25,604 at TIER2 | one score per legal site in *this* state |
+| head parameters | one column per slot: `25,604 x 96 = 2.46M` | one small scorer, reused at every site |
+| position 7 vs position 400 | independent columns — nothing learned at one transfers to the other | same weights, different local features |
+| a longer or wider braid | needs a new head; a TIER1 checkpoint **fails to load** at TIER2 | same weights, unchanged |
+| what gets scored | all 25,604 slots, then masked | only the legal sites |
+
+The middle row is the mathematical argument, not just an engineering one: the
+braid relations are stated for *any* generator index and the word is a necklace,
+so "what makes this a good position" cannot legitimately depend on the absolute
+index. A per-slot head is forced to relearn the same rule at every position, from
+separate data, and cannot express it at a position it never saw.
+
+**Why it is first.** The branching factor *is* the search. M0.4 measured 10,598
+legal successors on the target's long word — **95.9% of them `INSERT`** — at 39
+nodes/s, and `INSERT` is likewise 23,552 of the 25,604 slots (92%) of the action
+space. So both the head's capacity and the search's branching are dominated by
+the question *where may the diagram grow*, which nothing currently ranks and
+which §Status forbids answering by banning growth. Turning thousands of sites
+into a top-ten shortlist is worth more than any value-head improvement. It is
+also the only change that makes a checkpoint portable across problem sizes at all
+— M0.4 measured the present head failing exactly there (`size mismatch [1156,96]
+vs [25604,96]`). And because the labels come free from generated witnesses, it is
+trainable and judgeable **before** any reinforcement learning is paid for.
 
 Measured cost: 1.1 h generation, then 0.5 h (instance-level) to 30.5 h
 (state-level) of MPS training, 115 MB. The binding constraint is the wall clock
