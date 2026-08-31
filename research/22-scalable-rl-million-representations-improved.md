@@ -1200,6 +1200,48 @@ per possible action — `REDUCE(p)`, `COMMUTE(p)`, `BRAID(p)`, `INSERT(p,g,s)`,
 `CROSSING_CHANGE(p)`, plus the four singletons — so the head's width is
 `3L + 2L(N-1) + 4 + L`, and those are the 1,156 and 25,604 above.
 
+**Where M1's weights and labels come from.** Three candidate sources, ranked,
+because the wrong ranking here is how a warm start becomes an undisclosed
+advantage.
+
+| source | use | why |
+|---|---|---|
+| generated + replayed witnesses | **primary supervision** | exact by construction |
+| old trunk blocks (`raster-axial`, `strand-graph`) | **warm start, gated** | shape-independent weights, unproven value |
+| old checkpoints as a teacher | **migration check only** | inherits the teacher's errors invisibly |
+
+1. **Labels: the generators and the proof graph, not a teacher.** The seeded
+   interleaved generator emits witnesses whose difficulty is *certified* —
+   acceptance 1.000 at `u >= 4` from a `T(2,21)` seed, 23 ms per hard positive —
+   so the positive sites are known exactly and for free at any size. `unknotdb`'s
+   replay-verified paths supply set-valued targets on real proof-graph states, and
+   note 20's evidence index has 100 identities with verified native evidence.
+   Every one of these is correct by construction. A distilled policy is not: it
+   transfers the teacher's mistakes with no signal that it has done so.
+2. **Weights: reuse the trunk, never the head.** The local raster blocks and the
+   strand-graph message passing have shape-independent weights and are reusable
+   as initialisation, exactly as note 21's stage 1 proposes. The head is what M1
+   deletes, so it cannot transfer by construction — M0.4's `size mismatch
+   [1156,96] vs [25604,96]` *is* the head failing, and the trunk did not.
+   **Two reasons to gate this rather than assume it.** The old trunks were trained
+   under `L1000`, which §2.1 now shows inverts at target scale, and on a
+   curriculum whose hardest rungs turned out to be `7_5` at `u = 2` — so their
+   priors are tuned for a different objective on easier instances, and a warm
+   start can be worse than none. And M1's gate is recall@10 against a hand-written
+   heuristic; warm-started, that gate can be passed on inherited competence rather
+   than anything learned. **A from-scratch arm at equal compute is therefore the
+   control, not an optional ablation.**
+3. **Distilling the old `(48, 12)` networks: no, with one exception.** The
+   exception is this repository's own standing policy, from
+   [13 §5](13-directions.md) and [06](06-network-growth.md): keep the old
+   checkpoint "as a teacher for migration verification, not as an undisclosed
+   starting advantage". Use it to confirm the new architecture reproduces the old
+   behaviour on the old distribution — a function-preserving migration test, which
+   `pgx-mcts-bench` already has machinery for (`*-migrated.pt`, `*-distilled.pt`,
+   `*-pretrained.pt` under `artifacts/mastery-v3-*`). That is a test, not a
+   training signal. If distillation is used for skill at all, note 20's rules
+   bind: capped as a fraction of native updates, and reported in its own column.
+
 **What M1 does *not* include: raising the capacity.** Two size dependences exist
 and only one of them is M1's.
 
