@@ -30,7 +30,7 @@ several are used before the section that introduces them.
 | `R`, `R'` | a seed representation, and the representation generated from it (§4.1b) |
 | `L(K)` | a **certified** lower bound on `u(K)` — a theorem, never a table row (§1.2) |
 | `h(K)` | the network's **learned estimate of how many crossing changes still separate `K` from the unknot** — an estimate of `u(K)`. It is the `h` of an `f = g + h` best-first priority, with `g = ` changes already spent. Deliberately **not admissible**: it may overestimate, so the search proves upper bounds only (§3.1). Clamped below by `L(K)`, which is a theorem. |
-| `A_plus(s)` | the set of **known-good** action sites at state `s` — the target of the set-valued policy loss. Absent from it means unexplored, never wrong (§5.3). |
+| `A_plus(s)` | the set of action sites at `s` **demonstrated** to admit a completion in budget — the target of the set-valued policy loss. Membership is exhibited, never inferred; absence means unexplored, never wrong (§5.3, and see §5.3b for the evidence tiers). |
 | `cap` | the strict crossing-change budget a search is conditioned on; the target's is 5 (§1.4) |
 | `dose` | the compute budget of one search run — simulations, or beam width (§9) |
 | `A`, `M` | objective weight and internal move cap in `A*cc + moves`; M0 recommends `A = 100_000`, `M = 10_000` (§2.1) |
@@ -1032,6 +1032,41 @@ for three reasons:
 
 Absent sites are unexplored, not negative. That rule from note 21 §5.1 is what
 makes the loss set-valued in the first place, and it applies here verbatim.
+
+### 5.3b Where `A_plus` comes from, and the tiers it must not mix
+
+Every membership in `A_plus` is **exhibited**, never inferred. `src/rf_knots/aplus.py`
+enforces this structurally — its fields are `sites_demonstrated_good` and
+`sites_undetermined`, and it has no field that can express "bad". Three tiers of
+evidence, which must be recorded separately for the same reason the proof graph
+separates `verified` from `attested`:
+
+| tier | source | evidence | cost |
+|---|---|---|---|
+| 1. demonstrated | the generator's own witness; brute-force beam over every legal site | a completion was found and **replayed** | free for the base case; expensive for brute force |
+| 2. exact closure | commutation of a tier-1 action | apply `a;b` and `b;a`, compare `BraidState`s — an equality, not a search | negligible |
+| 3. attested | a successor whose identity carries a smaller catalogue `u` (§4.4) | composes to a bound; **not** demonstrated in our move set | one identification |
+
+**Tier 1 is the base case and it is free.** The generator builds instances
+backwards from a seed, so the reverse path is a verified witness and the action it
+takes at each state is known-good by construction. `spine_from_witness` is
+deliberately written to re-index "any verified witness, whoever produced it", so
+**`unknotdb`'s replay-verified paths feed the same structure** — they supply
+`A_plus` for proof-graph states, which is a different and complementary corpus to
+the generated one.
+
+**Tier 2 is the one that scales.** Measured, commutation closure is the only
+cheap method that *improves* with word length (firing at 29% -> 35% -> 43%),
+while the re-walking method fails outright.
+
+**SnapPy cannot supply tier 1 or 2, and this is worth being explicit about.** Its
+moves do not translate — M0.1 measured 2 of 518 — so it can never say which
+action *in our move set* is good. What it can do is tier 3: identify the
+successor of a candidate action and report that it has a smaller known `u`. That
+is a genuine and cheap signal, and a far cheaper proxy than a brute-force beam,
+but it inherits catalogue trust and composes to a catalogue-composed bound (§3.1).
+Keep it in its own tier and its own column; a gate scored on a mixture of tiers 1
+and 3 is not measuring what it claims to.
 
 ### 5.4 Outcome classes, carried forward
 
