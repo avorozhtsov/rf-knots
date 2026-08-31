@@ -506,6 +506,35 @@ primary loop.
   and `identify()` correctly returns `[]` on the composite root, since the census
   is of prime knots and a connected sum is not hyperbolic. Composites go through
   `connected_summands` first — which already splits this target unaided.
+* **Identification, measured at scale — the bottleneck is substantially closed.**
+  A sweep over 102,701 CC=0 components of the proof graph, at 0.048 s each:
+
+  | | before | after |
+  |---|---:|---:|
+  | components carrying an identity | 5,071 (**4.9%**) | 84,485 (**82.3%**) |
+  | mapped vertices | 8,680 | 88,094 |
+
+  79,414 newly named, by three routes: 37,959 census identification, 20,668 by
+  fingerprint where the knot is non-hyperbolic, and 20,787 unknots by
+  simplification. All `attested`; no proof edge, no promotion to `verified`.
+* **Ambiguity is not rare, and the lesson that predicted it was right.**
+  **8,361 rows were ambiguous and every one was quarantined rather than
+  labelled** — of which **7,149 are exactly the `5_1`/`10_132` collision recorded
+  in `docs/lessons.md`**, and 1,135 the `7_1`/`12n_749` pair this note hit on the
+  target itself in §1.2. A first-match policy would have written 8,361 confident
+  wrong names into the graph.
+* **A knot's *name* is not a safe key across sources.** All 72 cross-check
+  disagreements have one cause: SnapPy's `LinkExteriors` census uses Rolfsen's
+  **uncorrected** 10-crossing numbering, which still contains the Perko duplicate,
+  while the federated catalogue removed it — so SnapPy's `10_163` is the
+  catalogue's `10_162`, and so on down. In every disagreeing row the
+  Hoste–Thistlethwaite name agreed on all four invariants and the Rolfsen name did
+  not. Two further consequences: SnapPy and the KnotInfo import disagree on which
+  Rolfsen number is `10a_87` (a `10_83`/`10_86` transposition, with the bundled
+  `rf_knots` table siding with SnapPy), and **one stored UnknotDB label is wrong**
+  — node 23077 records `10_162` where both of SnapPy's names agree on all four
+  invariants for `10_161`, the same Perko off-by-one inside imported data.
+  **Compose bounds across sources by invariant, never by name.**
 * **The key should be `(determinant, |signature|)` — and not hyperbolic volume.**
   Measured one crossing change deeper than the level-0 frontier, on 2,525 states
   spanning 36 knots, against an up-to-mirror referee:
@@ -883,9 +912,22 @@ non-hyperbolic input — it **lies quietly**. The fingerprint experiment measure
 are **80%** of the level-0 frontier and §4.1b's torus seeds are non-hyperbolic
 too. As a *training label* that is worse than as a key: you would be regressing
 the network onto noise across most of the distribution and it would look like
-ordinary loss. **Gate every geometric label on `verify_hyperbolicity()`**, which
-is available and cheap, and give non-hyperbolic states an explicit separate class
-rather than a fabricated number.
+ordinary loss.
+
+> **Correction.** An earlier draft said to "gate every geometric label on
+> `verify_hyperbolicity()`, which is available and cheap". It is **not available
+> here**: `verify_hyperbolicity`, `canonical_retriangulation(verified=True)` and
+> `isometry_signature(verified=True)` all raise `SageNotAvailable`, and Sage is
+> not installed. The draft checked that the attribute *existed*, not that calling
+> it worked — the same class of error as `docs/lessons.md`'s silently-absent
+> `spherogram` backend.
+>
+> The strongest substitute actually available, and the one the attestation sweep
+> used: recompute at high precision and require a matching isometry signature —
+> **43,023 of 43,034 matches reproduced at 212-bit precision**. Use that as the
+> gate, call it what it is (numerical agreement, not verification), and give
+> non-hyperbolic states an explicit separate class rather than a fabricated
+> number.
 
 **Two things SnapPy must still never supply.**
 
