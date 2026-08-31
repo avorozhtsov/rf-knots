@@ -1461,6 +1461,14 @@ Only if the gate fails should the scorer become an MLP over `[h_s; g; e_t]` —
 > even though its inputs are exactly so.** §M1's "position 7 versus 400" argument
 > holds for the encoder and, as specified, not for the head.
 >
+> **Correction: the rotary is NOT off by default, contrary to an earlier claim
+> here and in the commit that introduced this paragraph.** Measured:
+> `word_harmonics = arange(48)`, 47 nonzero, in a default-constructed necklace
+> encoder. Agent A's report said the trunk permutes bitwise *when the harmonics
+> are zeroed* — a capability, not a default — and that was over-read. Every gate
+> number below was therefore taken **with the rotary active**. The analysis that
+> follows is unchanged; only the claim about what ships was wrong.
+>
 > **The resolution is to turn the rotary off, not to complicate the head.** With
 > the harmonics zeroed the wrap-around trunk permutes tokens **bitwise** under a
 > cyclic shift — it is already exactly `Z_L`-equivariant on its own, and a linear
@@ -1668,6 +1676,69 @@ backward-generated witnesses.
 > methods together cover just **5.4%** of the brute-force set (1.8% at B-long) —
 > but they are sound: brute force reproduced all 938 cheap sites with **zero
 > disagreements**.
+
+> ### The revised gate was built, and it refutes the rescope above
+>
+> **`INSERT` is not hard to rank. It is flat, and provably so.** Counting move
+> kinds gives an exact identity for a completion's length:
+>
+> ```text
+> moves = (L + n - 1)/2 + 2i + 2s + c
+> ```
+>
+> with `i` insertions, `s` stabilisations, `c` crossing changes. Every insertion
+> costs two moves that nothing pays back, and `REDUCE(p)` undoes `INSERT(p, ...)`
+> — so **every** `INSERT` site reaches the unknot in exactly `m* + 2`. Measured:
+> **0 `INSERT` sites in the target across all 159 states**, while 159 of 159
+> states have at least two `INSERT` sites available. 160 such `m*+2` completions
+> were built with no search at all and replayed.
+>
+> So "no hand-written score beats random ordering inside the `INSERT` block" was
+> never evidence of room for a learned head. It is what a **flat** target looks
+> like: every option provably equal, nothing to rank. A learned head cannot beat
+> random on a constant.
+>
+> **And the deeper cause is the corpus, not the head.** The generator walks
+> forward with type-preserving moves — `INSERT` among them — and then applies a
+> crossing change, `k` times. The witness is that walk *reversed*, and the
+> inverse of `INSERT` is `REDUCE`. **The witness therefore never contains an
+> `INSERT`**, so the shortest completion never begins with one. Not by accident:
+> by construction.
+>
+> That is a systematic bias in exactly the dimension that matters. §Status
+> established that the real target *requires growing the diagram* before the third
+> crossing change, and disqualified length-monotone search for that reason. The
+> generated corpus is precisely the set of instances a length-monotone search
+> **can** solve. We have been training and gating on the easy half of the problem
+> and measuring the half that was never in question.
+>
+> **What survives of M1, and what is withdrawn.**
+>
+> * **Survives — portability, which was a hard blocker.** 49,833 parameters at
+>   every braid size, and a TIER1 `state_dict` loading into `(512, 24)` and
+>   scoring bit-identically. M0.4 measured that transfer failing outright. This
+>   alone justifies the head.
+> * **Withdrawn — the ranking-quality claim.** There is no measured region in
+>   which the head improves on a hand-written ranker, and the region this note
+>   nominated is provably flat.
+>
+> **The gate can fail a bad head but cannot pass a good one.** `kind_prior`
+> scores **0.994** on the whole-state target, leaving 0.006 of headroom; it does
+> correctly fail an untrained `SiteHead` at 0.050, below chance. Two honest
+> caveats from the run: 5.9% of states hit the node cap and were dropped rather
+> than counted as failures, biased toward the longest words, so every number is
+> flattered; and the rotary was active throughout.
+>
+> | recall@1, held-out identities | states | chance | uniform | `kind_prior` | `free_reduced_drop` | `growth_aware` | untrained head |
+> |---|---:|---:|---:|---:|---:|---:|---:|
+> | the gate | 159 | 0.075 | 0.113 | **0.994** | 0.711 | 0.981 | 0.050 |
+> | transfer, strands [4,6] | 89 | 0.055 | 0.101 | 0.989 | 0.798 | 0.978 | 0.067 |
+>
+> **The next experiment is a generator change, not a head change:** build
+> instances whose *shortest* completion provably requires growth, so that the
+> corpus contains the phenomenon the target demands. Until then M1 has no
+> measurable ranking gate, and the honest status is that the head is portable and
+> unproven.
 
 **The revised gate.** Three changes, each answering one of the failures above:
 
