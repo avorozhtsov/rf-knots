@@ -1,8 +1,7 @@
 # 22 — Witness generation at depth five: an instance-driven revision of note 21
 
-> **Relationship to note 21.** Note 21 (`21-scalable-rl-million-representations.md`,
-> an untracked draft in the working copy) is an *architecture and data-hygiene*
-> plan. Its outcome taxonomy A/B/C/D, its refusal to treat a budget-censored
+> **Relationship to note 21.** [Note 21](21-scalable-rl-million-representations.md)
+> is an *architecture and data-hygiene* plan. Its outcome taxonomy A/B/C/D, its refusal to treat a budget-censored
 > failure as a mathematical negative, and its set-valued proof-graph targets are
 > the best things written about this project's training contract and are kept
 > here in full. What it lacks is the other half: a **target instance**, a

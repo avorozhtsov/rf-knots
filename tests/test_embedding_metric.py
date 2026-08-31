@@ -55,3 +55,34 @@ def test_exact_positive_distance_penalizes_collapsed_embedding() -> None:
         batch,
     )
     assert loss.item() == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("geometry", ("chord", "angular", "log_affinity"))
+def test_cc_geometries_map_identity_to_zero_and_are_monotone(geometry: str) -> None:
+    objective = MetricEmbeddingObjective(cc_geometry=geometry)
+    cosine = torch.tensor([1.0, 0.8, 0.2, -0.5])
+    distance = objective.cc_distance(cosine)
+
+    assert distance[0].item() == pytest.approx(0.0, abs=1e-6)
+    assert torch.all(distance[1:] > distance[:-1])
+
+
+@pytest.mark.parametrize("geometry", ("chord", "angular", "log_affinity"))
+def test_cc_reference_calibration_is_comparable_across_geometries(geometry: str) -> None:
+    objective = MetricEmbeddingObjective(cc_geometry=geometry)
+    objective.calibrate_cc_scale(reference_cosine=0.4)
+    predicted = objective.scale("cc") * objective.cc_distance(torch.tensor(0.4))
+
+    assert predicted.item() == pytest.approx(1.0, rel=1e-6)
+
+
+def test_cc_ranking_loss_uses_only_provably_ordered_intervals() -> None:
+    objective = MetricEmbeddingObjective(cc_rank_weight=1.0, cc_rank_margin=0.25)
+    lower = torch.tensor([0.0, 1.0, 2.0, 2.0])
+    upper = torch.tensor([0.0, 1.0, 2.0, torch.inf])
+
+    ordered = objective.cc_ranking_loss(torch.tensor([0.0, 0.5, 1.0, 1.2]), lower, upper)
+    collapsed = objective.cc_ranking_loss(torch.tensor([0.0, 0.0, 0.0, 0.0]), lower, upper)
+
+    assert ordered.item() == pytest.approx(0.0)
+    assert collapsed.item() == pytest.approx(0.25)

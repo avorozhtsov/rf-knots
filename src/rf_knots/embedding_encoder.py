@@ -63,10 +63,12 @@ class ScalableBraidEmbeddingEncoder(nn.Module):
         return torch.where(word > 0, 2 * magnitude - 1, 2 * magnitude)
 
     @staticmethod
-    def _position_features(length: int, device: torch.device) -> Tensor:
-        position = torch.arange(length, device=device, dtype=torch.float32)
-        denominator = max(length, 1)
-        angle = 2 * math.pi * position / denominator
+    def _position_features(width: int, lengths: Tensor, device: torch.device) -> Tensor:
+        """Positions normalized by each braid, never by unrelated batch padding."""
+        position = torch.arange(width, device=device, dtype=torch.float32)[None, :]
+        denominator = lengths.clamp_min(1).to(dtype=torch.float32)[:, None]
+        phase = position / denominator
+        angle = 2 * math.pi * phase
         return torch.stack(
             [
                 torch.sin(angle),
@@ -75,8 +77,8 @@ class ScalableBraidEmbeddingEncoder(nn.Module):
                 torch.cos(2 * angle),
                 torch.sin(4 * angle),
                 torch.cos(4 * angle),
-                position / denominator,
-                torch.ones_like(position),
+                phase,
+                torch.ones_like(phase),
             ],
             dim=-1,
         )
@@ -89,8 +91,8 @@ class ScalableBraidEmbeddingEncoder(nn.Module):
         mask = torch.arange(word.shape[1], device=word.device)[None, :] < lengths[:, None]
         state = self.tokens(self._token_ids(word))
         state = state + self.position_projection(
-            self._position_features(word.shape[1], word.device)
-        )[None, :, :]
+            self._position_features(word.shape[1], lengths, word.device)
+        )
         state = state + self.strands(strands)[:, None, :]
         state = state * mask.unsqueeze(-1)
         for block in self.blocks:

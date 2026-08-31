@@ -40,8 +40,10 @@ def test_virtual_corpus_is_exactly_eighty_percent_hard() -> None:
     strata = [curriculum.spec(index).stratum for index in range(len(curriculum))]
     assert sum(value.startswith("hard_") for value in strata) == 80
     assert strata.count("hard_edge_interior") == 15
-    assert strata.count("hard_cc1_detour") == 15
-    assert strata.count("hard_cc2_detour") == 10
+    assert strata.count("hard_cc1_detour") == 7
+    assert strata.count("hard_cc1_long_detour") == 8
+    assert strata.count("hard_cc2_detour") == 5
+    assert strata.count("hard_cc2_long_detour") == 5
     assert strata.count("hard_mirror_orbit") == 10
     assert strata.count("hard_zero_cc_orbit") == 10
     assert strata.count("hard_procedural_same_knot_cc0") == 10
@@ -69,9 +71,7 @@ def test_collate_embedding_pairs_pads_variable_words(tmp_path) -> None:
         SyntheticPairSpec,
     )
 
-    spec = SyntheticPairSpec(
-        0, "hard_zero_cc_orbit", "cc", 1, 1, 0, 0, 0, 4, 5, 1
-    )
+    spec = SyntheticPairSpec(0, "hard_zero_cc_orbit", "cc", 1, 1, 0, 0, 0, 4, 5, 1)
     batch = collate_embedding_pairs(
         [MaterializedSyntheticPair(spec, "cc", (1,), (1, -1, 2), 3, 3, 12)]
     )
