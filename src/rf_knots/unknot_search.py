@@ -78,20 +78,48 @@ class SearchReport:
 def _fingerprint(word: Word, strands: int) -> tuple:
     """A cheap knot invariant tuple, for deduplicating across diagrams.
 
-    The Alexander polynomial would be a sharper key, but it is ~10 ms and this
-    runs on every candidate flip; at a few hundred diagrams times twenty positions
-    per level that is the difference between a minute and an afternoon. The
-    determinant alone is one Burau evaluation and separates enough.
+    The determinant separates enough, and it runs on every candidate flip, so
+    *which route computes it* is the hot path of this whole search.
+
+    An earlier version of this docstring argued that "the determinant alone is
+    one Burau evaluation" and cost about 10 ms. Both halves were wrong, and the
+    measurement is the reason this now prefers the Seifert route.
+    `invariants.determinant` builds the whole Alexander polynomial -- it costs
+    the same as `alexander_polynomial` to within 3% -- while
+    `seifert.determinant` reads one Smith-normal-form invariant off the Seifert
+    matrix. Warmed up, on random words:
+
+    | letters/strands | `invariants` | `seifert` | ratio |
+    |---|---:|---:|---:|
+    | 20/5  |   21.2 ms | 1.2 ms |  18x |
+    | 60/5  |  905.2 ms | 9.7 ms |  93x |
+    | 80/12 | 3926.4 ms | 15.9 ms | 247x |
+
+    and on the 254-letter target, 647 s against 0.42 s -- 1,539x for the same
+    answer, which is one search level in 45.7 hours rather than 107 seconds.
+    There is no crossover: the Seifert route wins at every shape measured.
+    (Time it warm. A single cold call charges spherogram's import to the Seifert
+    side and reverses the verdict.)
+
+    Both routes return the same value, so the keys are identical and this is a
+    pure speedup. The fallback is therefore free of consequence: `seifert` needs
+    the optional `spherogram` backend and raises on some split-link words, and in
+    either case the Burau route computes the same key more slowly.
 
     Collisions merely merge two branches that were probably the same knot anyway.
     A wrong merge can lose a route but can never invent one, because every witness
     returned is replay-verified against the reference implementation.
     """
-    from rf_knots.invariants import determinant
-
     if not word:
         return (0, strands)
-    return (1, determinant(word, strands))
+    from rf_knots import seifert
+
+    try:
+        return (1, seifert.determinant(word, strands))
+    except (ValueError, KeyError, RuntimeError, seifert.BackendUnavailable):
+        from rf_knots.invariants import determinant
+
+        return (1, determinant(word, strands))
 
 
 def certified_lower_bound(word: Word, strands: int) -> int:

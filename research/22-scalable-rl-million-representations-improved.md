@@ -164,11 +164,16 @@ the test would need `bound > 4`.
    change. Controlled inflation is a first-class requirement, not a risk note.
 4. M1–M5 are **not** premature — but "reproduce the published witness" is struck
    from M0's deliverables and replaced by "construct an independent one".
-5. **Fix the fingerprint before anything that searches.** It is one import and it
-   dominates the only search this project ships. **Correction to an earlier draft
-   of this list:** it said "nothing in M1–M5 should start until it is measured
-   again", which is wrong. M1 is supervised training on generated data and never
-   calls `unknot_search`, so it is not blocked by this. M2 onward are.
+5. **Fix the fingerprint before anything that searches. — DONE.**
+   `_fingerprint` now takes the Seifert route with a guarded fallback.
+   **Measured end to end on the target's 20-letter word: 23.9 s -> 2.1 s, an
+   11.2x speedup with identical search behaviour** (28 diagrams, 145 knots
+   expanded, 135 pruned, both routes), which is the proof that it is a pure
+   speedup rather than a different search. Per-call, warmed up: 18x at 20/5, 93x
+   at 60/5, 247x at 80/12, and 1,539x on the 254-letter word.
+   *(Correction to an earlier draft of this list: it said "nothing in M1–M5
+   should start until it is measured again", which was wrong — M1 is supervised
+   and never calls `unknot_search`. M2 onward were the ones blocked.)*
 6. **Change the record format, do not merely compress it.** At M3's stated shape
    a raw record is 844.7 kB, so `10^6` is **844 GB** — impossible — and 14.0 GB
    gzipped, which is 42% of the 31 GiB free on a 93%-full volume. Storing

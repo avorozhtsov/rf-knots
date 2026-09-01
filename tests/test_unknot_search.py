@@ -74,3 +74,59 @@ def test_the_pruning_actually_fires():
     """A search that prunes nothing is not branch-and-bound, it is enumeration."""
     report = search((1, 1, 1, 1, 1), 2, max_crossing_changes=2, node_budget=8000)
     assert report.pruned_by_bound > 0
+
+
+def test_the_two_determinant_routes_agree_so_the_fingerprint_key_is_unchanged():
+    """`_fingerprint` switched routes for speed; a differing value would be a bug.
+
+    The Seifert route is 18x-247x faster depending on shape (1,539x on the
+    254-letter target), but it is only a legitimate swap because the key it
+    produces is identical.  This asserts that over the bundled table rather than
+    over one hand-picked word.
+    """
+    import random
+
+    from rf_knots import seifert
+    from rf_knots.invariants import determinant
+    from rf_knots.unknot_search import _fingerprint
+
+    rng = random.Random(20260901)
+    words = [(1,) * n for n in range(2, 9)]                      # torus knots
+    words += [(1, -2, 1, -2), (1, 1, 2, -1, 2, 2)]               # small mixed
+    words += [
+        tuple(rng.choice([g, -g]) for g in
+              (rng.randint(1, 4) for _ in range(length)))
+        for length in (12, 20, 28)
+    ]
+    checked = 0
+    for word in words:
+        strands = max((abs(letter) for letter in word), default=1) + 1
+        try:
+            fast = seifert.determinant(word, strands)
+        except (ValueError, KeyError, RuntimeError, seifert.BackendUnavailable):
+            continue                     # the fallback path; nothing to compare
+        assert fast == determinant(word, strands), word
+        assert _fingerprint(word, strands) == (1, fast), word
+        checked += 1
+    assert checked >= 8, f"only {checked} words exercised the fast route"
+
+
+def test_the_fingerprint_is_bounded_on_a_word_the_burau_route_cannot_afford():
+    """The empty word is special-cased, and a long word must not take minutes.
+
+    A 60-letter word costs ~0.9 s through `invariants.determinant` and ~10 ms
+    through `seifert`.  The bound here is loose enough to survive a contended
+    host and still fail the route this change removed.
+    """
+    import time
+
+    from rf_knots.unknot_search import _fingerprint
+
+    assert _fingerprint((), 1) == (0, 1)
+
+    word = tuple(1 if index % 3 else -1 for index in range(60))
+    _fingerprint(word, 2)                                  # warm the backend
+    start = time.monotonic()
+    key = _fingerprint(word, 2)
+    assert time.monotonic() - start < 0.30
+    assert key[0] == 1

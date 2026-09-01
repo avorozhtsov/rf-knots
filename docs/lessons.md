@@ -164,4 +164,12 @@ may since have moved; the lesson is the durable part.
   wrap-around convolution permutes tokens bitwise under a cyclic shift, and adding
   a rotary replaces that exact permutation with a rotation the downstream linear
   functional cannot undo. Check what actually reads the encoding before adding it.
+- **Time it warm, or the import lands in the wrong column.** A single cold call
+  put `seifert.determinant` at 258 ms against `invariants.determinant` at 84 ms
+  and appeared to refute three prior measurements. The 258 ms was spherogram's
+  import, charged to the first caller. Warmed up and averaged over distinct words
+  the same shape reads 1.2 ms against 21.2 ms — an 18x win, not a 3x loss. Two
+  further guards that mattered here: use *different* words per repeat, or an
+  `lru_cache` measures itself; and check the value agrees, since a fast wrong
+  answer is not a speedup.
 - Negative results belong in commit messages and notes, not in dead code.
