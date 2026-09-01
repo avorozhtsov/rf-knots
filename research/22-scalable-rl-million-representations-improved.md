@@ -1684,24 +1684,30 @@ backward-generated witnesses.
 
 > ### The revised gate was built, and it refutes the rescope above
 >
-> **`INSERT` is not hard to rank. It is flat, and provably so.** Counting move
-> kinds gives an exact identity for a completion's length:
+> **`INSERT` is flat *on this corpus, under this metric*.** Both qualifiers are
+> load-bearing and an earlier draft of this block dropped them, which turned a
+> statement about a measurement into a false statement about the problem. The
+> correction is §M1b below; the measurement itself stands.
+>
+> Counting move kinds gives an exact identity for a completion's length:
 >
 > ```text
 > moves = (L + n - 1)/2 + 2i + 2s + c
 > ```
 >
 > with `i` insertions, `s` stabilisations, `c` crossing changes. Every insertion
-> costs two moves that nothing pays back, and `REDUCE(p)` undoes `INSERT(p, ...)`
-> — so **every** `INSERT` site reaches the unknot in exactly `m* + 2`. Measured:
+> costs two moves, and can save at most one — by removing a crossing change,
+> which contributes 1 to `c`. **Net `+1`, always.** So under *shortest-moves* an
+> insertion is dominated for every instance, and `REDUCE(p)` undoes
+> `INSERT(p, ...)`, putting every `INSERT` site at exactly `m* + 2`. Measured:
 > **0 `INSERT` sites in the target across all 159 states**, while 159 of 159
-> states have at least two `INSERT` sites available. 160 such `m*+2` completions
-> were built with no search at all and replayed.
+> states have at least two available. 160 such `m*+2` completions were built with
+> no search at all and replayed.
 >
 > So "no hand-written score beats random ordering inside the `INSERT` block" was
-> never evidence of room for a learned head. It is what a **flat** target looks
-> like: every option provably equal, nothing to rank. A learned head cannot beat
-> random on a constant.
+> not evidence of room for a learned head *here*. It is what a flat target looks
+> like: every option equal, nothing to rank. What it does **not** license is the
+> conclusion that growth does not matter — see §M1b.
 >
 > **And the deeper cause is the corpus, not the head.** The generator walks
 > forward with type-preserving moves — `INSERT` among them — and then applies a
@@ -1936,6 +1942,52 @@ backward-generated witnesses.
 > `churn-unknot-k1-long` plus a `growth_aware`-versus-head comparison scored on
 > the states those instances carry — and that is a corpus question, not a head
 > question.
+
+### M1b — Growth does matter, and the flatness was an artifact of how we asked
+
+The block above was summarised at one point as "`INSERT` is not hard to rank, it
+is flat, and provably so". That reads as a claim about knot theory. It is not,
+and it is false as one. The published witness for the target **does grow**, in two
+separate places, and both were already measured in this note:
+
+| where | measured |
+|---|---|
+| the final zero-CC leg, *after* all five changes | **16 of 518 moves create crossings** (`RI+` 9, `RII+` 7) on a 254 -> 0 reduction |
+| reaching a chart where changes 3–5 are visible at all | the 20-letter entry word admits only **2 of 5**; a certified **117**-move floor just to inflate |
+
+So growth is not incidental to untying hard knots — it is the mechanism, exactly
+as one would expect. Two things have to be kept apart:
+
+* **Is growth necessary?** On the real target, yes, measured twice over.
+* **Are insertions distinguishable from each other?** That is what a per-site
+  head would rank, and it is a different question.
+
+**The identity answers only the second, and only under one metric.** It says that
+*among insertions which enable nothing*, all are equal — because a move-count
+metric can see only that each costs `+2`. An insertion that unlocks a cheaper
+crossing change is not equal to one that does not, and the shortest-moves metric
+**cannot represent that difference at all**: `+2` against a saving of `1` is
+dominated for every instance, so the metric rules out the very move the target
+requires, before any data is seen.
+
+That is §2.1's inversion in a second costume. §2.1 caught it in the objective and
+this note reintroduced it in the gate's target. Under the campaign objective —
+lexicographic `(cc, moves)` — an insertion saving one change wins **always**,
+because `cc` dominates absolutely.
+
+**And the corpus could not have shown it either way.** Instances are built by a
+forward walk and the witness is that walk reversed, so the reverse is always
+traversable by shrinking. Growth is never *necessary* there, so every insertion
+really is pure waste — in the corpus. That is a property of how the examples were
+made, not of the problem they stand for.
+
+**The correct statement, then:** insertions are flat with respect to move count
+and differentiated with respect to what they unlock. We measured with a metric
+that cannot see the difference, on a corpus that did not contain it. Both were
+fixed afterwards — the target is now `(cc, moves)`, and 36 instances with
+verifiably necessary growth exist — and neither fix has yet produced a corpus
+carrying enough of the phenomenon to gate a head on. That remains the open item,
+and §M1's honest status is unchanged: **the head is portable and unproven.**
 
 **The revised gate.** Three changes, each answering one of the failures above:
 
