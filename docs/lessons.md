@@ -172,4 +172,17 @@ may since have moved; the lesson is the durable part.
   further guards that mattered here: use *different* words per repeat, or an
   `lru_cache` measures itself; and check the value agrees, since a fast wrong
   answer is not a speedup.
+- **A "certified" bound was unsound, and the error pointed the dangerous way.**
+  `_divisibility_chain([3, 29])` returned `[1, 87]`, so `Z/3 + Z/29` -- cyclic of
+  order 87 -- was read as a rank-2 group and emitted a false Montesinos `u >= 2`
+  on 25 of 9,708 nodes that carry a *replayed* `u <= 1`. Two things make it worse
+  than an ordinary bug. It is a false **lower** bound, and `unknot_search` prunes
+  on lower bounds, so the error discards correct answers rather than wasting
+  time. And it lived in the layer the whole project calls theorems: every claim
+  that a witness "determines `u`" rests on these being right. The function's own
+  docstring said only the length was used downstream, which is exactly what made
+  a spurious unit fatal. It surfaced only because a filter derived from it
+  dropped a knot that was known-reachable -- a contradiction between two sources
+  that were never compared before. **Cross-check a certified bound against
+  replayed evidence, not only against another computation.**
 - Negative results belong in commit messages and notes, not in dead code.

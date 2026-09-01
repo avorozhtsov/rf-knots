@@ -244,28 +244,55 @@ def _pivot_smallest(work: Matrix, top: int, size: int):
 
 
 def _divisibility_chain(values: list[int]) -> list[int]:
-    """Rewrite a multiset of orders as `d_1 | d_2 | ... `.
+    """Rewrite a multiset of orders as genuine invariant factors `d_1 | ... | d_k`.
 
-    Only the *length* is used downstream (cyclic or not), but a group written
-    without the divisibility chain is not in Smith form and would be a trap for
-    anyone reading the numbers.
+    The length is what decides `u >= 2` downstream, so a wrong length is an
+    unsound *lower* bound -- the direction that prunes valid witnesses out of a
+    search. An earlier version took repeated gcds and produced `[3, 29] -> [1, 87]`,
+    reporting cyclic `Z/87` as a rank-2 group and emitting a false Montesinos
+    bound on 25 of 9,708 nodes that have a replayed `u <= 1`. It also returned
+    `[5, 5, 5] -> [5, 1, 25]`, which is not a divisibility chain at all.
+
+    The standard construction instead: split every order into prime powers, and
+    take the `j`-th invariant factor to be the product over primes of that
+    prime's `j`-th largest exponent. Units cannot arise, because a factor is
+    emitted only while some prime still has an exponent to spend.
     """
-    from math import gcd
+    from collections import defaultdict
 
-    remaining = sorted(values)
-    chain: list[int] = []
-    while remaining:
-        divisor = 0
-        for value in remaining:
-            divisor = gcd(divisor, value)
-        product = 1
-        for value in remaining:
-            product *= value
-        chain.append(divisor)
-        remaining.remove(divisor) if divisor in remaining else remaining.pop(0)
-        if remaining:
-            rest = product // divisor
-            remaining = _factor_multiset(rest, len(remaining))
+    exponents: dict[int, list[int]] = defaultdict(list)
+    for value in values:
+        remainder = abs(value)
+        if remainder in (0, 1):
+            continue
+        prime = 2
+        while prime * prime <= remainder:
+            if remainder % prime == 0:
+                power = 0
+                while remainder % prime == 0:
+                    remainder //= prime
+                    power += 1
+                exponents[prime].append(power)
+            prime += 1 if prime == 2 else 2
+        if remainder > 1:
+            exponents[remainder].append(1)
+
+    for powers in exponents.values():
+        powers.sort(reverse=True)
+    width = max((len(powers) for powers in exponents.values()), default=0)
+
+    chain = []
+    for index in range(width):
+        factor = 1
+        for prime, powers in exponents.items():
+            if index < len(powers):
+                factor *= prime ** powers[index]
+        chain.append(factor)
+    chain.reverse()                       # ascending, so d_1 | d_2 | ... | d_k
+
+    for smaller, larger in zip(chain, chain[1:], strict=False):
+        if larger % smaller:              # the property the name promises
+            raise AssertionError(f"not a divisibility chain: {chain}")
     return chain
 
 

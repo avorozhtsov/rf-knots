@@ -155,3 +155,45 @@ def test_exact_integer_determinant_agrees_with_a_naive_expansion():
         size = int(rng.integers(1, 6))
         matrix = [[int(rng.integers(-4, 5)) for _ in range(size)] for _ in range(size)]
         assert seifert.integer_determinant(matrix) == naive(matrix)
+
+
+def test_coprime_orders_are_one_cyclic_factor_not_two():
+    """A wrong length here is an unsound *lower* bound, which prunes witnesses.
+
+    `Z/3 + Z/29` is cyclic of order 87.  Reporting it as a rank-2 group emits a
+    false Montesinos `u >= 2`, and `unknot_search` prunes on that bound -- so the
+    error direction discards correct answers rather than merely wasting time.
+    Measured blast radius before the fix: 25 of 9,708 nodes carrying a replayed
+    `u <= 1` were given a provably false `u >= 2`.
+    """
+    from rf_knots.seifert import _divisibility_chain
+
+    assert _divisibility_chain([3, 29]) == [87]
+    assert _divisibility_chain([2, 3, 5, 7]) == [210]
+    assert _divisibility_chain([9]) == [9]
+    assert _divisibility_chain([]) == []
+
+
+def test_the_chain_is_a_chain_and_preserves_the_group_order():
+    """`d_1 | d_2 | ... | d_k`, no units, same order -- the name's whole promise.
+
+    The previous implementation returned `[5, 5, 5] -> [5, 1, 25]`, which has the
+    right product and is not a divisibility chain, and `[3, 29] -> [1, 87]`, whose
+    unit inflated the rank.
+    """
+    import math
+    import random
+
+    from rf_knots.seifert import _divisibility_chain
+
+    assert _divisibility_chain([5, 5, 5]) == [5, 5, 5]
+    assert _divisibility_chain([2, 3, 4]) == [2, 12]
+
+    rng = random.Random(20260901)
+    for _ in range(60):
+        orders = [rng.randint(2, 60) for _ in range(rng.randint(1, 5))]
+        chain = _divisibility_chain(list(orders))
+        assert math.prod(chain) == math.prod(orders), orders
+        assert all(d > 1 for d in chain), (orders, chain)
+        for smaller, larger in zip(chain, chain[1:], strict=False):
+            assert larger % smaller == 0, (orders, chain)
