@@ -553,7 +553,19 @@ primary loop.
 
   Adding `|signature|` costs 1.5 ms per state and removes **99.8% of the false
   merges** (12,920 pairs down to 24), with zero false splits, exactly and without
-  floats. In a tuple **volume is a measured no-op** — `(volume, det, abs sig)`
+  floats.
+
+  > **Scope, added after this key was used where it does not belong.** That
+  > measurement covers 2,525 states spanning **36 knots**. On the landmark table
+  > it does not hold: **2,911 knots collapse to 273 distinct `(det, |sigma|)`
+  > values, 193 of which carry more than one `u`.** Used as a *terminal test*
+  > the key composes **false bounds** — reach `10_22`, claim `u <= 1` because
+  > `11n_4` shares `(49, 0)`. **This key is for frontier deduplication only,
+  > never for identification.** For identification use `(determinant, Jones)`,
+  > which `knot_table.identify` already keys on — measured at **0.61 ms/state
+  > against 1.24 ms** for the weaker key and 6.04 ms for the certified floor the
+  > same loop already pays. The stronger key is the cheaper one; there was never
+  > a trade to make. In a tuple **volume is a measured no-op** — `(volume, det, abs sig)`
   scores byte-identically to `(det, abs sig)` at 5.4x the cost, because where
   volume works it separates exactly what the determinant already separated.
 * **Why volume fails here, recorded so it is not retried.** Connected sums are
@@ -622,6 +634,66 @@ value" with something measurable.
 The last row is the honest version of note 21's embedding ablation. An embedding
 that raises retrieval recall and shrinks the number of expansions to a terminal
 has earned its place; one that only produces a pretty space has not.
+
+---
+
+### 3.5 The §3.4 gate was run, and it could not be decided
+
+Seven frontier orderings plus a branch-and-bound control, everything else held
+identical — same inner exploration, node key, pruning, terminal test, tie-break
+and budget. 57 instances with known `u`: 19 rungs and 38 identified `unknotdb`
+nodes with `u_lower == u_upper`.
+
+| ordering | expansions/solved, all 57 | cap >= 3 (n=29) |
+|---|---:|---:|
+| certified floor (control) | **1.96** | 1.66 |
+| embedding cosine order | 2.04 | **1.52** |
+| embedding key, refit scale | 2.18 | 2.38 |
+| embedding key, trained scale | 2.23 | 2.48 |
+| structural (free-reduced length) | 2.73 | 3.43 |
+| random | 3.00 | 3.31 |
+
+At `cap >= 3` the embedding beats both baselines, **and that number should not be
+used.** Paired instance by instance it is better on 2, worse on 1, tied on 26 —
+**net 4 expansions across three instances** — and over all 57 the ordering
+reverses. No `cap >= 3` ranking survives dropping a single instance, including
+the one that flatters the control.
+
+**The reason is the finding: 45 of 57 instances are settled before any ordering
+is consulted**, 43 at the very first expansion, by every arm including random.
+Identification at 82.3% coverage decides them; the heuristic never gets a vote.
+The instance set is too easy to carry the gate, and that is a statement about the
+instances, not about the embedding — which remains **unproven for search**, its
+retrieval result notwithstanding.
+
+**Scalarisation loses inside the search too**, reproducing §5.2: every keyed form
+is worse than the embedding's own cosine order. Refitting `cc_scale` does not
+rescue it — least squares gives 1.578 against the trained 1.628, and mean
+matching gives **4.785, a 2.9x change**, which does calibrate the held-out mean
+to 1.15 and still loses (2.38 against 1.52). The 2.9x miscalibration is a real
+defect on its own account.
+
+> ### And the cap-5 attempt was structurally incapable, which voids it as evidence
+>
+> No arm reached a terminal on `7_1 # m(7_1)` at cap 5, and branch-and-bound
+> without the table found nothing either. But the run cannot be read as a
+> statement about heuristics, because **the `ActionSpec` is built at the source's
+> strand count, so `STABILIZE` is illegal and the search cannot grow the braid.**
+>
+> That is §2.3's requirement and §Status consequence 3 — "controlled inflation is
+> a first-class requirement, not a risk note" — and it is simply not implemented.
+> §M1b measured what it costs: the published witness creates crossings 16 times,
+> and the 20-letter entry word admits only 2 of its 5 changes without inflating.
+>
+> **So every cap-5 attempt in this note so far, M0.3's floor included, was run by
+> a search that could not do the thing the target requires.** Part of that zero
+> is a missing capability rather than a hard instance. Building growth into the
+> search is now the prerequisite for any further cap-5 claim, and it outranks
+> every heuristic question.
+
+**What the gate needs to be decidable:** instances where the table does *not*
+settle the answer at expansion one. That is the same corpus problem §M1 keeps
+arriving at, now reached from the search side rather than the training side.
 
 ---
 
