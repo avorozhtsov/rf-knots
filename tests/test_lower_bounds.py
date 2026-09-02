@@ -1,7 +1,14 @@
 from dataclasses import replace
 
+import pytest
+
 from rf_knots.invariants import invariants
-from rf_knots.lower_bounds import claims_for, strongest, tabulated_claims
+from rf_knots.lower_bounds import (
+    claims_for,
+    computed_claims,
+    strongest,
+    tabulated_claims,
+)
 
 
 def test_trefoil_has_three_independent_tabulated_lower_bounds():
@@ -27,3 +34,21 @@ def test_computed_and_tabulated_claims_combine():
     claims = claims_for(inv)
     assert strongest(claims) == 1
     assert "signature" in {claim.method for claim in claims}
+
+
+def test_a_cyclic_double_cover_does_not_certify_an_unknotting_number_of_two():
+    """11n_184, whose `u` is 1 by a replayed CC=1 edge to the unknot.
+
+    `tests/test_seifert.py` pins the invariant factors; this pins the *consumer*,
+    which is where the bound actually became unsound. `H_1(Sigma_2) = Z/87` is
+    cyclic, so Montesinos says nothing here -- but `computed_claims` only ever
+    sees `len(homology)`, so any future change that inflates the rank re-emits
+    `u >= 2` on a knot that unknots in one crossing change, and `unknot_search`
+    prunes on exactly this maximum.
+    """
+    pytest.importorskip("spherogram", reason="computed bounds need the 'bounds' extra")
+    word, strands = (-2, -2, 1, 3, 2, 2, 3, 1, -2, 1, 3), 4
+    claims = computed_claims(word, strands)
+    assert claims, "the computed bounds are unavailable, so this proves nothing"
+    assert "montesinos-cyclic" not in {claim.method for claim in claims}
+    assert strongest(claims) == 1

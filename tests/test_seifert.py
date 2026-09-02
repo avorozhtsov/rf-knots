@@ -197,3 +197,68 @@ def test_the_chain_is_a_chain_and_preserves_the_group_order():
         assert all(d > 1 for d in chain), (orders, chain)
         for smaller, larger in zip(chain, chain[1:], strict=False):
             assert larger % smaller == 0, (orders, chain)
+
+
+# `test_the_chain_is_a_chain_and_preserves_the_group_order` above checks three
+# properties -- divisibility, no units, same order -- and those three do not pin
+# the answer. For the multiset `[9, 4]` the chain `[6, 6]` satisfies all of them
+# and is still wrong: `Z/9 + Z/4` is the cyclic `Z/36`, so the truth is `[36]`.
+# The wrong answer is longer, which is the same direction the merged defect
+# failed in -- an inflated rank, hence a false Montesinos `u >= 2`. So these add
+# the cases that separate the right chain from the merely well-formed ones.
+COPRIME_CASES = [
+    ([5, 7], [35]),
+    ([9, 4], [36]),
+    ([2, 4], [2, 4]),
+    ([3, 3], [3, 3]),
+    ([6, 10, 15], [30, 30]),
+    ([12, 18, 30], [6, 6, 180]),
+]
+
+
+@pytest.mark.parametrize(("orders", "expected"), COPRIME_CASES)
+def test_the_chain_is_the_one_smith_form_and_not_merely_well_formed(orders, expected):
+    assert seifert._divisibility_chain(orders) == expected
+
+
+def test_the_chain_agrees_with_an_independent_gcd_lcm_construction():
+    """Differential check against a second algorithm that shares no code.
+
+    `seifert` builds the invariant factors from sorted prime exponents. The
+    classical alternative works on the diagonal directly: `diag(a, b)` is
+    equivalent to `diag(gcd(a, b), lcm(a, b))` over `Z`, so sweeping that
+    replacement across adjacent pairs until nothing moves also lands on the Smith
+    form. Two routes to a decomposition that is unique -- so any disagreement is
+    a defect in one of them, and no amount of property-checking substitutes for
+    it, since the properties admit wrong answers.
+    """
+    import math
+    import random
+    from math import gcd
+
+    def by_gcd_lcm(values):
+        chain = sorted(abs(value) for value in values if value not in (0, 1))
+        changed = True
+        while changed:
+            changed = False
+            for index in range(len(chain) - 1):
+                first, second = chain[index], chain[index + 1]
+                divisor = gcd(first, second)
+                if divisor != first:
+                    chain[index] = divisor
+                    chain[index + 1] = first // divisor * second
+                    changed = True
+        return [value for value in chain if value != 1]
+
+    rng = random.Random(20260902)
+    primes = [2, 3, 5, 7, 11, 13, 101, 9973]
+    for _ in range(400):
+        orders = [
+            rng.choice(primes) ** rng.randint(1, 3)
+            if rng.random() < 0.5
+            else rng.randint(2, 5000)
+            for _ in range(rng.randint(1, 5))
+        ]
+        chain = seifert._divisibility_chain(list(orders))
+        assert chain == by_gcd_lcm(orders), orders
+        assert math.prod(chain) == math.prod(orders), orders
