@@ -130,3 +130,60 @@ def test_the_fingerprint_is_bounded_on_a_word_the_burau_route_cannot_afford():
     key = _fingerprint(word, 2)
     assert time.monotonic() - start < 0.30
     assert key[0] == 1
+
+
+# -- growth: the search may widen the braid, under an explicit budget ----------
+
+
+def test_growth_is_off_by_default_so_no_existing_caller_changes():
+    """`strand_growth=0` must reproduce the search exactly as it was.
+
+    The `ActionSpec` is built at the source's own strand count, `STABILIZE` is
+    illegal from the first node, and nothing wider than the source is ever
+    expanded. That was note 22 §3.5's defect, and it is now the *default* rather
+    than an accident, which is the difference that matters.
+    """
+    report = search((1, 1, 1, 1, 1), 2, max_crossing_changes=2, node_budget=4000)
+    assert report.strand_growth == 0
+    assert report.strand_cap == 2
+    assert report.length_growth == report.growth
+    assert report.max_strands_expanded == 2
+    assert report.expansions_above_source_width == 0
+    assert report.stabilizations_generated == 0
+
+
+def test_strand_growth_makes_stabilize_legal_and_the_braid_widens():
+    """The capability itself: with headroom, `STABILIZE` fires and `n` grows."""
+    report = search((1, 1, 1, 1, 1), 2, max_crossing_changes=2,
+                    node_budget=4000, strand_growth=1)
+    assert report.strand_cap == 3
+    assert report.stabilizations_generated > 0
+    assert report.max_strands_expanded == 3
+    assert report.witness is not None, report.notes
+    report.witness.verify()
+
+
+def test_the_width_penalty_pushes_the_frontier_back_down():
+    """The ratchet is real, and this is the dial that holds it.
+
+    `STABILIZE` is legal nearly everywhere and `DESTABILIZE` nearly nowhere, so
+    length-first ordering alone defers a widened diagram by one letter and no
+    more. Charging each extra strand several letters of priority has to move the
+    fraction of expansions spent wide, or the policy is decoration.
+    """
+    from rf_knots.actions import ActionSpec
+    from rf_knots.unknot_search import _explore_level
+
+    spec = ActionSpec(16, 4)
+    word = (1, 2, 1, -2, -1, 2)
+    drift = {}
+    for penalty in (0, 4):
+        stats: dict = {}
+        _explore_level(spec, [((word, 3), [])], 1500, 3,
+                       strand_cap=4, source_strands=3,
+                       width_penalty=penalty, stats=stats)
+        drift[penalty] = (
+            stats["expansions_above_source_width"] / stats["expansions"]
+        )
+    assert drift[0] > 0.5, drift
+    assert drift[4] < drift[0], drift

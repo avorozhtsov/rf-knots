@@ -68,11 +68,53 @@ class SearchReport:
     knots_expanded: int
     pruned_by_bound: int
     notes: tuple[str, ...] = field(default_factory=tuple)
+    # The two growth dials, recorded so a run can be quoted without its caller.
+    growth: int = 0
+    strand_growth: int = 0
+    strand_cap: int | None = None
+    length_growth: int = 0
+    width_penalty: int = 0
+    # Cost and drift, filled from `_explore_level`'s counters.
+    expansions: int = 0
+    successors_generated: int = 0
+    successors_admitted: int = 0
+    stabilizations_generated: int = 0
+    destabilizations_generated: int = 0
+    max_strands_expanded: int = 0
+    expansions_above_source_width: int = 0
+    flip_sites: int = 0
+    flip_sites_above_source_width: int = 0
+    witness_stabilizations: int = 0
 
     @property
     def solved_exactly(self) -> bool:
         """`u` is determined: the sequence found meets the certified bound."""
         return self.exact
+
+    @property
+    def branching_factor(self) -> float:
+        """Legal successors generated per node expanded, over the whole search."""
+        return self.successors_generated / self.expansions if self.expansions else 0.0
+
+    @property
+    def admitted_branching_factor(self) -> float:
+        """Successors that survived the length and strand caps, per expansion."""
+        return self.successors_admitted / self.expansions if self.expansions else 0.0
+
+    @property
+    def width_drift(self) -> float:
+        """Fraction of expansions spent on braids wider than the source.
+
+        This is the number the growth policy has to keep small.  An unconstrained
+        walk ratchets -- `STABILIZE` is nearly always legal and `DESTABILIZE`
+        nearly never is -- so if enabling growth is not to make the search
+        strictly worse, the frontier must keep coming back down.
+        """
+        return (
+            self.expansions_above_source_width / self.expansions
+            if self.expansions
+            else 0.0
+        )
 
 
 def _fingerprint(word: Word, strands: int) -> tuple:
@@ -136,6 +178,11 @@ def _explore_level(
     roots: list[tuple[State, list[int]]],
     node_budget: int,
     growth: int,
+    *,
+    strand_cap: int | None = None,
+    source_strands: int | None = None,
+    width_penalty: int = 0,
+    stats: dict | None = None,
 ) -> tuple[list[tuple[State, list[int]]], State | None, list[int] | None]:
     """Best-first over type-preserving moves from every root at this level.
 
@@ -146,39 +193,121 @@ def _explore_level(
     Length-first drives straight at short representatives, which are both the ones
     worth flipping a crossing on and the ones a solution has to pass through.
 
+    ## Two caps, not one
+
+    `growth` bounds the **word length** relative to the roots. `strand_cap` bounds
+    the **strand count** absolutely, and is the second half of the same idea: the
+    length cap alone never stopped `STABILIZE`, because until this parameter
+    existed the caller built the `ActionSpec` at the source's own strand count and
+    `STABILIZE` was illegal from the first node. Passing `strand_cap=None` keeps
+    whatever the spec permits.
+
+    ## The ratchet, and what actually holds it
+
+    `STABILIZE` is legal at almost every node and `DESTABILIZE` almost nowhere --
+    it needs the top generator to occur exactly once -- so a walk that treats the
+    two symmetrically widens monotonically and never comes back.
+
+    Length-first ordering is *not* enough on its own. `STABILIZE` raises both keys
+    by one, so a widened diagram is deferred by one letter's worth of priority and
+    no more; once the narrow diagrams within the length cap run out, every
+    remaining expansion is wide. Measured on `5_1` at `strand_growth=1`, that is
+    97.8% of expansions above the source width.
+
+    `width_penalty` is the control: each strand above `source_strands` costs that
+    many letters of priority. The charge is on the *state*, not the path, so
+    destabilising back to the source width refunds it in full -- a
+    stabilise/manoeuvre/destabilise round trip that shortens the word is rewarded
+    the moment it closes, while sitting wide is paid for at every expansion. It is
+    inert at `strand_growth=0`, where every node has the same width.
+    `stats["expansions_above_source_width"]` reports what the policy achieved.
+
     Returns the reachable diagrams with the path that reached each, plus the
     solved state and its path if the empty 1-braid was found without spending
     another crossing change.
     """
     import heapq
 
+    from rf_knots.actions import DESTABILIZE, STABILIZE_NEG, STABILIZE_POS
+
     seen: set[State] = set()
     heap: list[tuple[int, int, int, State, list[int]]] = []
     counter = 0
+    if source_strands is None:
+        source_strands = min((state[1] for state, _ in roots), default=0)
+
+    def key(word: Word, strands: int) -> int:
+        return len(word) + width_penalty * max(0, strands - source_strands)
+
     for state, path in roots:
         if state not in seen:
             seen.add(state)
-            heapq.heappush(heap, (len(state[0]), state[1], counter, state, path))
+            heapq.heappush(
+                heap, (key(*state), state[1], counter, state, path)
+            )
             counter += 1
     reached: list[tuple[State, list[int]]] = []
     cap = max((len(state[0]) for state, _ in roots), default=0) + growth
+    stabilize_actions = {spec.encode(STABILIZE_POS), spec.encode(STABILIZE_NEG)}
+    destabilize_action = spec.encode(DESTABILIZE)
+    expansions = generated = admitted = 0
+    stabilizations = destabilizations = 0
+    widest = 0
+    wide_expansions = 0
 
     while heap and len(seen) < node_budget:
         _, _, _, (word, strands), path = heapq.heappop(heap)
         reached.append(((word, strands), path))
+        expansions += 1
+        widest = max(widest, strands)
+        if strands > source_strands:
+            wide_expansions += 1
         if not word and strands == 1:
-            return reached, (word, strands), path
+            break
         for action, next_word, next_strands in successors(spec, word, strands):
+            generated += 1
+            if action in stabilize_actions:
+                stabilizations += 1
+            elif action == destabilize_action:
+                destabilizations += 1
             if len(next_word) > cap:
                 continue
+            if strand_cap is not None and next_strands > strand_cap:
+                continue
+            admitted += 1
             nxt = (next_word, next_strands)
             if nxt in seen:
                 continue
             seen.add(nxt)
             counter += 1
             heapq.heappush(
-                heap, (len(next_word), next_strands, counter, nxt, [*path, action])
+                heap,
+                (key(next_word, next_strands), next_strands, counter, nxt,
+                 [*path, action]),
             )
+
+    if stats is not None:
+        stats["expansions"] = stats.get("expansions", 0) + expansions
+        stats["successors_generated"] = (
+            stats.get("successors_generated", 0) + generated
+        )
+        stats["successors_admitted"] = stats.get("successors_admitted", 0) + admitted
+        stats["stabilizations_generated"] = (
+            stats.get("stabilizations_generated", 0) + stabilizations
+        )
+        stats["destabilizations_generated"] = (
+            stats.get("destabilizations_generated", 0) + destabilizations
+        )
+        stats["max_strands_expanded"] = max(
+            stats.get("max_strands_expanded", 0), widest
+        )
+        stats["expansions_above_source_width"] = (
+            stats.get("expansions_above_source_width", 0) + wide_expansions
+        )
+
+    solved = reached[-1][0] if reached and reached[-1][0] == ((), 1) else None
+    if solved is not None:
+        return reached, solved, reached[-1][1]
     return reached, None, None
 
 
@@ -189,6 +318,8 @@ def search(
     max_crossing_changes: int = 3,
     node_budget: int = 20_000,
     growth: int = 2,
+    strand_growth: int = 0,
+    width_penalty: int = 2,
     frontier_width: int = 24,
     flip_from: int = 150,
     max_len: int | None = None,
@@ -203,30 +334,102 @@ def search(
     up to that width. Any witness returned is exact evidence for an upper bound
     whatever the width; only the claim "no shorter sequence exists" would need
     completeness, and this function never makes that claim.
+
+    ## The two growth dials
+
+    `growth` is the **length** headroom, relative to the roots of each level.
+    `strand_growth` is the **width** headroom, absolute and relative to the
+    source: the braid may reach `strands + strand_growth` strands and no more.
+
+    `strand_growth=0` is the default and reproduces the search exactly as it
+    behaved before this parameter existed — the `ActionSpec` is built at the
+    source's own strand count, so `STABILIZE_POS`/`STABILIZE_NEG` (which take
+    `n -> n+1` and are legal only while `n < spec.max_strands`) are illegal from
+    the first node and the braid can never widen. That was not a policy; it was
+    an oversight, and note 22 §2.3 / §M1b measured what it costs: the published
+    witness for `7_1 # m(7_1)` creates crossings sixteen times, and the 20-letter
+    entry word admits only two of its five crossing changes without inflating.
+
+    A stabilisation also costs one letter, so with `strand_growth > 0` the length
+    cap is raised by the same amount: widening is charged against its own budget
+    rather than silently eating the insertion budget, and the two dials stay
+    independent. Both are recorded on the returned `SearchReport`.
+
+    ## The growth policy, in one sentence
+
+    **Cap the width absolutely, and charge every strand above the source
+    `width_penalty` letters of frontier priority, refunded on the way back down.**
+    The cap stops the braid running away; the charge stops the frontier *sitting*
+    wide, because `DESTABILIZE` is nearly never legal while `STABILIZE` nearly
+    always is and length-first ordering alone defers a widened diagram by exactly
+    one letter (measured: 97.8% of expansions above source width on `5_1` at
+    `width_penalty=0`). All three of `growth`, `strand_growth` and
+    `width_penalty` are recorded on the report, and `width_penalty` is inert
+    whenever `strand_growth=0`, so no existing caller changes.
     """
     letters = tuple(int(x) for x in word if int(x))
-    spec = ActionSpec(max_len or len(letters) + growth + 4, max(strands, 2))
+    strand_growth = max(int(strand_growth), 0)
+    strand_cap = max(strands, 2) + strand_growth
+    # One stabilisation costs one letter as well as one strand, so the length cap
+    # is opened by exactly the strand budget.  At `strand_growth=0` this is `growth`
+    # and every existing caller is bit-for-bit unchanged.
+    length_growth = growth + strand_growth
+    spec = ActionSpec(max_len or len(letters) + length_growth + 4, strand_cap)
 
+    def _report(*args, **kwargs) -> SearchReport:
+        report = SearchReport(*args, **kwargs)
+        report.growth = growth
+        report.strand_growth = strand_growth
+        report.strand_cap = strand_cap
+        report.length_growth = length_growth
+        report.width_penalty = width_penalty
+        report.expansions = stats.get("expansions", 0)
+        report.successors_generated = stats.get("successors_generated", 0)
+        report.successors_admitted = stats.get("successors_admitted", 0)
+        report.stabilizations_generated = stats.get("stabilizations_generated", 0)
+        report.destabilizations_generated = stats.get(
+            "destabilizations_generated", 0
+        )
+        report.max_strands_expanded = stats.get("max_strands_expanded", strands)
+        report.expansions_above_source_width = stats.get(
+            "expansions_above_source_width", 0
+        )
+        report.flip_sites = stats.get("flip_sites", 0)
+        report.flip_sites_above_source_width = stats.get(
+            "flip_sites_above_source_width", 0
+        )
+        if report.witness is not None:
+            report.witness_stabilizations = sum(
+                step.action.kind in ("STABILIZE_POS", "STABILIZE_NEG")
+                for step in report.witness.steps
+            )
+        return report
+
+    stats: dict = {}
     start_bound = certified_lower_bound(letters, strands)
     log(f"start: {len(letters)} letters on {strands} strands, "
         f"certified lower bound {start_bound}")
     if start_bound > max_crossing_changes:
-        return SearchReport(None, None, start_bound, False, 0, 0, 0,
-                            ("the certified bound already exceeds the budget",))
+        return _report(None, None, start_bound, False, 0, 0, 0,
+                       ("the certified bound already exceeds the budget",))
 
     diagrams = knots = pruned = 0
     level: list[tuple[State, list[int]]] = [((letters, strands), [])]
     seen_knots: set[tuple] = set()
 
     for used in range(max_crossing_changes + 1):
-        reached, solved, path = _explore_level(spec, level, node_budget, growth)
+        reached, solved, path = _explore_level(
+            spec, level, node_budget, length_growth,
+            strand_cap=strand_cap, source_strands=strands,
+            width_penalty=width_penalty, stats=stats,
+        )
         diagrams += len(reached)
         log(f"level {used}: {len(reached)} diagrams from {len(level)} roots")
         if solved is not None:
             witness = UnknotWitness.from_actions(letters, strands, spec, path)
             exact = witness.crossing_changes == start_bound
-            return SearchReport(witness, witness.crossing_changes, start_bound,
-                                exact, diagrams, knots, pruned)
+            return _report(witness, witness.crossing_changes, start_bound,
+                           exact, diagrams, knots, pruned)
         if used == max_crossing_changes:
             break
 
@@ -237,6 +440,16 @@ def search(
         # word that has been inflated by insertions is almost always undone by
         # free reduction -- so the cap costs far less than it saves.
         ordered_by_length = sorted(reached, key=lambda item: len(item[0][0]))[:flip_from]
+        # Recorded, not used: the whole §M1b mechanism is "inflate until a
+        # crossing change becomes available", so the count of flip sites that sit
+        # above the source width is what says whether growth ever reached the
+        # place it was enabled for.  The selection itself stays ordered by plain
+        # length, so `strand_growth=0` is unchanged.
+        stats["flip_sites"] = stats.get("flip_sites", 0) + len(ordered_by_length)
+        stats["flip_sites_above_source_width"] = (
+            stats.get("flip_sites_above_source_width", 0)
+            + sum(1 for (_, n), _ in ordered_by_length if n > strands)
+        )
         candidates: dict[tuple, tuple[State, list[int], int]] = {}
         flipped_seen: set[Word] = set()
         for (current, current_strands), path in ordered_by_length:
@@ -271,8 +484,8 @@ def search(
         log(f"level {used} -> {used + 1}: {len(candidates)} distinct knots, "
             f"{pruned} pruned, carrying {len(level)}")
 
-    return SearchReport(None, None, start_bound, False, diagrams, knots, pruned,
-                        ("no sequence found within the budget",))
+    return _report(None, None, start_bound, False, diagrams, knots, pruned,
+                   ("no sequence found within the budget",))
 
 
 def _crossing_change_action(spec: ActionSpec, position: int) -> int:

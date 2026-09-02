@@ -695,6 +695,65 @@ defect on its own account.
 settle the answer at expansion one. That is the same corpus problem §M1 keeps
 arriving at, now reached from the search side rather than the training side.
 
+### 3.6 Growth was implemented, and is structurally unusable — for a third reason
+
+`strand_growth` now exists as a hard cap, with `length_growth = growth +
+strand_growth` so a stabilisation's letter does not eat the insertion budget, and
+a `width_penalty` charged on the state so destabilising refunds it. Default `0`
+reproduces the old behaviour bit for bit.
+
+**The ratchet is real and a length-first ordering does not control it.**
+`STABILIZE` raises both priority keys by one, so a widened diagram is deferred by
+exactly one letter: on `5_1` that leaves **97.8% of expansions above source
+width**, and 57.3% across the 57-instance sweep. The hard cap plus the priority
+charge cuts drift to **12.1%** and the instances that widen at all from 38/57 to
+11/57. The penalty saturates at 1 — `p1` and `p2` are byte-identical everywhere.
+
+**Branching cost is small** (+1–2% over the sweep), and one arm's apparent saving
+is a trap worth recording: `growth-on-p0` spends 29,325 *fewer* expansions and is
+**worse**, returning a 3-change sequence on 6 instances where the control returns
+a certified-optimal 2. Fewer expansions bought a degraded answer.
+
+**No witness uses `STABILIZE`. Zero, everywhere** — 139 replay-complete sweep
+witnesses and 5 on the target, at every dial setting, including arms spending
+38–57% of their expansions on widened diagrams. The one move this work made legal
+is the one never used. **Cap 5 on the target: 0 of 5 arms**, now measured by a
+search that *can* make the move.
+
+> **Why, and it is not the frontier.** `flip_sites_above_source_width` is **0 of
+> 7,500** on the target and **0 of 6,066** on the hard subset. `search` selects
+> the `flip_from` **shortest** diagrams as crossing-change sites, and a stabilised
+> diagram is always longer — so a widened diagram never reaches the stage where a
+> crossing change is applied, no matter how much of the frontier it occupies.
+>
+> **The policy that stops the search drowning also stops it reaching the place
+> growth exists for, and no scalar penalty avoids both.**
+
+**This is the length-monotone bias surviving in a second place.** §Status
+consequence 3 disqualified length-monotone *search* — and `flip_from` is a
+length-monotone *selection* that went unnoticed because it sits at a different
+stage. That is now the third time in this note a corrected error reappeared
+somewhere else: `L1000`'s inversion returned as the gate's shortest-moves target
+(§M1b), the `(det, |sigma|)` key was carried from deduplication into
+identification (§3.1), and length-monotonicity now here. **A fix applied at one
+site is not a fix of the class.**
+
+**Consequence for M1, which is a scope change.** Growth and the per-site head are
+**coupled, not independent**: the head's job includes ranking `STABILIZE` and
+ranking the **flip sites**, not only the `INSERT` block that §M1b's kill
+criterion is currently scoped to. Widening the criterion is required before M1
+can be judged against the target's actual need.
+
+**One cheap experiment first, before any head.** Reserve a quota of the
+`flip_from` slots for diagrams that used growth, instead of taking the shortest.
+That tests whether flipping on a widened diagram helps *at all*, needs no
+training, and would tell us whether the head has anything to learn here.
+
+**Cap 6, kept separate and not a result:** 5 of 5 arms found a replay-verified
+6-change witness at `node_budget = 1e6`, and nothing at either cap at 12,000 —
+reproducing M0.3's branch-and-bound row. That is a budget effect, and 6 is free
+from subadditivity.
+
 ---
 
 ## 4. Data: generate from the answer, interleaved
