@@ -85,6 +85,17 @@ class SearchReport:
     flip_sites: int = 0
     flip_sites_above_source_width: int = 0
     witness_stabilizations: int = 0
+    # The flip-site quota (note 22 §3.6's "one cheap experiment first").
+    flip_growth_quota: float = 0.0
+    flip_quota_slots: int = 0
+    flip_quota_filled: int = 0
+    flip_quota_levels: int = 0
+    flip_quota_levels_filled: int = 0
+    # Whether the `flip_from` cut is even binding: reserving slots can only
+    # matter at a level where there were more diagrams than slots.
+    flip_reached: int = 0
+    flip_levels: int = 0
+    flip_levels_cut: int = 0
 
     @property
     def solved_exactly(self) -> bool:
@@ -100,6 +111,21 @@ class SearchReport:
     def admitted_branching_factor(self) -> float:
         """Successors that survived the length and strand caps, per expansion."""
         return self.successors_admitted / self.expansions if self.expansions else 0.0
+
+    @property
+    def flip_quota_fill_rate(self) -> float:
+        """Fraction of the reserved flip slots that a widened diagram existed for.
+
+        Note 22 §3.6 names the third possible outcome of the quota experiment:
+        *the quota cannot be filled*, because too few widened diagrams reach the
+        frontier at all.  That is a frontier problem rather than a selection
+        problem, and this is the number that tells the two apart.
+        """
+        return (
+            self.flip_quota_filled / self.flip_quota_slots
+            if self.flip_quota_slots
+            else 0.0
+        )
 
     @property
     def width_drift(self) -> float:
@@ -322,6 +348,7 @@ def search(
     width_penalty: int = 2,
     frontier_width: int = 24,
     flip_from: int = 150,
+    flip_growth_quota: float = 0.0,
     max_len: int | None = None,
     log=lambda *_: None,
 ) -> SearchReport:
@@ -366,9 +393,34 @@ def search(
     `width_penalty=0`). All three of `growth`, `strand_growth` and
     `width_penalty` are recorded on the report, and `width_penalty` is inert
     whenever `strand_growth=0`, so no existing caller changes.
+
+    ## The flip-site quota
+
+    `flip_growth_quota` reserves `int(flip_from * quota)` of the crossing-change
+    slots at each level for diagrams **above the source width**, filling the rest
+    by length exactly as before.  It exists because growth turned out to be
+    unusable for a reason that is neither the branching factor nor the frontier
+    policy: note 22 §3.6 measured `flip_sites_above_source_width` at **0 of
+    7,500** on the target and **0 of 6,066** on the hard sweep subset, because a
+    stabilised diagram is at least one letter longer than the one it came from
+    and there are always more than `flip_from` shorter ones.  The one move the
+    growth work made legal could never reach the stage it was made legal for.
+
+    That is the same length-monotone bias §Status consequence 3 disqualified for
+    *search*, surviving one stage later as a length-monotone *selection*.  The
+    quota is the cheapest possible test of whether flipping a widened diagram
+    helps at all: no training, one selection rule.
+
+    The default `0.0` reserves nothing, so the selection is the same list of
+    indices in the same order and every existing caller is unchanged.  Three
+    counters say what happened: `flip_sites_above_source_width` (did the quota do
+    what it says), `flip_quota_slots`/`flip_quota_filled` (were there even enough
+    widened diagrams to fill it -- a quota that cannot be filled is a statement
+    about the frontier, not about the selection).
     """
     letters = tuple(int(x) for x in word if int(x))
     strand_growth = max(int(strand_growth), 0)
+    flip_growth_quota = min(max(float(flip_growth_quota), 0.0), 1.0)
     strand_cap = max(strands, 2) + strand_growth
     # One stabilisation costs one letter as well as one strand, so the length cap
     # is opened by exactly the strand budget.  At `strand_growth=0` this is `growth`
@@ -398,6 +450,14 @@ def search(
         report.flip_sites_above_source_width = stats.get(
             "flip_sites_above_source_width", 0
         )
+        report.flip_growth_quota = flip_growth_quota
+        report.flip_quota_slots = stats.get("flip_quota_slots", 0)
+        report.flip_quota_filled = stats.get("flip_quota_filled", 0)
+        report.flip_quota_levels = stats.get("flip_quota_levels", 0)
+        report.flip_quota_levels_filled = stats.get("flip_quota_levels_filled", 0)
+        report.flip_reached = stats.get("flip_reached", 0)
+        report.flip_levels = stats.get("flip_levels", 0)
+        report.flip_levels_cut = stats.get("flip_levels_cut", 0)
         if report.witness is not None:
             report.witness_stabilizations = sum(
                 step.action.kind in ("STABILIZE_POS", "STABILIZE_NEG")
@@ -439,12 +499,39 @@ def search(
         # level. Short diagrams are also the useful ones -- a crossing change on a
         # word that has been inflated by insertions is almost always undone by
         # free reduction -- so the cap costs far less than it saves.
-        ordered_by_length = sorted(reached, key=lambda item: len(item[0][0]))[:flip_from]
-        # Recorded, not used: the whole §M1b mechanism is "inflate until a
-        # crossing change becomes available", so the count of flip sites that sit
-        # above the source width is what says whether growth ever reached the
-        # place it was enabled for.  The selection itself stays ordered by plain
-        # length, so `strand_growth=0` is unchanged.
+        # Note 22 §3.6: the count of flip sites above the source width is what
+        # says whether growth ever reached the stage it was enabled for, and it
+        # was measured at **0 of 7,500** on the target because this selection
+        # takes the shortest diagrams and a stabilised diagram is always longer.
+        # `flip_growth_quota` reserves a fraction of the slots for widened
+        # diagrams; at the default `0.0` not a single index changes and
+        # `strand_growth=0` remains bit-for-bit what it was.
+        by_length = sorted(range(len(reached)),
+                           key=lambda i: len(reached[i][0][0]))
+        stats["flip_reached"] = stats.get("flip_reached", 0) + len(reached)
+        stats["flip_levels"] = stats.get("flip_levels", 0) + 1
+        if len(reached) > flip_from:
+            stats["flip_levels_cut"] = stats.get("flip_levels_cut", 0) + 1
+        slots = int(flip_from * flip_growth_quota)
+        reserved: list[int] = []
+        if slots:
+            reserved = [i for i in by_length if reached[i][0][1] > strands][:slots]
+            stats["flip_quota_slots"] = stats.get("flip_quota_slots", 0) + slots
+            stats["flip_quota_filled"] = (
+                stats.get("flip_quota_filled", 0) + len(reserved)
+            )
+            stats["flip_quota_levels"] = stats.get("flip_quota_levels", 0) + 1
+            if len(reserved) == slots:
+                stats["flip_quota_levels_filled"] = (
+                    stats.get("flip_quota_levels_filled", 0) + 1
+                )
+        held = set(reserved)
+        rest = [i for i in by_length if i not in held][:flip_from - len(reserved)]
+        # Keep the union in length order, so the narrow sites keep the dedup
+        # priority they have today and the reserved wide ones can only *add*
+        # crossing changes that were not already available.
+        chosen = set(rest) | held
+        ordered_by_length = [reached[i] for i in by_length if i in chosen]
         stats["flip_sites"] = stats.get("flip_sites", 0) + len(ordered_by_length)
         stats["flip_sites_above_source_width"] = (
             stats.get("flip_sites_above_source_width", 0)

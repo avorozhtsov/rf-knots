@@ -187,3 +187,44 @@ def test_the_width_penalty_pushes_the_frontier_back_down():
         )
     assert drift[0] > 0.5, drift
     assert drift[4] < drift[0], drift
+
+
+def test_the_flip_quota_defaults_to_reserving_nothing():
+    """Note 22 §3.6's dial has to be inert at `0.0` or it changes every caller.
+
+    Every counter on the report, not just the answer: the selection has to be
+    the same indices in the same order, because the crossing-change loop dedups
+    by first-seen and a reordering would change which knots survive.
+    """
+    word = (1, 1, 2, 2, 1, -2, 1, -2)
+    base = search(word, 3, max_crossing_changes=2, node_budget=6000,
+                  strand_growth=1)
+    quota_zero = search(word, 3, max_crossing_changes=2, node_budget=6000,
+                        strand_growth=1, flip_growth_quota=0.0)
+    assert quota_zero.flip_quota_slots == 0
+    for field in ("expansions", "diagrams_explored", "knots_expanded",
+                  "pruned_by_bound", "flip_sites",
+                  "flip_sites_above_source_width", "crossing_changes"):
+        assert getattr(quota_zero, field) == getattr(base, field), field
+
+
+def test_the_flip_quota_puts_widened_diagrams_into_the_crossing_change_stage():
+    """The whole point: `flip_sites_above_source_width` was 0 and has to move.
+
+    `width_penalty=0` is deliberate -- under the charged policy the widened
+    diagrams do not reach the frontier at all on most instances, so a quota has
+    nothing to reserve and this would test nothing.  `T(3,5)` is one where they
+    do.
+    """
+    word = (1, 2, 1, 2, 1, 2, 1, 2, 1, 2)
+    kw = dict(max_crossing_changes=4, node_budget=6000,
+              strand_growth=1, width_penalty=0)
+    control = search(word, 3, flip_growth_quota=0.0, **kw)
+    quota = search(word, 3, flip_growth_quota=0.5, **kw)
+    assert quota.flip_quota_slots > 0
+    assert quota.flip_quota_filled > 0
+    assert 0.0 < quota.flip_quota_fill_rate <= 1.0
+    assert quota.flip_quota_levels_filled <= quota.flip_quota_levels
+    assert quota.flip_sites_above_source_width > control.flip_sites_above_source_width
+    # The quota reserves slots, it does not create them.
+    assert quota.flip_sites == control.flip_sites

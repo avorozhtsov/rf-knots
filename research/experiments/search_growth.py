@@ -166,6 +166,17 @@ def run_one(word, strands, cap, arm: dict, *, node_budget: int, seconds: float) 
         width_drift=report.width_drift,
         flip_sites=report.flip_sites,
         flip_sites_above_source_width=report.flip_sites_above_source_width,
+        # Note 22 §3.6's flip-site quota, recorded here so both experiments read
+        # the same rows.  Zero at the default, which is what `search-growth` ran.
+        flip_growth_quota=report.flip_growth_quota,
+        flip_quota_slots=report.flip_quota_slots,
+        flip_quota_filled=report.flip_quota_filled,
+        flip_quota_levels=report.flip_quota_levels,
+        flip_quota_levels_filled=report.flip_quota_levels_filled,
+        flip_quota_fill_rate=report.flip_quota_fill_rate,
+        flip_reached=report.flip_reached,
+        flip_levels=report.flip_levels,
+        flip_levels_cut=report.flip_levels_cut,
         growth=report.growth,
         strand_growth=report.strand_growth,
         length_growth=report.length_growth,

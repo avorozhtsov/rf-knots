@@ -746,8 +746,52 @@ can be judged against the target's actual need.
 
 **One cheap experiment first, before any head.** Reserve a quota of the
 `flip_from` slots for diagrams that used growth, instead of taking the shortest.
-That tests whether flipping on a widened diagram helps *at all*, needs no
-training, and would tell us whether the head has anything to learn here.
+
+> ### That experiment was run, and it refutes the diagnosis above
+>
+> `flip_growth_quota` reserves slots for diagrams above source width. **The
+> counter moves** — wide flip sites go 0/600 to **300/600** on the target, and
+> 7,511 to 7,891 across the sweep — so the plumbing works and the previous zero
+> was genuinely the length cut.
+>
+> **And not one other number changes.** 28/57 solved, 22 exact, 79,790
+> expansions, *identical across all four quotas*; 0 newly solved, 0 lost, 0
+> degraded answers, expansions tied on every shared solve. `STABILIZE` still
+> appears in **0 witnesses**. Cap 5 on the target is still **0 of 5 arms**, now
+> with 300 widened diagrams sitting in the flip stage. All three arms are
+> byte-identical: 32,971 expansions, 469 knots expanded, 450 pruned. Three
+> hundred widened flip sites contributed **not one distinct knot**.
+>
+> **The reason is a theorem, not a tuning failure.** Markov's first move says
+> `w·sigma_n` and `w·sigma_n^-1` are the positive and negative stabilisation of
+> the same `w` and close to the *same knot*. So the crossing a `STABILIZE`
+> creates is exactly the one crossing whose change is a **no-op on knot type** —
+> flipping there moves between two stabilisations of one braid. Checked
+> independently here: determinant and Jones agree on 17/17 random pairs, 0
+> differing. Flipping at an *old* site on a widened diagram gives what the narrow
+> diagram already gave. There was never anything at those 300 sites to find.
+>
+> **So §3.6's diagnosis was right about the counter and wrong as a diagnosis.**
+> The flip-site cut was a symptom; removing it changes no answer.
+>
+> **And it withdraws the job §3.6 handed M1.** Ranking flip sites on widened
+> diagrams ranks a **provably redundant** set, so the per-site head gets no
+> concrete work from growth after all. That claim is retracted.
+>
+> **What growth would actually need.** A widened diagram pays only once the extra
+> strand has been *used* — stabilise, then braid relations that move letters onto
+> the new strand, and only then a change. All three must happen inside one
+> zero-CC level, because levels are separated by exactly one crossing change. The
+> quota puts "narrow diagram plus a stabilisation" into the flip stage; it cannot
+> put "stabilisation whose strand has been exploited" there, because no selection
+> rule at the flip stage supplies the middle step. **That is a within-level depth
+> problem, not a selection problem, and it is where the next attempt belongs.**
+>
+> **The cap-5 floor therefore still has no identified cause.** Growth is
+> necessary for the published witness (§M1b: 16 crossing-creating moves), is now
+> legal, is now reachable at the flip stage, and is still never used. Three
+> mechanisms have been proposed and eliminated. The floor is the honest open
+> problem, and it is no longer safe to assume the missing move explains it.
 
 **Cap 6, kept separate and not a result:** 5 of 5 arms found a replay-verified
 6-change witness at `node_budget = 1e6`, and nothing at either cap at 12,000 —
