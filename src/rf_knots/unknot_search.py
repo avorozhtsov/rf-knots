@@ -281,6 +281,13 @@ def _explore_level(
     widest = 0
     wide_expansions = 0
 
+    # `node_budget` counts states ADMITTED to `seen`, not states expanded, and
+    # `seen` grows by every admitted successor below. On the 20-letter target that
+    # is 170-203 admissions per expansion (it rises with the budget as the wide
+    # shell opens), so `node_budget=20_000` buys 138 expansions, not 20,000 --
+    # see `research/experiments/strand_exploitation.py --stage budget`. Every
+    # budget figure in note 22 is on this scale; the guard is left as it is
+    # because changing it would rescale every published measurement at once.
     while heap and len(seen) < node_budget:
         _, _, _, (word, strands), path = heapq.heappop(heap)
         reached.append(((word, strands), path))
@@ -353,6 +360,10 @@ def search(
     log=lambda *_: None,
 ) -> SearchReport:
     """Find a short unknotting sequence, pruning with the certified bounds.
+
+    `node_budget` bounds **admitted states, not expansions**: see the comment on
+    the `_explore_level` loop. It is off by the branching factor, two orders of
+    magnitude on the target.
 
     `flip_from` caps how many diagrams per level are used as crossing-change
     sites, taking the shortest; `frontier_width` caps how many distinct knots are

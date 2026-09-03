@@ -808,6 +808,12 @@ can be judged against the target's actual need.
 > diagrams the theorem does not reach. That is a stronger result than §3.6's, and
 > it is the one a reviewer would have gone looking for.
 >
+> **But the exploited share is strongly dial-dependent, so quote the setting.**
+> Those figures are `width_penalty = 2`. At `p0` only **178 of 531** wide diagrams
+> are exploited and the quota picks 81 — so a null measured at `p0` alone would be
+> much weaker evidence than one at `p2`. `p0-q25` was an arm of the quota sweep,
+> which is exactly why the setting has to travel with the number.
+>
 > **On the target the theorem is load-bearing, and for a sharper reason than
 > stated.** Exploited diagrams number **exactly 0** at every budget tried — 20k,
 > 100k, 300k, 1M, 2M, **4M**. At 4M the level expands 22,787 nodes of which 14,573
@@ -835,11 +841,18 @@ can be judged against the target's actual need.
 >
 > `_explore_level`'s guard is `len(seen) < node_budget`, and `seen` grows on every
 > **admitted successor**, not on every expansion (`unknot_search.py:284, 307`).
-> Measured on the target: **170 admissions per expansion**. So a run at
-> `node_budget = 20,000` expands on the order of 120 nodes, not 20,000, and every
+> Measured on the target: **170.1 admissions per expansion at
+> `node_budget = 20,000`**, rising to 187.3 at 1M and 203.1 at 4M as the wide
+> shell opens — a range, not a constant. So a run at
+> `node_budget = 20,000` expands about 138 nodes, not 20,000, and every
 > budget figure quoted in this note reads roughly two orders of magnitude smaller
 > than its name suggests. This is independent of growth and of everything above;
 > it changes how the whole document's search budgets should be read.
+>
+> **The guard is deliberately left as it is.** Fixing it would rescale every
+> published measurement in this note at once, which is a decision about the
+> record rather than a side effect of a measurement — it should be taken
+> knowingly, with the affected figures restated together, not slipped in.
 
 **Cap 6, kept separate and not a result:** 5 of 5 arms found a replay-verified
 6-change witness at `node_budget = 1e6`, and nothing at either cap at 12,000 —
