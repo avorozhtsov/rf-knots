@@ -792,6 +792,54 @@ can be judged against the target's actual need.
 > legal, is now reachable at the flip stage, and is still never used. Three
 > mechanisms have been proposed and eliminated. The floor is the honest open
 > problem, and it is no longer safe to assume the missing move explains it.
+>
+> ### The depth question was then measured, and budget is not the lever either
+>
+> A peer session instrumented `_explore_level` and split widened diagrams by
+> whether the top generator occurs **once** — destabilisable, and therefore the
+> redundant class the Markov argument above covers — or **twice or more**, which
+> means the new strand has actually been used and the argument does *not* cover.
+>
+> **On `5_1` this strengthens the null and weakens my explanation.** 1,012 wide
+> diagrams reached, **906 of them genuinely exploited**, and the quota's 300
+> shortest-wide picks up 258 of those. So the quota *did* flip non-redundant
+> widened diagrams, and they still contributed nothing. On small instances the
+> theorem is **not load-bearing** — the null there is empirical, on exactly the
+> diagrams the theorem does not reach. That is a stronger result than §3.6's, and
+> it is the one a reviewer would have gone looking for.
+>
+> **On the target the theorem is load-bearing, and for a sharper reason than
+> stated.** Exploited diagrams number **exactly 0** at every budget tried — 20k,
+> 100k, 300k, 1M, 2M, **4M**. At 4M the level expands 22,787 nodes of which 14,573
+> are wide, and **all 14,573 are pure stabilisations**. So the "300 wide flip
+> sites" were 300 provably redundant diagrams: there was never a non-redundant one
+> to select. No selection rule could have helped *there* — not because selection
+> is the wrong lever in general, but because the frontier was empty of the only
+> thing worth selecting.
+>
+> **And the mechanism, which answers "just increase the depth".** Maximum word
+> length on the target is pinned at **21 = root + 1** at every one of those
+> budgets. Exploiting the new strand needs the top generator twice, hence length
+> **>= 22**, and the length-ordered frontier never exhausts the length-21 shell —
+> 4.6M admissions without moving off it. **Raising the budget 200x multiplied
+> pure stabilisations and produced zero exploited diagrams.** Depth is where the
+> problem lives; budget is not the dial that reaches it.
+>
+> **Length-monotone ordering, for the fourth time.** After `L1000`'s inversion,
+> the `(det, |sigma|)` key, and the flip cut. The pattern is now the finding: this
+> bias is not a bug that was fixed, it is a **default that keeps being
+> re-expressed** at each new stage — objective, key, selection, and now frontier
+> ordering.
+
+> ### A separate defect: `node_budget` does not count nodes
+>
+> `_explore_level`'s guard is `len(seen) < node_budget`, and `seen` grows on every
+> **admitted successor**, not on every expansion (`unknot_search.py:284, 307`).
+> Measured on the target: **170 admissions per expansion**. So a run at
+> `node_budget = 20,000` expands on the order of 120 nodes, not 20,000, and every
+> budget figure quoted in this note reads roughly two orders of magnitude smaller
+> than its name suggests. This is independent of growth and of everything above;
+> it changes how the whole document's search budgets should be read.
 
 **Cap 6, kept separate and not a result:** 5 of 5 arms found a replay-verified
 6-change witness at `node_budget = 1e6`, and nothing at either cap at 12,000 —
