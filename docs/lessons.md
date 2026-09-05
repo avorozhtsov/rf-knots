@@ -185,4 +185,14 @@ may since have moved; the lesson is the durable part.
   dropped a knot that was known-reachable -- a contradiction between two sources
   that were never compared before. **Cross-check a certified bound against
   replayed evidence, not only against another computation.**
+- **An untrained network is not a neutral prior — it is worse than no prior.**
+  Measured: an untrained net drove MCTS to 0.200 on the easy rung and **0.000** on
+  the harder one at every dose, while the *same search with a flat prior* reached
+  0.500-0.800 and 0.172-0.931. A randomly initialised head still produces a
+  *peaked* softmax, so PUCT commits to an arbitrary branch and never recovers;
+  uniform priors keep exploring. So "untrained net" and "no net" are two different
+  floors, and **the stronger one is the bar** — reporting a trained net against an
+  untrained one flatters it by the whole width of that gap. This is the
+  measure-the-floor lesson firing from the opposite direction to the run that
+  produced it.
 - Negative results belong in commit messages and notes, not in dead code.

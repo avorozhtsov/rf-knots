@@ -861,6 +861,68 @@ from subadditivity.
 
 ---
 
+### 3.7 The MCTS loop exists, and training moves the headline metric
+
+The first loop that closes: encoder, site head, search, self-play, and a metric
+that is playing strength rather than a retrieval score. `src/rf_knots/mcts_loop.py`,
+artifacts in `artifacts/mcts-loop/`.
+
+**Size independence holds where it is supposed to.** One `state_dict` ran the loop
+at `(5, 3)` — 44 actions — and at `(512, 24)` — **25,604 actions**, M0.4's
+failed-transfer shape — with `site_head` at **49,833 parameters at both**, weights
+unchanged by search, reloading into a fresh net. Cyclic word shift moves the
+`knot` embedding by `5.96e-08` under the necklace geometry against `3.63e-02`
+under the legacy default, which is the reason to construct it explicitly.
+
+**`witness_rate`, 8 seeds, equal simulations, all 2,358 claimed witnesses
+verified twice:**
+
+| rung@dose | untrained | **trained** | classical beam | flat-prior MCTS |
+|---|---:|---:|---:|---:|
+| A@200 | 0.200 | **0.700** | 0.225 | 0.500 |
+| A@800 | 0.200 | 0.800 | 0.613 | 0.800 |
+| A@3200 | 0.200 | **0.975** | 0.662 | 0.800 |
+| B@200 | 0.000 | **0.207** | 0.000 | 0.172 |
+| B@800 | 0.000 | **0.552** | 0.121 | 0.483 |
+| B@3200 | 0.000 | 0.793 | 0.293 | **0.931** |
+
+> **The control had to change, and this is the most useful thing in the run.**
+> The **untrained net is below the search-only floor** — 0.200 and 0.000 at every
+> dose, *worse than no prior at all*, because a random head still emits a peaked
+> softmax and PUCT commits to an arbitrary branch. So "untrained net" and "no net"
+> are different floors and **flat-prior MCTS is the honest control**, not the
+> beam and not the untrained net. Reporting against the untrained net would have
+> flattered the result by the whole width of that gap.
+
+**Against that control the win is real, thin, and dose-dependent.** 4 wins, 1
+tie, 1 loss; paired at A@3200 it is 2 better, 1 worse, 7 tied; and it **reverses
+at B@3200**, 0.793 against 0.931 — given enough search, the prior stops paying.
+Self-play does add beyond the supervised warm-up (A@200 0.200 -> 0.700, B@800
+0.241 -> 0.552), and its own witness rate on the generated pool climbs 0.430 ->
+0.949.
+
+**The clean win is the growth-heavy regime — which is where everything
+hand-written failed.** Same checkpoints, no retraining: at slack 6 the
+length-ordered beam is **0.000** at both doses, flat-prior MCTS reaches 0.700 at
+3200, and the trained net reaches **0.900**; at slack 4/800 it is beam 0.100,
+flat 0.600, trained 0.800. §3.6 and the flip quota could not make growth pay by
+any hand-written rule; the learned prior does. That is the project's premise
+producing its first evidence.
+
+**Also measured rather than assumed:** Gumbel and PUCT trade places with dose —
+PUCT dominates at 200–800 (B@200: 0.207 against 0.009), Gumbel wins at 3200
+(A: 0.975 against 0.800). Neither is the default.
+
+**What this is not.** Rungs A and B are `u = 1` three-braids of 8–12 letters.
+That is very far from cap 5 on a 20-letter five-strand composite, and nothing
+here touches the target. The value head is a single `p(solve | budget)` rather
+than §5.1's monotone vector; there is no two-level search, no identification, no
+certified terminal test, no GRPO; `A_plus` is tiers 1–2 only; and self-play
+trains on generated instances alone, so the curriculum distribution gap is
+unmeasured. The loop is a foundation that works, not a result about hard knots.
+
+---
+
 ## 4. Data: generate from the answer, interleaved
 
 ### 4.1 The interleaved backward generator
