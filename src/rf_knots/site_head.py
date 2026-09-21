@@ -92,6 +92,7 @@ __all__ = [
     "MASKED_LOGIT",
     "POSITIONLESS_KINDS",
     "SITE_FIELDS",
+    "FactorizedSiteHead",
     "SiteHead",
     "masked_log_policy",
     "set_valued_loss",
@@ -186,6 +187,7 @@ class SiteHead(nn.Module):
         global_names: Sequence[str] = GLOBAL_NAMES,
         positionless_kinds: Sequence[int] = POSITIONLESS_KINDS,
         generator_kinds: Sequence[int] = GENERATOR_KINDS,
+        structural_generators: bool = False,
     ) -> None:
         super().__init__()
         if width < 2 or embedding_dim < 2 or num_kinds < 1:
@@ -242,6 +244,11 @@ class SiteHead(nn.Module):
         self.register_buffer("generator_flag", uses_generator, persistent=False)
 
         self._reset_parameters(film_init_scale)
+        self.structural_generators = structural_generators
+        if structural_generators:
+            # Opt-in: interior generators must not alias once both boundary
+            # buckets saturate. These are shared scalar maps, not ID lookups.
+            self.generator_structure = nn.Linear(6, 2 * width, bias=False)
 
     def _reset_parameters(self, film_init_scale: float) -> None:
         nn.init.normal_(self.projection.weight, std=self.width**-0.5)
@@ -367,6 +374,7 @@ class SiteHead(nn.Module):
         *,
         budgets: Tensor | None = None,
         strands: Tensor | None = None,
+        word: Tensor | None = None,
     ) -> Tensor:
         """Score every site.  Returns `[B, S]`, `-inf` wherever `site_mask` is False.
 
@@ -430,6 +438,25 @@ class SiteHead(nn.Module):
 
         rows = self._generator_rows(generator, sign, uses_generator, strands)
         scale, shift = F.embedding(rows, self._generator_film_table()).chunk(2, dim=-1)
+        if self.structural_generators:
+            if word is None or strands is None or word.shape != mask.shape:
+                raise ValueError("structural generator conditioning requires word and strands")
+            present = effective & uses_generator
+            # Mask before arithmetic, so garbage fields never enter a log or
+            # produce an inf*0 in the backward pass.
+            g = torch.where(present, generator, 0).to(tokens.dtype)
+            local = word.abs().gather(1, position_safe).to(tokens.dtype)
+            delta = torch.where(present, g - local, 0)
+            n = strands[:, None].to(tokens.dtype)
+            features = torch.stack((torch.log1p(g.clamp_min(0)),
+                                    torch.log1p((n - g).clamp_min(0)),
+                                    g / (n - 1).clamp_min(1),
+                                    delta.clamp(-2, 2),
+                                    delta.sign() * torch.log1p(delta.abs()),
+                                    (delta == 0).to(tokens.dtype)), dim=-1)
+            modulation = self.generator_structure(features * present.unsqueeze(-1))
+            extra_scale, extra_shift = modulation.chunk(2, dim=-1)
+            scale, shift = scale + extra_scale, shift + extra_shift
 
         # `<e_t, W(gamma_c * x + beta_c)> = <(W^T e_t) * gamma_c, x> + <W^T e_t, beta_c>`,
         # so the context FiLM is folded into the nine kind directions and into a
@@ -468,6 +495,184 @@ class SiteHead(nn.Module):
             f"num_kinds={self.num_kinds}, budget_dim={self.budget_dim}, "
             f"parameters={sum(p.numel() for p in self.parameters())}"
         )
+
+
+class FactorizedSiteHead(nn.Module):
+    """Opt-in kind/position/generator/sign proposal head.
+
+    The ordinary :class:`SiteHead` scores an already materialised legal action
+    list.  This head scores the factors separately so a caller can select top-k
+    positions and generators before invoking the exact legality checker.  All
+    maps are shared: parameter count is independent of word length and strand
+    count, while the runtime is O(L*K + N) rather than O(L*N).
+
+    It is intentionally a separate module.  Existing checkpoints and the
+    historical MCTS evaluator therefore remain byte-compatible until a caller
+    explicitly opts into factorized proposals and trains this head's targets.
+    """
+
+    def __init__(
+        self,
+        width: int = 96,
+        embedding_dim: int = 64,
+        num_kinds: int = NUM_KINDS,
+        *,
+        budget_dim: int = 2,
+        context_width: int | None = None,
+        global_names: Sequence[str] = GLOBAL_NAMES,
+        cyclic_band_generators: bool = False,
+    ) -> None:
+        super().__init__()
+        if width < 2 or embedding_dim < 2 or num_kinds < 1 or budget_dim < 0:
+            raise ValueError("invalid factorized-head dimensions")
+        self.width = int(width)
+        self.embedding_dim = int(embedding_dim)
+        self.num_kinds = int(num_kinds)
+        self.budget_dim = int(budget_dim)
+        self.global_names = tuple(global_names)
+        self.cyclic_band_generators = bool(cyclic_band_generators)
+        self.token_norm = nn.LayerNorm(width)
+        self.position_projection = nn.Linear(width, embedding_dim, bias=False)
+        self.kind_embedding = nn.Embedding(num_kinds, embedding_dim)
+        self.kind_bias = nn.Parameter(torch.zeros(num_kinds))
+        self.sign_embedding = nn.Embedding(2, embedding_dim)
+        self.context_dim = len(self.global_names) * embedding_dim + 3 * budget_dim + 1
+        hidden = int(context_width) if context_width else width
+        self.context_query = nn.Sequential(
+            nn.Linear(self.context_dim, hidden), nn.GELU(), nn.Linear(hidden, embedding_dim)
+        )
+        self.generator_projection = nn.Sequential(
+            nn.Linear(4, hidden), nn.GELU(), nn.Linear(hidden, embedding_dim)
+        )
+
+    def _context_features(
+        self,
+        globals_: Mapping[str, Tensor] | Tensor,
+        budgets: Tensor | None,
+        batch: int,
+        device: torch.device,
+        dtype: torch.dtype,
+    ) -> Tensor:
+        if isinstance(globals_, Mapping):
+            missing = [name for name in self.global_names if name not in globals_]
+            if missing:
+                raise KeyError(f"globals_ is missing {missing}; got {sorted(globals_)}")
+            parts = [globals_[name].to(dtype) for name in self.global_names]
+        else:
+            parts = [globals_.to(dtype)]
+        if any(part.ndim != 2 or part.shape[0] != batch for part in parts):
+            raise ValueError("factorized global embeddings must be [B, D]")
+        context = torch.cat(parts, dim=-1)
+        expected = len(self.global_names) * self.embedding_dim
+        if context.shape[-1] != expected:
+            raise ValueError(f"globals width {context.shape[-1]} != {expected}")
+        if budgets is None:
+            zeros = context.new_zeros(batch, self.budget_dim)
+            budget_features = [zeros, zeros, zeros + 1.0, context.new_zeros(batch, 1)]
+        else:
+            if budgets.shape != (batch, self.budget_dim):
+                raise ValueError(f"budgets must be [{batch}, {self.budget_dim}]")
+            value = budgets.to(dtype)
+            budget_features = [
+                value,
+                torch.log1p(value.clamp_min(0.0)),
+                (value <= 0).to(dtype),
+                context.new_ones(batch, 1),
+            ]
+        return torch.cat([context, *budget_features], dim=-1).to(device)
+
+    def forward(
+        self,
+        tokens: Tensor,
+        mask: Tensor,
+        globals_: Mapping[str, Tensor] | Tensor,
+        *,
+        budgets: Tensor | None = None,
+        strands: Tensor,
+    ) -> dict[str, Tensor]:
+        """Return factor scores, with padding and inactive generators masked."""
+        if tokens.ndim != 3 or mask.shape != tokens.shape[:2] or mask.dtype != torch.bool:
+            raise ValueError("tokens/mask shape or dtype is invalid")
+        batch, length, width = tokens.shape
+        if width != self.width or strands.shape != (batch,):
+            raise ValueError("factorized head input dimensions are invalid")
+        context = self._context_features(globals_, budgets, batch, tokens.device, tokens.dtype)
+        query = self.context_query(context)
+        kind = self.kind_embedding.weight
+        kind_scores = query @ kind.t() + self.kind_bias
+        position = self.position_projection(self.token_norm(tokens))
+        position_scores = torch.einsum("bld,kd->bkl", position, kind)
+        position_scores = position_scores + kind_scores.unsqueeze(-1)
+        position_scores = position_scores.masked_fill(~mask[:, None, :], -torch.inf)
+
+        maximum = int(strands.max().item()) if strands.numel() else 1
+        generator_count = maximum if self.cyclic_band_generators else max(1, maximum - 1)
+        generator_index = torch.arange(generator_count, device=tokens.device, dtype=tokens.dtype)
+        generator = generator_index[None, :] + 1.0
+        n = strands.to(tokens.dtype)[:, None]
+        active_count = strands if self.cyclic_band_generators else (strands - 1).clamp_min(0)
+        features = torch.stack(
+            (
+                torch.log1p(generator.expand(batch, -1)),
+                torch.log1p((n - generator).clamp_min(0.0)),
+                generator.expand(batch, -1) / (n - 1).clamp_min(1.0),
+                torch.log1p(n.expand(batch, generator_count)),
+            ),
+            dim=-1,
+        )
+        generator_scores = torch.einsum(
+            "bgd,bd->bg", self.generator_projection(features), query
+        )
+        generator_mask = torch.arange(generator_count, device=tokens.device)[None, :] < active_count[:, None]
+        generator_scores = generator_scores.masked_fill(~generator_mask, -torch.inf)
+        sign_scores = query @ self.sign_embedding.weight.t()
+        return {
+            "kind_scores": kind_scores,
+            "position_scores": position_scores,
+            "generator_scores": generator_scores,
+            "generator_mask": generator_mask,
+            "sign_scores": sign_scores,
+        }
+
+    def action_scores(self, factors: Mapping[str, Tensor], sites: Tensor) -> Tensor:
+        """Compose factor scores for a candidate site list.
+
+        This is the bridge to replay supervision and to the exact proposal
+        helper.  It scores only supplied sites; it does not enumerate a
+        complement and therefore cannot create implicit negative labels.
+        """
+        required = {"kind_scores", "position_scores", "generator_scores", "sign_scores"}
+        missing = required.difference(factors)
+        if missing:
+            raise KeyError(f"factor scores are missing {sorted(missing)}")
+        if sites.ndim != 3 or sites.shape[-1] != len(SITE_FIELDS):
+            raise ValueError("sites must be [B, S, 4]")
+        kind, position, generator, sign = (sites[..., i] for i in range(len(SITE_FIELDS)))
+        batch, count = kind.shape
+        kind_scores = factors["kind_scores"]
+        position_scores = factors["position_scores"]
+        if kind_scores.shape[0] != batch or position_scores.shape[0] != batch:
+            raise ValueError("factor batch does not match sites")
+        kind_safe = kind.clamp(0, self.num_kinds - 1)
+        length = position_scores.shape[-1]
+        position_safe = position.clamp(0, max(length - 1, 0))
+        kind_rows = position_scores.gather(
+            1, kind_safe.unsqueeze(-1).expand(batch, count, length)
+        )
+        positional = kind_rows.gather(2, position_safe.unsqueeze(-1)).squeeze(-1)
+        base = kind_scores.gather(1, kind_safe)
+        positionless = torch.zeros_like(kind_safe, dtype=torch.bool)
+        for item in POSITIONLESS_KINDS:
+            positionless |= kind_safe == item
+        score = torch.where(positionless, base, positional)
+
+        insert = kind_safe == INSERT
+        generator_scores = factors["generator_scores"]
+        generator_safe = (generator - 1).clamp(0, max(generator_scores.shape[1] - 1, 0))
+        generator_part = generator_scores.gather(1, generator_safe)
+        sign_index = torch.where(sign > 0, torch.zeros_like(sign), torch.ones_like(sign))
+        sign_part = factors["sign_scores"].gather(1, sign_index.clamp(0, 1))
+        return score + torch.where(insert, generator_part + sign_part, torch.zeros_like(score))
 
 
 def masked_log_policy(logits: Tensor, site_mask: Tensor) -> Tensor:

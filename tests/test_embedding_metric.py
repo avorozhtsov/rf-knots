@@ -57,6 +57,18 @@ def test_exact_positive_distance_penalizes_collapsed_embedding() -> None:
     assert loss.item() == pytest.approx(1.0)
 
 
+def test_uniform_weighting_does_not_downweight_exact_cc2_against_long_cc0():
+    vector = torch.tensor([[1.0, 0.0], [1.0, 0.0]])
+    batch = MetricBatch(
+        ("cc", "cc"), torch.tensor([0.0, 2.0]), torch.tensor([0.0, 2.0]), torch.tensor([30, 30])
+    )
+    plain = MetricEmbeddingObjective(witness_priority=False)
+    weighted = MetricEmbeddingObjective()
+    prediction = {"knot": vector, "isotopy": vector}
+    assert plain(prediction, prediction, batch)[0].item() == pytest.approx(2.0)
+    assert weighted(prediction, prediction, batch)[0].item() == pytest.approx(4.0 / 9.0)
+
+
 @pytest.mark.parametrize("geometry", ("chord", "angular", "log_affinity"))
 def test_cc_geometries_map_identity_to_zero_and_are_monotone(geometry: str) -> None:
     objective = MetricEmbeddingObjective(cc_geometry=geometry)

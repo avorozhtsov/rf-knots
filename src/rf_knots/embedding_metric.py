@@ -47,6 +47,7 @@ class MetricEmbeddingObjective(nn.Module):
         cc_geometry: str = "chord",
         cc_rank_weight: float = 0.0,
         cc_rank_margin: float = 0.25,
+        witness_priority: bool = True,
     ):
         super().__init__()
         if cc_geometry not in CC_GEOMETRIES:
@@ -59,6 +60,7 @@ class MetricEmbeddingObjective(nn.Module):
         self.cc_geometry = cc_geometry
         self.cc_rank_weight = cc_rank_weight
         self.cc_rank_margin = cc_rank_margin
+        self.witness_priority = witness_priority
         self.cc_scale_raw = nn.Parameter(torch.tensor(0.5))
         self.rm_scale_raw = nn.Parameter(torch.tensor(0.5))
 
@@ -129,7 +131,7 @@ class MetricEmbeddingObjective(nn.Module):
             upper = batch.upper[index]
             lengths = batch.witness_semantic_length[index]
             weights = torch.ones_like(predicted)
-            if metric == "cc":
+            if metric == "cc" and self.witness_priority:
                 eligible = upper <= 1
                 weights = torch.where(eligible & (lengths > 5), 2.0, weights)
                 weights = torch.where(eligible & (lengths > 10), 4.0, weights)

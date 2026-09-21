@@ -101,7 +101,9 @@ class ActionSpec:
             1,  # PASS
             length,  # CROSSING_CHANGE
         ]
-        offsets = np.concatenate([[0], np.cumsum(sizes)]).astype(np.int32)
+        # Reference/site-policy search stores sparse scalar action IDs. Large
+        # L*N must not wrap at 2**31 even when no dense action tensor is built.
+        offsets = np.concatenate([[0], np.cumsum(sizes, dtype=np.int64)]).astype(np.int64)
         offsets.flags.writeable = False
         return offsets
 

@@ -40,7 +40,7 @@ import functools
 import json
 import math
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -53,7 +53,8 @@ from rf_knots import reference
 from rf_knots.actions import CROSSING_CHANGE, ActionSpec
 from rf_knots.embedding_encoder import ScalableBraidEmbeddingEncoder
 from rf_knots.evidence import UnknotWitness
-from rf_knots.site_head import SiteHead, set_valued_loss, sites_from_actions
+from rf_knots.lazy_actions import LazyActionCatalogue, factorized_action_candidates
+from rf_knots.site_head import FactorizedSiteHead, SiteHead, set_valued_loss, sites_from_actions
 
 Word = tuple[int, ...]
 
@@ -87,6 +88,7 @@ class Instance:
     #: presentations sit in the same easy pool -- so a report keyed on `name`
     #: silently merges instances.
     uid: str = ""
+    cc_weight: float = 1000.0
 
     @functools.cached_property
     def spec(self) -> ActionSpec:
@@ -108,6 +110,7 @@ class Instance:
             "growth_strands": self.growth_strands,
             "source": self.source,
             "crossings": self.crossings,
+            "cc_weight": self.cc_weight,
         }
 
 
@@ -247,8 +250,20 @@ class SitePolicyValueNet(nn.Module):
         embedding_dim: int = 64,
         maximum_strands: int = 1024,
         value_hidden: int = 128,
+        encoder_kind: str = "necklace",
+        graph_rounds: int = 2,
+        context_rounds: int = 0,
+        window_size: int = 0,
+        hierarchy_levels: int = 0,
+        normalized_knot: bool = False,
+        budget_dim: int = 2,
+        factorized_actions: bool = False,
     ) -> None:
         super().__init__()
+        if budget_dim not in (2, 5):
+            raise ValueError("budget_dim must be 2 (legacy) or 5 (full resource context)")
+        self.budget_dim = budget_dim
+        self.factorized_actions = bool(factorized_actions)
         self.encoder = ScalableBraidEmbeddingEncoder(
             width=width,
             depth=depth,
@@ -259,10 +274,35 @@ class SitePolicyValueNet(nn.Module):
             # a no-op on the knot.  The necklace geometry moves it by 2.2e-16.
             positional_geometry="necklace",
         )
-        self.head = SiteHead(width=width, embedding_dim=embedding_dim, budget_dim=2)
+        if encoder_kind == "strand_graph":
+            from rf_knots.strand_graph_encoder import StrandGraphBraidEncoder
+
+            self.encoder = StrandGraphBraidEncoder(
+                width=width, depth=depth, embedding_dim=embedding_dim, graph_rounds=graph_rounds,
+                context_rounds=context_rounds,
+                window_size=window_size, hierarchy_levels=hierarchy_levels,
+                normalized_knot=normalized_knot,
+            )
+        elif encoder_kind != "necklace":
+            raise ValueError(f"unknown encoder kind {encoder_kind!r}")
+        elif normalized_knot:
+            raise ValueError("normalized_knot requires strand_graph encoder")
+        self.head = SiteHead(
+            width=width, embedding_dim=embedding_dim, budget_dim=budget_dim,
+            structural_generators=encoder_kind == "strand_graph",
+        )
+        self.factorized_head = (
+            FactorizedSiteHead(
+                width=width,
+                embedding_dim=embedding_dim,
+                budget_dim=budget_dim,
+            )
+            if self.factorized_actions
+            else None
+        )
         # 3 globals + (remaining moves, remaining crossing changes) + log1p of each
         # + a length/strand pair that is scalar at every size.
-        self.value_input = 3 * embedding_dim + 6
+        self.value_input = 3 * embedding_dim + 2 * budget_dim + 2
         self.value = nn.Sequential(
             nn.Linear(self.value_input, value_hidden),
             nn.GELU(),
@@ -307,10 +347,29 @@ class SitePolicyValueNet(nn.Module):
             site_mask,
             budgets=budgets,
             strands=strands,
+            word=word,
         )
         effective = self.head.effective_site_mask(encoded["mask"], sites, site_mask)
         value = self.value(self.value_features(globals_, budgets, lengths, strands)).squeeze(-1)
         return logits, value, effective
+
+    def factorized_scores(
+        self,
+        encoded: dict[str, torch.Tensor],
+        globals_: dict[str, torch.Tensor],
+        budgets: torch.Tensor,
+        strands: torch.Tensor,
+    ) -> dict[str, torch.Tensor]:
+        """Score proposal factors for an opt-in factorized widening policy."""
+        if self.factorized_head is None:
+            raise RuntimeError("factorized_actions was not enabled")
+        return self.factorized_head(
+            encoded["tokens"],
+            encoded["mask"],
+            globals_,
+            budgets=budgets,
+            strands=strands,
+        )
 
     def parameter_report(self) -> dict[str, int]:
         return {
@@ -324,6 +383,8 @@ class SitePolicyValueNet(nn.Module):
 def build_batch(
     requests: Sequence[tuple[Instance, SearchState, Sequence[int]]],
     device: torch.device | str = "cpu",
+    *,
+    budget_dim: int = 2,
 ) -> dict[str, torch.Tensor]:
     """Pad a set of `(instance, state, candidate actions)` into one network batch.
 
@@ -340,7 +401,9 @@ def build_batch(
     strands = torch.zeros(batch, dtype=torch.long)
     sites = torch.zeros((batch, max_sites, 4), dtype=torch.long)
     site_mask = torch.zeros((batch, max_sites), dtype=torch.bool)
-    budgets = torch.zeros((batch, 2), dtype=torch.float32)
+    if budget_dim not in (2, 5):
+        raise ValueError("unsupported budget context")
+    budgets = torch.zeros((batch, budget_dim), dtype=torch.float32)
     for index, (instance, state, actions) in enumerate(requests):
         length = len(state.word)
         if length:
@@ -353,6 +416,10 @@ def build_batch(
             site_mask[index, : len(actions)] = True
         budgets[index, 0] = instance.cap_moves - state.used_moves
         budgets[index, 1] = instance.cap_crossing_changes - state.used_cc
+        if budget_dim == 5:
+            budgets[index, 2] = instance.spec.max_len - length
+            budgets[index, 3] = instance.spec.max_strands - state.strands
+            budgets[index, 4] = instance.cc_weight
     return {
         "word": word.to(device),
         "lengths": lengths.to(device),
@@ -395,7 +462,7 @@ class NetworkEvaluator(Evaluator):
         results: list[Evaluation | None] = [None] * len(requests)
         for start in range(0, len(order), self.micro_batch):
             chunk = order[start : start + self.micro_batch]
-            batch = build_batch([requests[i] for i in chunk], self.device)
+            batch = build_batch([requests[i] for i in chunk], self.device, budget_dim=self.net.budget_dim)
             logits, value, effective = self.net(
                 batch["word"],
                 batch["lengths"],
@@ -423,6 +490,71 @@ class NetworkEvaluator(Evaluator):
         return out
 
 
+class FactorizedProposalProvider:
+    """Turn an opt-in factorized head into an exact lazy-action proposer.
+
+    The provider is deliberately separate from :class:`NetworkEvaluator`: the
+    evaluator scores the currently opened edges, while this object chooses which
+    unopened factors to materialise.  The catalogue fallback in ``Tree`` remains
+    exhaustive, so a proposal miss is a recall event rather than silent pruning.
+    """
+
+    def __init__(
+        self,
+        net: SitePolicyValueNet,
+        device: torch.device | str = "cpu",
+        *,
+        top_positions: int = 8,
+        top_generators: int = 8,
+    ) -> None:
+        if net.factorized_head is None:
+            raise ValueError("FactorizedProposalProvider requires factorized_actions=True")
+        if top_positions < 1 or top_generators < 1:
+            raise ValueError("top factor limits must be positive")
+        self.net = net
+        self.device = torch.device(device)
+        self.top_positions = int(top_positions)
+        self.top_generators = int(top_generators)
+
+    @torch.no_grad()
+    def __call__(self, instance: Instance, state: SearchState, limit: int) -> tuple[int, ...]:
+        if limit < 1 or state.key == SOLVED:
+            return ()
+        self.net.eval()
+        batch = build_batch([(instance, state, ())], self.device, budget_dim=self.net.budget_dim)
+        encoded = self.net.encoder.encode_sites(
+            batch["word"], batch["lengths"], batch["strands"]
+        )
+        globals_ = {name: encoded[name] for name in ("knot", "isotopy", "layout")}
+        factors = self.net.factorized_scores(
+            encoded, globals_, batch["budgets"], batch["strands"]
+        )
+        rows = {
+            key: value[0].detach().cpu().numpy()
+            for key, value in factors.items()
+            if key.endswith("_scores")
+        }
+        factor_limit = max(self.top_positions, self.top_generators, 1)
+        candidates: tuple[tuple[int, float], ...] = ()
+        while factor_limit <= max(limit, 1) * 4:
+            candidates = factorized_action_candidates(
+                instance.spec,
+                state.word,
+                state.strands,
+                kind_scores=rows["kind_scores"],
+                position_scores=rows["position_scores"],
+                generator_scores=rows["generator_scores"],
+                sign_scores=rows["sign_scores"],
+                top_positions=max(self.top_positions, factor_limit),
+                top_generators=max(self.top_generators, factor_limit),
+                allow_crossing=state.used_cc < instance.cap_crossing_changes,
+            )
+            if len(candidates) >= limit:
+                break
+            factor_limit *= 2
+        return tuple(action for action, _ in candidates[:limit])
+
+
 # ---------------------------------------------------------------- the tree
 
 
@@ -440,6 +572,9 @@ class Node:
         "expanded",
         "parent",
         "parent_index",
+        "catalogue",
+        "catalogue_cursor",
+        "proposal_exhausted",
     )
 
     def __init__(self, state: SearchState, parent: Node | None, parent_index: int) -> None:
@@ -455,6 +590,9 @@ class Node:
         self.dead = np.zeros(0, dtype=bool)
         self.count = 0
         self.expanded = False
+        self.catalogue: LazyActionCatalogue | None = None
+        self.catalogue_cursor = 0
+        self.proposal_exhausted = False
 
 
 @dataclass
@@ -479,6 +617,26 @@ class _Pending:
     actions: tuple[int, ...]
     children: tuple[SearchState, ...]
     path: list[tuple[Node, int]]
+    widening: bool = False
+    catalogue: LazyActionCatalogue | None = None
+    catalogue_cursor: int = 0
+    proposal_exhausted: bool = False
+
+
+def dominated_cost(frontier: Sequence[tuple[int, int]], cc: int, moves: int) -> bool:
+    """Only a path no worse in BOTH consumed budgets can dominate another."""
+    return any(old_cc <= cc and old_moves <= moves for old_cc, old_moves in frontier)
+
+
+def remember_cost(seen: dict, state: SearchState) -> bool:
+    frontier = seen.get(state.key, ())
+    if dominated_cost(frontier, state.used_cc, state.used_moves):
+        return False
+    seen[state.key] = [
+        (cc, moves) for cc, moves in frontier
+        if not (state.used_cc <= cc and state.used_moves <= moves)
+    ] + [(state.used_cc, state.used_moves)]
+    return True
 
 
 class Tree:
@@ -486,7 +644,9 @@ class Tree:
 
     Deterministic single-player search, so the transposition guard is the same one
     a best-first beam uses: a child whose `(word, strands)` already exists in this
-    tree at no greater crossing-change cost is dropped at expansion.  It is applied
+    tree at no greater crossing-change AND semantic-move cost is dropped. A lower
+    CC path can still have consumed more of its move budget: those incomparable
+    paths must both survive, for feasibility as well as for L10/L1000. It is applied
     identically to every arm, which is what makes "at equal simulations" mean the
     same thing for the network arms and for the classical control.
     """
@@ -504,9 +664,15 @@ class Tree:
         dirichlet_alpha: float = 0.3,
         dirichlet_fraction: float = 0.0,
         budget: int = 1024,
+        widening_batch: int = 0,
+        proposal_provider: Callable[[Instance, SearchState, int], Sequence[int]] | None = None,
     ) -> None:
         if root_selection not in ("puct", "gumbel"):
             raise ValueError(f"unknown root selection {root_selection!r}")
+        if widening_batch < 0 or (widening_batch and root_selection != "puct"):
+            raise ValueError("progressive widening requires PUCT and nonnegative batch")
+        self.widening_batch = int(widening_batch)
+        self.proposal_provider = proposal_provider
         self.instance = instance
         self.spec = instance.spec
         self.rng = np.random.default_rng(seed)
@@ -522,7 +688,7 @@ class Tree:
 
         start = SearchState(instance.word, instance.strands, 0, 0)
         self.root = Node(start, None, -1)
-        self.seen: dict[tuple[Word, int], int] = {start.key: 0}
+        self.seen: dict[tuple[Word, int], list[tuple[int, int]]] = {start.key: [(0, 0)]}
         self.expansions = 0
         self.simulations = 0
         self.solved_path: tuple[int, ...] | None = None
@@ -613,6 +779,21 @@ class Tree:
                 return _Pending(
                     self, node, -1, node.state, (), (), path
                 )
+            if self.widening_batch:
+                catalogue_remaining = (
+                    node.catalogue is not None and node.catalogue_cursor < len(node.catalogue)
+                )
+                proposal_remaining = self.proposal_provider is not None and not node.proposal_exhausted
+                remaining = catalogue_remaining or proposal_remaining
+                target = self.widening_batch * math.ceil(math.sqrt(node.count + 1))
+                if remaining and (node.catalogue_cursor < target or node.dead.all()):
+                    return _Pending(self, node, -1, node.state, (), (), path, widening=True)
+                if not remaining and node.dead.all():
+                    if node.parent is not None:
+                        node.parent.dead[node.parent_index] = True
+                    self._backup(path, 0.0)
+                    self.simulations += 1
+                    return None
             if len(node.actions) == 0:
                 # Dead end: back up a loss and stop this simulation.
                 if node.parent is not None:
@@ -640,6 +821,100 @@ class Tree:
 
     # -- expansion ---------------------------------------------------------
 
+    def proposal_request(self, pending: _Pending):
+        """Describe the optional proposal inference before successor expansion."""
+        if (self.proposal_provider is None or not self.widening_batch or pending.state.key == SOLVED
+                or pending.state.used_moves >= self.instance.cap_moves
+                or (pending.widening and pending.node.proposal_exhausted)):
+            return None
+        target = max(self.widening_batch,
+                     self.widening_batch * math.ceil(math.sqrt(pending.node.count + 1)))
+        return self.instance, pending.state, target
+
+    def prepare_pending(self, pending: _Pending) -> None:
+        """Bound new successor materialisation; preserve all previously open edges.
+
+        A widening request consumes one simulation/evaluation just like an initial
+        expansion. The target catalogue prefix grows as batch*ceil(sqrt(visits+1));
+        at most one batch is examined per request. An all-dead prefix forces the
+        next batch instead of falsely declaring the state dead. No unoffered
+        action is permanently pruned. Gumbel's fixed shortlist is not supported.
+        """
+        if not self.widening_batch:
+            pending.actions, pending.children, _ = self.candidates(pending.state)
+            return
+        state = pending.state
+        if state.key == SOLVED or state.used_moves >= self.instance.cap_moves:
+            return
+        proposal_exhausted = False
+        if pending.widening:
+            catalogue = pending.node.catalogue
+            cursor = pending.node.catalogue_cursor
+            actions, children = list(pending.node.actions), list(pending.node.children_states)
+            proposal_exhausted = pending.node.proposal_exhausted
+        else:
+            catalogue = LazyActionCatalogue(
+                self.spec, state.word, state.strands,
+                state.used_cc < self.instance.cap_crossing_changes,
+            )
+            cursor, actions, children = 0, [], []
+        assert catalogue is not None
+        existing = set(actions)
+
+        def append_child(action: int, word: Word, strands: int) -> None:
+            if action in existing:
+                return
+            child = SearchState(word, strands,
+                                state.used_cc + int(self.spec.decode(action)[0] == CROSSING_CHANGE),
+                                state.used_moves + 1)
+            if child.key != SOLVED and dominated_cost(
+                self.seen.get(child.key, ()), child.used_cc, child.used_moves
+            ):
+                return
+            actions.append(action)
+            children.append(child)
+            existing.add(action)
+
+        added = 0
+        if self.proposal_provider is not None and not proposal_exhausted:
+            request = self.proposal_request(pending)
+            assert request is not None
+            proposed = self.proposal_provider(*request)
+            for action in proposed:
+                if action in existing:
+                    continue
+                if not reference.is_legal(
+                    self.spec,
+                    state.word,
+                    state.strands,
+                    action,
+                    state.used_cc < self.instance.cap_crossing_changes,
+                ):
+                    continue
+                word, strands = reference.apply(self.spec, state.word, state.strands, action)
+                before = len(actions)
+                append_child(action, word, strands)
+                added += len(actions) - before
+                if added >= self.widening_batch:
+                    break
+
+            # The exact catalogue remains the completeness fallback.  Once it
+            # is exhausted and the provider returned no new action, the provider
+            # is considered exhausted for this node; this is not a negative label.
+            if not proposed and cursor >= len(catalogue):
+                proposal_exhausted = True
+
+        needed = max(0, self.widening_batch - added)
+        for action, word, strands in catalogue.materialize(cursor, needed):
+            append_child(action, word, strands)
+        cursor = min(cursor + needed, len(catalogue))
+        pending.actions, pending.children = tuple(actions), tuple(children)
+        pending.catalogue = catalogue
+        pending.catalogue_cursor = cursor
+        pending.proposal_exhausted = proposal_exhausted or (
+            self.proposal_provider is not None and cursor >= len(catalogue) and added == 0
+        )
+
     def candidates(
         self, state: SearchState
     ) -> tuple[tuple[int, ...], tuple[SearchState, ...], bool]:
@@ -651,8 +926,7 @@ class Tree:
         for action, child in successors_of(state, self.instance, self.spec):
             if child.key == SOLVED:
                 return (action,), (child,), False
-            previous = self.seen.get(child.key)
-            if previous is not None and previous <= child.used_cc:
+            if dominated_cost(self.seen.get(child.key, ()), child.used_cc, child.used_moves):
                 continue
             actions.append(action)
             children.append(child)
@@ -672,10 +946,10 @@ class Tree:
             node.children[index] = child
         else:
             child = node
-        self.nodes += 1
+        self.nodes += int(not pending.widening)
         self.expansions += 1
         self.simulations += 1
-        self.seen[state.key] = min(self.seen.get(state.key, 10**9), state.used_cc)
+        remember_cost(self.seen, state)
 
         if state.key == SOLVED:
             child.expanded = True
@@ -684,9 +958,13 @@ class Tree:
             return
 
         actions, children, _ = pending.actions, pending.children, False
+        old_count = len(child.actions) if pending.widening else 0
         child.actions = actions
         child.children_states = children
-        child.children = [None] * len(actions)
+        child.children = (child.children if pending.widening else []) + [None] * (len(actions) - old_count)
+        child.catalogue = pending.catalogue
+        child.catalogue_cursor = pending.catalogue_cursor
+        child.proposal_exhausted = pending.proposal_exhausted
         count = len(actions)
         if evaluation is None or count == 0:
             child.prior = np.full(count, 1.0 / max(count, 1))
@@ -699,11 +977,15 @@ class Tree:
                 prior = prior / prior.sum()
             child.prior = prior
             value = float(evaluation.value)
-        child.visits = np.zeros(count)
-        child.total = np.zeros(count)
-        child.dead = np.zeros(count, dtype=bool)
+        child.visits = np.concatenate((child.visits[:old_count], np.zeros(count - old_count)))
+        child.total = np.concatenate((child.total[:old_count], np.zeros(count - old_count)))
+        child.dead = np.concatenate((child.dead[:old_count], np.zeros(count - old_count, dtype=bool)))
         child.expanded = True
-        if count == 0 and child.parent is not None:
+        unopened = (
+            (child.catalogue is not None and child.catalogue_cursor < len(child.catalogue))
+            or (self.proposal_provider is not None and not child.proposal_exhausted)
+        )
+        if count == 0 and child.parent is not None and not unopened:
             # A dead end must stop competing for the budget, or PUCT re-selects it
             # forever at `Q = 0` and the arm is measured on a search that spent its
             # simulations re-discovering the same wall.
@@ -759,6 +1041,8 @@ def run_searches(
     log_every: float = 15.0,
     log: bool = False,
     label: str = "",
+    widening_batch: int = 0,
+    proposal_provider: Callable[[Instance, SearchState, int], Sequence[int]] | None = None,
 ) -> list[SearchResult]:
     """Run every `(instance, seed)` tree in lockstep, one batched evaluation a step.
 
@@ -775,6 +1059,8 @@ def run_searches(
             gumbel_m=gumbel_m,
             dirichlet_fraction=dirichlet_fraction,
             budget=simulations,
+            widening_batch=widening_batch,
+            proposal_provider=proposal_provider,
         )
         for index, instance in enumerate(instances)
         for seed in seeds
@@ -794,12 +1080,20 @@ def run_searches(
             pending = tree.select_leaf()
             if pending is None:
                 continue
-            actions, children, is_solved = tree.candidates(pending.state)
-            pending.actions = actions
-            pending.children = children
             pendings.append(pending)
+        if callable(getattr(proposal_provider, "prepare_batch", None)):
+            requests = [request for pending in pendings
+                        if (request := pending.tree.proposal_request(pending)) is not None]
+            proposal_provider.prepare_batch(requests)
+        for pending in pendings:
+            pending.tree.prepare_pending(pending)
         if not pendings:
-            break
+            # A simulation may only back up a dead child. Other unopened
+            # catalogue entries can still exist; no neural request this round
+            # is not proof that all searches are terminal.
+            if all(t.finished or t.simulations >= simulations for t in trees):
+                break
+            continue
         requests = [
             (p.tree.instance, p.state, p.actions)
             for p in pendings
@@ -874,7 +1168,7 @@ def classical_beam(
     spec = instance.spec
     rng = np.random.default_rng(seed)
     start = SearchState(instance.word, instance.strands, 0, 0)
-    seen = {start.key: 0}
+    seen = {start.key: [(0, 0)]}
     heap: list[tuple[int, int, float, int, SearchState, tuple[int, ...]]] = [
         (0, len(start.word), 0.0, 0, start, ())
     ]
@@ -893,10 +1187,8 @@ def classical_beam(
                 return SearchResult(
                     instance, True, witness, actions, expansions, expansions, None, seed, "beam"
                 )
-            previous = seen.get(child.key)
-            if previous is not None and previous <= child.used_cc:
+            if not remember_cost(seen, child):
                 continue
-            seen[child.key] = child.used_cc
             heapq.heappush(
                 heap,
                 (
@@ -995,6 +1287,7 @@ def samples_from_witness(
     growth_len: int = 2,
     growth_strands: int = 1,
     include_commutation: bool = True,
+    candidate_limit: int = 0,
 ) -> list[PolicySample]:
     """Set-valued `A_plus` supervision from any replay-verified witness.
 
@@ -1005,6 +1298,8 @@ def samples_from_witness(
     """
     from rf_knots.aplus import commutation_known_good, spine_from_witness
 
+    if candidate_limit < 0:
+        raise ValueError("candidate_limit must be nonnegative")
     witness.verify()
     spine = spine_from_witness(witness)
     out: list[PolicySample] = []
@@ -1026,7 +1321,6 @@ def samples_from_witness(
         )
         spec = instance.spec
         search_state = SearchState(state.word, state.strands, 0, 0)
-        candidates = [action for action, _ in successors_of(search_state, instance, spec)]
         # Action ids are `ActionSpec`-relative, and the witness carries its own
         # spec.  Re-encoding through the semantic `(kind, position, generator,
         # sign)` tuple is the only correct way across the two layouts -- and it is
@@ -1039,6 +1333,20 @@ def samples_from_witness(
             except Exception:  # pragma: no cover - the closure is an optimisation
                 pass
         positives = {spec.encode(*spine.spec.decode(action)) for action in raw}
+        if candidate_limit:
+            # A conditional shortlist objective, not the full-action softmax.
+            # Preserve every demonstrated positive, then sample evenly across
+            # the lazy catalogue without allocating successor words or L*N ids.
+            allow = instance.cap_crossing_changes > 0
+            positives = {a for a in positives if reference.is_legal(
+                spec, state.word, state.strands, a, allow
+            )}
+            catalogue = LazyActionCatalogue(spec, state.word, state.strands, allow)
+            count = min(candidate_limit, len(catalogue))
+            proposed = {catalogue.action_at(j * len(catalogue) // count) for j in range(count)}
+            candidates = sorted(positives | proposed) if instance.cap_moves > 0 else []
+        else:
+            candidates = [action for action, _ in successors_of(search_state, instance, spec)]
         positives &= set(candidates)
         if not positives or not candidates:
             continue
@@ -1085,7 +1393,7 @@ def training_loss(
     own share of the normaliser -- it is never pushed down on its own account.
     """
     requests = [(s.instance, s.state, s.actions) for s in samples]
-    batch = build_batch(requests, device)
+    batch = build_batch(requests, device, budget_dim=net.budget_dim)
     logits, value, effective = net(
         batch["word"],
         batch["lengths"],

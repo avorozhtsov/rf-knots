@@ -30,6 +30,7 @@ from rf_knots.embedding_encoder import ScalableBraidEmbeddingEncoder
 from rf_knots.embedding_gordian import load_gordian_pairs
 from rf_knots.embedding_metric import CC_GEOMETRIES, MetricBatch, MetricEmbeddingObjective
 from rf_knots.embedding_supervision import UnknotDBEmbeddingSidecar
+from rf_knots.strand_graph_encoder import StrandGraphBraidEncoder
 
 SCHEMA = "rf-knots-embedding-calibration-v0"
 
@@ -487,6 +488,10 @@ def main() -> None:
     parser.add_argument("--depth", type=int, default=4)
     parser.add_argument("--width", type=int, default=96)
     parser.add_argument("--embedding-dim", type=int, default=64)
+    parser.add_argument(
+        "--encoder-kind", choices=("legacy", "necklace", "strand_graph"), default="legacy"
+    )
+    parser.add_argument("--graph-rounds", type=int, default=2)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--steps", type=int, default=100)
     parser.add_argument("--warmup-steps", type=int, default=10)
@@ -603,9 +608,13 @@ def main() -> None:
         prefetch_factor=2 if args.workers > 0 else None,
         drop_last=True,
     )
-    model = ScalableBraidEmbeddingEncoder(
-        width=args.width, depth=args.depth, embedding_dim=args.embedding_dim
-    ).to(device)
+    dimensions = dict(width=args.width, depth=args.depth, embedding_dim=args.embedding_dim)
+    if args.encoder_kind == "strand_graph":
+        model = StrandGraphBraidEncoder(**dimensions, graph_rounds=args.graph_rounds).to(device)
+    else:
+        model = ScalableBraidEmbeddingEncoder(
+            **dimensions, positional_geometry=args.encoder_kind
+        ).to(device)
     objective = MetricEmbeddingObjective(
         cc_geometry=args.cc_geometry,
         cc_rank_weight=args.cc_rank_weight,
@@ -621,6 +630,11 @@ def main() -> None:
     scaler = torch.amp.GradScaler("cuda", enabled=args.amp and device.type == "cuda")
     if source_payload:
         source_config = source_payload["config"]
+        if source_config.get("encoder_kind", "legacy") != args.encoder_kind:
+            raise ValueError("checkpoint encoder kind differs from requested architecture")
+        if (args.encoder_kind == "strand_graph" and args.resume
+                and source_config.get("graph_rounds", 2) != args.graph_rounds):
+            raise ValueError("resume must retain the graph message-passing depth")
         expected_architecture = (args.width, args.depth, args.embedding_dim)
         source_architecture = (
             int(source_config["width"]),
@@ -938,6 +952,8 @@ def main() -> None:
             "depth": args.depth,
             "width": args.width,
             "embedding_dim_each": args.embedding_dim,
+            "encoder_kind": args.encoder_kind,
+            "graph_rounds": args.graph_rounds if args.encoder_kind == "strand_graph" else None,
             "workers": args.workers,
             "steps": args.steps,
             "warmup_steps": args.warmup_steps,

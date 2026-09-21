@@ -22,6 +22,32 @@ TREFOIL = ((1, 1, 1), 2)
 FIGURE_EIGHT = ((1, -2, 1, -2), 3)
 
 
+def test_transposition_preserves_shorter_and_incomparable_paths():
+    state = M.SearchState((1, 1, 1), 2, 1, 10)
+    seen = {}
+    assert M.remember_cost(seen, state)
+    assert M.remember_cost(seen, M.SearchState(state.word, 2, 1, 5))
+    assert seen[state.key] == [(1, 5)]
+    assert M.remember_cost(seen, M.SearchState(state.word, 2, 0, 8))
+    assert not M.remember_cost(seen, M.SearchState(state.word, 2, 1, 9))
+    assert set(seen[state.key]) == {(1, 5), (0, 8)}
+    assert not M.dominated_cost(seen[state.key], 2, 3)
+
+
+def test_tree_does_not_prune_same_cc_cheaper_move_successor():
+    instance = M.Instance("regression", (1, 1, 1), 2, 2, cap_moves=32)
+    tree = M.Tree(instance, seed=0)
+    source = M.SearchState(instance.word, instance.strands, 0, 0)
+    actions, children, _ = tree.candidates(source)
+    changed = next(c for c in children if c.used_cc == 1)
+    tree.seen[changed.key] = [(0, 20)]
+    _, after, _ = tree.candidates(source)
+    assert any(c.key == changed.key for c in after)
+    tree.seen[changed.key] = [(0, 1)]
+    _, after, _ = tree.candidates(source)
+    assert not any(c.key == changed.key for c in after)
+
+
 def small_instance(word=TREFOIL[0], strands=TREFOIL[1], **kwargs) -> M.Instance:
     return M.Instance(
         name="small",

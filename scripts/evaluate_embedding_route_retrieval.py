@@ -227,9 +227,13 @@ def main() -> None:
     parser.add_argument("--device", default="auto")
     parser.add_argument("--batch-size", type=int, default=2048)
     parser.add_argument("--per-source", type=int, default=20)
+    parser.add_argument(
+        "--evaluate-test", action="store_true",
+        help="explicitly open reserved test edges; omit during development",
+    )
     args = parser.parse_args()
 
-    args.output.mkdir(parents=True, exist_ok=True)
+    args.output.mkdir(parents=True, exist_ok=False)
     hashes = validate_snapshot_contract(
         proof_path=args.proof,
         pairs_path=args.pairs,
@@ -266,6 +270,13 @@ def main() -> None:
         [case for case in hidden if case.source_split != "test"],
         source_split="all",
     )
+    # The test-edge split is reserved before model scoring.  Keep it in a
+    # separate field so it cannot be mistaken for development evidence or
+    # accidentally used by prospective candidate selection.
+    heldout_test = (
+        evaluate_hidden_edges(representations, embeddings, hidden, source_split="test")
+        if args.evaluate_test else None
+    )
     gap_sources = load_gap_sources(args.identification, args.lower_bounds)
     candidates, candidate_summary = generate_shortcut_candidates(
         representations,
@@ -291,6 +302,8 @@ def main() -> None:
         "test_edges_reserved": sum(case.source_split == "test" for case in hidden),
         "retrospective_validation": validation,
         "retrospective_non_test": all_non_test,
+        "retrospective_test_reserved": heldout_test,
+        "test_evaluated": args.evaluate_test,
         "prospective": {
             **candidate_summary,
             "top_candidates": candidates[:100],
