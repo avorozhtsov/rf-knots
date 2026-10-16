@@ -30,6 +30,16 @@ loop live here because they are part of the RF Knots model architecture.
 > curriculum. The operational state of training runs lives in
 > `../pgx-mcts-bench/HANDOFF.md`, next to the code and artifacts it describes.
 
+## Archived experiment artifacts
+
+The [RF Knots Drive folder](https://drive.google.com/drive/folders/1pYBhu0C-z6jFXMbtbb600wM1UOkXoLWr)
+contains the [2026-08-21 local Q-SKM Q134-barrier archive](https://drive.google.com/drive/folders/1DBYyjRo-X7P4BY6Wqe1arHTT4ohOlTQA)
+from `pgx-mcts-bench`, named
+`pgx-mcts-bench-local-q-skm-20260821T232025Z-Q134-barrier`.
+Open its [results](https://drive.google.com/drive/folders/1pcPzFnFPt-KOC9q8LDLI1sypeTPV48oG)
+or [checkpoints](https://drive.google.com/drive/folders/1dtRoDcAs5ZxLef9sKHgssPzAtn0qkgMJ).
+The archive was moved there on 2026-10-07; its folder and child links are unchanged.
+
 ## The three-project system
 
 | Repository | Responsibility |

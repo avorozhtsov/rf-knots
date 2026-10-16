@@ -1,0 +1,14 @@
+# Short positive-seed R2 root F yield: completed pilots and stop decision
+
+2026-10-12. Both prospectively frozen TRAIN-only search batches completed, and their separate independent full-replay audits passed. This is MCTS teacher collection, **not** optimizer training or model promotion.
+
+| Batch | Manifest SHA256 | Audit SHA256 | Conditions | Replayed episodes | Solved episodes | New distinct exact-root F-usable TRAIN groups | CPU seconds |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| First eight roots, `research/340` | `ca61603ca547361662beacbdbbea584b961f3024a5e9cef319eaf69a1b6413a8` | `e94db1cf89a364e301dc540302c061211204ae9cdc5de2c4383893a152667cbb` | 32/32 | 1819 | 4 | 3/8 | 1464.568721 |
+| Remaining eight roots, `research/341` | `4fa17962e0c6c0ada62814933da64b8c30f7dfa766388b802764eed18bc6b687` | `da067e7436fbecb30324b1c2661b24d56161565dd09299b875a0c000b8c0aee9` | 32/32 | 1824 | 0 | 0/8 | 1489.095269 |
+
+The combined observed yield is **3/16 distinct new roots** from 64 search conditions and **2953.663990 CPU seconds**, or about **984.555 CPU seconds per newly usable root** over this tiny, selected panel. This ratio is not a scalable throughput estimate; the held-out second half produced zero. The three first-batch roots are all short stage-1 roots (indices 1, 3, 4 in that batch). No capped no-solve has been turned into a negative label. Both audits verified all pinned input and shard hashes, full saved-episode and solution replay, root ownership, caps, exact-root first-action/successor disagreement, and margin2/3/K4 F coefficients. No intermediate heldout trajectory state is a training row.
+
+Apply the predeclared `research/341` decision: **stop this source family for collection**. Do not rerun either batch or blindly increase simulation/CPU budgets. This sample neither supports the 1k/3k/10k/30k milestones nor hard-knot generalization. The existing immutable additive bank still contains **399** distinct F-usable TRAIN roots and **701** F groups; the three newly audited roots are *not yet added* to it. The completed R2 optimizer remains at step152964 and was not restarted.
+
+Next work is a separate root-only bank version that copies all old rows byte-for-byte, admits only the three audited new exact-root F groups with source replay/SHA/ownership/exclusion checks, and is independently audited before any new optimizer contract. Any subsequent R2 training must use an explicit old-root rehearsal mixture and a fresh validation-owned, score-blind DEV panel before checkpoint promotion. For scale toward 30,000, diagnose a genuinely new TRAIN source with verified root-divergent cost-diverse solutions and measure supply before another CPU pilot. No viewed DEV/TEST checkpoint selection, unknotdb mutation/publication, cloud purchase, commit, merge or push.

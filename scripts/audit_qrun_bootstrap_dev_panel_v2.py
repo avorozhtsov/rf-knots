@@ -1,0 +1,81 @@
+"""Independent SHA, witness, ownership and exact-state-overlap panel audit."""
+
+import hashlib
+import json
+from collections import Counter
+from dataclasses import replace
+from pathlib import Path
+
+from build_f_curriculum_roster_v1 import excluded_groups, group
+from evaluate_embedding_cost_search import query_instance
+from rf_knots.embedding_replay_corpus import invariants, owner
+from rf_knots.evidence import UnknotWitness
+
+PANEL = Path("artifacts/qrun-bootstrap-dev-panel-v2/panel.json")
+ROSTER = Path("artifacts/f-curriculum-roster-v3/roster.json")
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def states(witness):
+    return {(tuple(s.word), s.strands) for s in
+            (witness.start, *(step.after for step in witness.steps)) if s.word}
+
+
+def main():
+    panel = json.loads(PANEL.read_text())
+    roster = json.loads(ROSTER.read_text())
+    if (panel["schema"] != "rf-knots-qrun-bootstrap-dev-panel-v2"
+            or len(panel["rows"]) != 32
+            or [r["band"] for r in panel["rows"]] != [0] * 16 + [1] * 16
+            or panel["selection"]["seed"] != 20261204):
+        raise ValueError("panel identity or quotas differ")
+    for path, expected in panel["inputs"].items():
+        if sha(Path(path)) != expected:
+            raise ValueError(f"panel input changed: {path}")
+    train_states = set()
+    train_groups = set()
+    for stage in roster["stages"]:
+        for row in stage:
+            witness = UnknotWitness.from_dict(row["witness"])
+            witness.verify()
+            train_states.update(states(witness))
+            train_groups.add(tuple(row["query_group"]))
+    if len(train_states) != panel["selection"]["train_exact_state_count"]:
+        raise ValueError("TRAIN state inventory differs")
+    excluded = excluded_groups() | train_groups
+    seen = set()
+    stats = Counter()
+    for row in panel["rows"]:
+        witness = UnknotWitness.from_dict(row["witness"])
+        witness.verify()
+        identity = group(invariants(witness.start.word, witness.start.strands))
+        length = len(witness.start.word)
+        if (owner(invariants(witness.start.word, witness.start.strands)) != "validation"
+                or tuple(row["query_group"]) != identity
+                or identity in excluded or identity in seen
+                or row["word_length"] != length
+                or not (20 <= length <= 64 if row["band"] == 0 else 129 <= length <= 192)
+                or (row["reference_cc"], row["reference_moves"])
+                != (witness.crossing_changes, witness.moves)
+                or states(witness) & train_states):
+            raise ValueError("reference replay/ownership/state overlap differs")
+        seen.add(identity)
+        base, fits = query_instance(row["generator_index"], witness, witness_caps=True)
+        if not fits or len(row["instances"]) != 2:
+            raise ValueError("reference outside resource caps")
+        for weight, stored in zip((10, 1000), row["instances"], strict=True):
+            expected = replace(base, cc_weight=weight,
+                               uid=f"qrun-bootstrap-dev-v2-{row['generator_index']}-{weight}").to_dict()
+            if stored != expected:
+                raise ValueError("paired resource instance differs")
+        stats[f"band{row['band']}_cc{witness.crossing_changes}"] += 1
+    print(json.dumps({"panel_sha256": sha(PANEL), "roots": len(seen),
+                      "train_exact_states": len(train_states),
+                      "by_band_cc": stats}, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
