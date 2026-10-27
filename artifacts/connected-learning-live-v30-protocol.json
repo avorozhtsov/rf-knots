@@ -1,0 +1,9 @@
+{
+  "authorization": "USER_APPROVED_RANDOM_SOURCE_REPAIR_2026_10_25",
+  "preservation": "Original A1628687, active origin206004.2251009539, MAIN39168, v3 panel and all evidence unchanged. Full AdamW71/RNG/EMA restored. Unchanged v29 balanced objective and balance_origin1645639; MCTS/F50:50 and MAIN/random50:50, no extra auxiliaries.",
+  "source": "Same seed20261023460, shallow depth4..8/strands3..6, prospective batch61 onward. All prior failed/unsolved rosters excluded. No retry of batch60. References never labels.",
+  "yield_contract": "FIXED nonoverlapping four-batch windows,16 novel TRAIN roots,64 conditions; aggregate>=8 distinct admissible solved normalized views AND searchCPU/solvedview<=300. Every batch including zero-yield is included; no outcome-selected extension/replacement. Only full window passing independent replay and cumulative bank audit publishes READY. Failed window STOP, no retry.",
+  "search": "Unchanged verified-auto canonical16sim/20processCPU per condition, two L weights and two fixed seeds. No budget increase per search/root; no lowered average yield requirement.",
+  "safety": "Runtime12GiB guard, launch16GiB headroom, hourly full saves, immutable audited handoffs. Preserve all old rows/quarantine. No deletion,DB,cloud,Git,promotion,new evaluation or panel.",
+  "pipeline": "Separate supervisorv30, same v29 learner objective. Explicit graceful migration, not hot swap. Future windows publish atomically after audit; native commissioning plus real consumption of at least one v30-generated random ID required. A clocks include mixed regimen, never reset."
+}

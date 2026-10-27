@@ -1,0 +1,15 @@
+{
+  "version": "compact-storage-v31",
+  "schema": 1,
+  "files": {
+    "scripts/compact_storage_v31.py": "846fb1bf088987bedf4b42814a857d3a640c65a6df9b16febf072f9126e1c1d5",
+    "scripts/compact_runtime_v31/sitecustomize.py": "68ce199382293f91ee53d0997989af584b86c9bb79152233ef8858c769bc4ac6",
+    "scripts/run_compact_v31.py": "87b90d73a4fabac05938fc0bccb66bbabf67d3dad191f975b529d784952c70c8",
+    "scripts/maintain_compact_storage_v31.py": "0c369fb7a3b734dc68b99dcbf9105ee4a2ee36047e227e4343e68033655bbf2b",
+    "scripts/migrate_compact_storage_v31.py": "348634ab948c530a8986674924a34acea7a1106a49d3ac72d6097000699a0ace",
+    "scripts/restore_compact_v31.py": "2dedbd3adaad351b1c8d6820777bacaa7433eee8fa6068207f9771cadf13cd2c",
+    "scripts/verify_compact_v31.py": "48c39167cef4b1fd0fea178c77f03b8a4dc55e1d0dd1afdabade7b90ad2a5a49",
+    "tests/test_compact_storage_v31.py": "7430a3441f0d533921626ced28d204443a3a0ac03183b5c28b495b38ede70983",
+    "research/466-compact-storage-v31-and-retention.md": "3ae56e968e6e59fbc4d6c80387a0e1cb41b92eb95c73d6d7039a698b9329f9b6"
+  }
+}

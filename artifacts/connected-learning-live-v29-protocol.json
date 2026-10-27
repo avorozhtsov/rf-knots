@@ -1,0 +1,16 @@
+{
+  "authorization": "USER_APPROVED_BALANCED_NEW_MCTS_F_2026_10_24",
+  "objective": "Only smoothed strict F ranking and NEW MCTS root policy NLL+0.1achieved-cost SmoothL1. No additional old auxiliary or rehearsal loss.",
+  "balance_norm": "L2 of full trainable parameter gradient vector BEFORE AdamW, not raw loss values. Also log encoder-only norms separately. AdamW displacement proportions are not claimed.",
+  "warmup": "From immutable balance_origin_step: first2000real updates MCTS:F20:80,next2000=35:65,then50:50. Never reset at resume or bank handoff; no outcome selection.",
+  "normalization": "EMA_F decay0.99 persisted in checkpoint metrics. Common target=min(EMA_F,current_F_norm,10*current_MCTS_norm); factors=(1-w)*target/F and w*target/MCTS. Exact target ratio with bounded amplification; zero/nonfinite norms fail. One final clip1 and one AdamW step.",
+  "MCTS_sources": "Alternate50:50 fresh random and fresh MAIN at unchanged absolute phase351232; uniform group/view/semantic path. Old rows retained but excluded from this objective. MAIN freshness requires fully audited committed episodes at task>=39168; random IDs must be absent from original A-bank and independently audited actual MCTS labels. No reference-proof or failed-search negatives.",
+  "MAIN_cursors": "Separate prospective post-A cursor starts1224, monotone sequential fully-audited intake. Historical backfill cursor393 retained as evidence, not pretended consumed or erased. No completed search reruns. B counting cursor39168 unchanged.",
+  "preservation": "Keep original v3 A, panel, evaluator, every old checkpoint, source, failure and row. Full model/objective/head/71AdamW/Python-Torch-MPS RNG restore. Continue original48activeh AND100kMAIN gate via parent lineage. No new A or clock.",
+  "disk_guard_GiB":12,
+  "launch_minimum_free_GiB":16,
+  "checkpoint_seconds":3600,
+  "refresh": "Automatic immutable audited snapshot intake after>=3600wallseconds and substantial new data; native commissioning and actual fresh-label contribution verification. No hot swap.",
+  "storage_failure": "Preserve partial v28b batch15 and failed intake; do not retry blindly. v29 collector retains all rosters and starts prospective batch16, same seed/curriculum/budgets/yield gates. This is explicit reviewed version migration, not rerunning failed conditions.",
+  "prohibitions": "No cleanup/deletion, guard bypass, DB/production promotion, cloud/Git, new panel or early evaluation. No training/intake/optimizer diagnostic below12GiB. Initial native launch requires stable16GiB and no duplicates."
+}

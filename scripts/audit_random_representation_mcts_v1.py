@@ -40,7 +40,7 @@ def main():
         for wi,d in enumerate(r['instances']):
             instance=M.Instance(**{**d,'word':tuple(d['word'])});instances[i,wi]=instance
             assert (instance.word,instance.strands)==(w.start.word,w.start.strands)
-    censored=0;solutions=0
+    censored=0;solutions=0;solved_searches=0
     for i,e in enumerate(m['shards']):
         assert sha(DATA/e['file'])==e['sha256'];s=read(DATA/e['file']);ri=i//8;wi=(i//4)%2;inst=instances[ri,wi]
         assert (s['position'],s['root'],s['weight'],s['seed'])==(i,ri,inst.cc_weight,20281016+i%4)
@@ -50,6 +50,9 @@ def main():
         if row['witness']:
             w=UnknotWitness.from_dict(row['witness']);w.verify();assert (w.start.word,w.start.strands)==(inst.word,inst.strands)
             assert w.crossing_changes<=inst.cap_crossing_changes and w.moves<=inst.cap_moves
+            assert row['L10']==10*w.crossing_changes+w.moves and row['L1000']==1000*w.crossing_changes+w.moves
+            solved_searches+=1
+        else:assert row['L10'] is None and row['L1000'] is None
         for episode in row['episodes']:
             w=replay_episode(inst,episode);episodes+=1
             if w:
@@ -63,7 +66,12 @@ def main():
         if ranked:candidates.append(dict(root=ri,weight=instances[ri,wi].cc_weight,paths=ranked))
     useful=len({p['root'] for p in candidates});a.out.mkdir()
     atomic(a.out/'report.json',dict(partial=m['next_task']<32,conditions=m['next_task'],episodes_replayed=episodes,
-        cycle_free_solution_episodes=solutions,censored=censored,relative_path_candidates=candidates,
+        cycle_free_solution_episodes=solutions,solved_searches=solved_searches,censored=censored,relative_path_candidates=candidates,
+        distinct_base_groups=len({tuple(r['query_group']) for r in roots}),exact_representations=len(roots),
+        comparisons=[dict(root=ri,weight=instances[ri,wi].cc_weight,unique_completed_paths=len(ps),
+            reference_cc=UnknotWitness.from_dict(roots[ri]['witness']).crossing_changes,
+            reference_moves=UnknotWitness.from_dict(roots[ri]['witness']).moves,
+            best_cost=min(v['cost'] for v in ps.values())) for (ri,wi),ps in paths.items()],
         representations_with_two_signs=useful,admitted_old_style_F_roots=0,optimizer_steps=0,
         cpu_seconds=m['cpu_seconds'],manifest_sha256=sha(DATA/'manifest.json'),auditor_sha256=sha(Path(__file__)),
         decision='partial_no_scale' if m['next_task']<32 else 'optimizer_smoke_contract_only' if useful>=2 else

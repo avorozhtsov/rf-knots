@@ -31,6 +31,9 @@ def timeout(*_):
 
 def prepare():
     if OUT.exists():raise ValueError('immutable output exists')
+    if shutil.disk_usage(OUT.parent).free<12*1024**3:raise ValueError('disk guard')
+    if sha(ROSTER)!='cea36964728381466158315252e6db2ea4f64eab17f3ba39e87f11d0a70586a0':
+        raise ValueError('base roster pin differs')
     rows=read(ROSTER)['rows']; _,held=exclusions(); roots=[]
     for stage in range(4):
         pool=[r for r in rows if r['stage']==stage]
@@ -56,7 +59,8 @@ def prepare():
     actor=snapshot()
     pins=[PROTOCOL,ROSTER,Path(__file__),Path('scripts/resource_cost_search.py'),
           Path('scripts/run_continuous_train_mcts_v1.py'),Path('scripts/run_continuous_train_mcts_v2.py'),
-          Path('scripts/audit_random_representation_mcts_v1.py'),Path('scripts/audit_f_short_positive_r2_yield_v1.py'),
+          Path('scripts/audit_random_representation_mcts_v1.py'),Path('tests/test_random_representation_mcts_v1.py'),
+          Path('scripts/audit_f_short_positive_r2_yield_v1.py'),
           *Path('src/rf_knots').glob('*.py'),
           *Path('/Users/artemvorozhtsov/projects/pgx-mcts-bench/src/pgx_mcts_bench').glob('*.py')]
     OUT.mkdir()

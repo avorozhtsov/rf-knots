@@ -1,0 +1,19 @@
+{
+  "status": "USER_AUTHORIZED_LAUNCH_2026_10_23",
+  "scope": "Native MPS connected learning, fresh random TRAIN collection and automatic immutable snapshot intake. No production or DB promotion.",
+  "source_fraction": {"retained_and_main_MCTS": 0.5, "random_MCTS": 0.5},
+  "sampling": "source parity from absolute origin351232; uniform invariant group, exact view, semantic path; quarantine protected legacy IDs",
+  "gradient_caps_relative_to_F": {"positive": 0.05, "old_aux": 0.05, "total_aux": 0.1, "rehearsal": 0.2},
+  "disk_guard_GiB": 12,
+  "checkpoint_seconds": 3600,
+  "minute_metadata_only": true,
+  "parent": "Current complete checkpoint, including clean storage-stop checkpoint; validate all pins/model/objective/head/71AdamW/Python-Torch-MPS RNG; never resume numerical failure",
+  "commissioning": "First metadata-selected NEW random path within64 ordinary updates; execute all preceding updates; full native bitwise restore/counter/finite/caps verification BEFORE atomic research teacher registration",
+  "random_supply": "Continue reviewed v28a from batch1, preserving every prior roster including unsolved. One prospectively frozen four-view batch at a time. Same seed/caps/CPU/yield gates. No seed retries or automatic redesign.",
+  "main_intake": "Sequential four-FULL-audited-batch chunks after cursor373; replay every episode, preserve old rows byte-identically; no partial input or duplicated cursors",
+  "refresh": "Only after at least3600wall seconds of continuous training and >=4 pending new random normalized views or >=16 pending semantic paths; graceful full checkpoint, fresh isolated CPU check, new immutable spec/output, native commissioning then continuous resume. Never hot-swap a pinned bank.",
+  "backpressure": "Pause new collection at32 pending normalized views; resume after optimizer intake. Pending READY older than2 active continuous hours is a failure, not a healthy generator claim.",
+  "completion_criterion": "Advancing native optimizer updates on both sources, actual NEW-path consumption counters, supervised continuing supply and automatic audited snapshot handoffs; READY alone is not completion",
+  "new_AB": "A frozen separately before commissioning; B only after BOTH172800durable active-training seconds AND100000new FULL independently replayed MAIN MCTS episodes after baseline cursor. Same auto-reduction search in both arms, frozen fresh disjoint panel. Preserve old completed A/B.",
+  "failure": "Stop failed component and preserve exact evidence. No blind numerical/input/supply/yield retry, deletion, cleanup, guard override, cloud or Git. Healthy unaffected workers remain healthy."
+}

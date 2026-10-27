@@ -1,0 +1,12 @@
+{
+  "version": "v31a_child_transport_only",
+  "files": {
+    "scripts/compact_child_env_v31a.py": "7a40bd3483e5d903eb66087e84c50310ab578ff3d0f56ddcc2560a03ba1db46e",
+    "scripts/compact_runtime_v31a/sitecustomize.py": "7e36989870d89f9f1ad9d824a27d65199e9d31c3fa0d62237e4028c8c7653fb1",
+    "scripts/run_compact_v31a.py": "034b9ee1b32f0ea196b6b5d356e47a4604a76444de4e1babf81fb05fc7ded202",
+    "scripts/probe_compact_inheritance_v31a.py": "224d759c228a98f5e8f6d925953774452fca3f4d07c9e87d9c798616b1902da5",
+    "scripts/resume_after_transport_review_v31a.py": "95bcd9afb944aa253fd3068d29b013d3478cc369ec5a57440c1258eaaf5e574b",
+    "tests/test_compact_child_env_v31a.py": "5a6f5696cf38cf8fbc6499a4e7c56ddf2c5211a071cbbf42a2c42681a62ebab7",
+    "research/468-v31a-python-child-transport-review.md": "f43937124669599fe5bb70f1fe59f90d65dd8eb78c8f3ecb71d101557ddd59b2"
+  }
+}

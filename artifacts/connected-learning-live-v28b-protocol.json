@@ -1,0 +1,17 @@
+{
+  "status": "USER_AUTHORIZED_REPAIR_2026_10_24",
+  "predecessor": "v28a preserved, including failed batch1 and storage-stop checkpoint1635952",
+  "source_fraction": {"retained_and_main_MCTS": 0.5, "random_MCTS": 0.5},
+  "curriculum": "Prospectively fixed shallow constructive TRAIN: same seed20261023460, fresh indices from512, strands3..6, depth4..8, normalized root length>=8, four distinct groups/views. No outcome-based retry or adaptive budget.",
+  "search": "Unchanged verified_reduction_search_v28,16conditions,16sim ceiling,20processCPU each; reference proofs NEVER labels; full independent replay; cycle-free MCTS paths only; >=2solved views and <=300CPU/newview unchanged",
+  "preservation": "All old v1/v2/horizon48/v28/v28a/v28b rosters including unsolved are exclusions. All old bank rows byte-identical, five legacy quarantined IDs remain ineligible. Protect frozen v3 panel.",
+  "intake": "Sequential chunks of4 FULL audited MAIN batches; preserve durable cursor across restart; consume existing READY rather than recreate. Automatic full-state handoff after>=3600continuous wall seconds and (>=4new random normalized views OR >=16new semantic paths). No live hot swap.",
+  "gradient_caps_relative_to_F": {"positive":0.05,"old_aux":0.05,"total_aux":0.1,"rehearsal":0.2},
+  "checkpoint_seconds":3600,
+  "minute_metadata_only":true,
+  "disk_guard_GiB":12,
+  "launch_minimum_free_GiB":16,
+  "continuation": "Full latest model/objective/head/71AdamW/Python-Torch-MPS RNG and absolute sampler phase351232. New per-round telemetry starts at parent step; lifetime active time follows immutable parent lineage. No A reset.",
+  "AB": "Keep v3 A1628687 SHAa2bf6f7b975a134352176e9d8c36059f9e9584bfd4bf47a0614747bf90541d1c, origin206004.2251009539 and first counted MAINtask39168. B only after BOTH172800durable active seconds and100000new independently replayed MAIN episodes. Unchanged v3 panel/evaluator; no early scores.",
+  "failure": "Preserve failed evidence; no automatic retries/new seeds/gate dilution/cleanup. Aggregate status must expose degraded supply. Stop and report a failed component; leave unaffected healthy workers. No DB/production/Git/cloud."
+}
